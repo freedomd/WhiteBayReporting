@@ -14,6 +14,8 @@ framework.
 
 """
 import os
+import sys
+sys.path.append('/home/ubuntu/WhiteBayReporting')
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WhiteBayReporting.settings")
 
