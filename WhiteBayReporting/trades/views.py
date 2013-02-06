@@ -6,7 +6,7 @@ from datetime import date
 from django.db.models import Q
 
 def home(request):
-    trade_list = Trade.objects.order_by('tradeDate').all()
+    trade_list = Trade.objects.order_by('tradeDate', 'executionId').all()
     #today = date.today()
     #print today.day
     #trade_list = Trade.objects.filter(Q(date_published__year=today.year) & Q(date_published__month=today.month) & Q(date_published__day=today.day))

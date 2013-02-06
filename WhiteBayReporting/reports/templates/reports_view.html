@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+
+<body>
+    
+<div class="container">
+<div id="filter" style="float:left">
+	<table>
+	<tr>
+    <td>
+    <select class="span3" id="options" size = "1" onchange="#">
+	       <option value="today"> Today
+    </select>
+    </td>
+    </tr>
+    </table>
+</div>
+<div style="float:right">
+	Report Date: {{ report_date }}
+</div>
+</div>
+
+<div class="container">
+<div class="hero-unit">
+
+<!-- trades list  -->
+<div id="trades_container">
+	<table class="table table-striped" style="margin-top:10px">
+		<tr>
+		<th>Symbol</th>
+		<th>Buys</th>
+		<th>Buy Ave</th>
+		<th>Sells</th>
+		<th>Sell Ave</th>
+		<th>Gross PNL</th>
+		<th>Unrealized PNL</th>
+		<th>Fees</th>
+		<th>Net PNL</th>
+		<th>LMV</th>
+		<th>SMV</th>
+		</tr>
+	{% for report in report_list %}
+		<tr>
+		<td>{{ report.symbol }}</td>
+		<td>{{ report.buys }}</td>
+		<td>{{ report.buyAve }}</td>
+		<td>{{ report.sells }}</td>
+		<td>{{ report.sellAve }}</td>
+		<td>{{ report.grossPNL }}</td>
+		<td>{{ report.unrealizedPNL }}</td>
+		<td>{{ report.fees }}</td>
+		<td>{{ report.netPNL }}</td>
+		<td>{{ report.LMV }}</td>
+		<td>{{ report.SMV }}</td>
+		</tr>
+	{% endfor %}
+		<tr>
+		<th>{{ total.symbol }}</th>
+		<th>{{ total.buys }}</th>
+		<th>-</th>
+		<th>{{ total.sells }}</th>
+		<th>-</th>
+		<th>{{ total.grossPNL }}</th>
+		<th>{{ total.unrealizedPNL }}</th>
+		<th>{{ total.fees }}</th>
+		<th>{{ total.netPNL }}</th>
+		<th>{{ total.LMV }}</th>
+		<th>{{ total.SMV }}</th>
+		</tr>
+	</table>
+</div>
+</div>
+</div>
+
+<!--  
+<div id="paginator" align="right">
+	<div class="input-prepend input-append">
+       <input class="btn" type="button" id="previous" value="Prev" disabled="disabled">&nbsp;<select style="width:80px" id="pages" size = "1"></select>&nbsp;<input class="btn" type="button" id="next" disabled="disabled" value="Next">
+	</div>
+</div>
+-->
+
+</body>
+</html>
+
+{% endblock %}

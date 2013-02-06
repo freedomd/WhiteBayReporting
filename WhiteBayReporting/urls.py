@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include, url
 from hello.views import hello_world
 from trades.views import *
+from reports.views import *
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -11,6 +12,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^$', home),
+    url(r'^report/', reportView),
     url(r'^upload/', upload),
     
     url(r'^admin/', include(admin.site.urls)),

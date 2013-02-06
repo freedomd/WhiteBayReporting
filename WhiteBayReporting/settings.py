@@ -130,6 +130,7 @@ INSTALLED_APPS = (
     # applications
     'hello',
     'trades',
+    'reports',
 )
 
 # A sample logging configuration. The only tangible logging
