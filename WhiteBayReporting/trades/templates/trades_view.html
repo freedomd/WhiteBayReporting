@@ -47,6 +47,7 @@
 		<th>Broker</th>
 		<th>Date</th>
 		<th>Exchange</th>
+		<th>Execution ID</th>
 		</tr>
 	{% for trade in trade_list %}
 		<tr>
@@ -58,6 +59,7 @@
 		<td>{{ trade.broker }}</td>
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
 		<td>{{ trade.exchange }}</td>
+		<td>{{ trade.executionId }}</td>
 		</tr>
 	{% endfor %}
 	</table>
