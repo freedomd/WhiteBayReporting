@@ -1,10 +1,34 @@
 # Django settings for WhiteBayReporting project.
+import os
+import sys
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
+
+TEMPLATE_DIRS = (
+    os.path.join(PROJECT_PATH, 'templates/'),
+)
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
+)
+
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+# Example: "/home/media/media.lawrence.com/static/"
+#PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
+STATIC_ROOT = os.path.join(PROJECT_PATH, 'static/')
+
+# URL prefix for static files.
+# Example: "http://media.lawrence.com/static/"
+STATIC_URL = '/assets/'
+
+# Additional locations of static files
+STATICFILES_DIRS = (
+    os.path.join(PROJECT_PATH, 'assets/'),
 )
 
 MANAGERS = ADMINS
@@ -123,10 +147,11 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     
     # tools
-    
+    'south',
     
     # applications
     'hello',
+    'trades',
 )
 
 # A sample logging configuration. The only tangible logging
