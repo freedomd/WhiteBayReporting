@@ -1,8 +1,7 @@
-from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from trades.models import Trade
 import csv
+from trades.models import Trade
 
 def home(request):
     trade_list = Trade.objects.order_by('tradeDate').all()
