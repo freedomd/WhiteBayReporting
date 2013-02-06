@@ -1,0 +1,34 @@
+#search_bar {
+     	 padding-top: 10px;
+         padding-bottom: 10px;
+         overflow: auto;
+}
+
+img {
+	max-width: 200px;
+	width: expression(( this.width > 200) ? 200 : this.width);
+	align: center;
+}
+  
+.main_table {
+	border-top: 1px solid #dddddd;
+	width: 100%;
+	margin-bottom: 18px;
+}		
+
+.info_table {
+	width: 100%;
+	margin-top: 8px;
+}		
+
+.info_table th,
+.info_table td {
+	padding: 8px;
+	line-height: 18px;
+	vertical-align: top;
+}
+
+.desc_area {
+	height: 80px;
+	width: 760px;
+}
