@@ -12,6 +12,7 @@ def home(request):
     #trade_list = Trade.objects.filter(Q(date_published__year=today.year) & Q(date_published__month=today.month) & Q(date_published__day=today.day))
     return render(request,"trades_view.html", locals())
 
+
 def upload(request):
     if request.POST:
         try:
@@ -20,7 +21,7 @@ def upload(request):
             for row in csv.reader(file.read().splitlines(), delimiter=','):
                 if count != 1: # Ignore the header row
                     try:
-                        Trade.objects.get( executionId = row[8] ) # ignore existed trade
+                        Trade.objects.get( executionId = row[8] ) # ignore existed trade, identify by execution id
                     except Trade.DoesNotExist:
                         trade = Trade()
                         trade.account = row[0]

@@ -1,65 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Trades</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <!-- Le styles -->    
-    <link href="../assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-
-    </style>
-    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
-    
-  	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 </head>
 
 <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand">White Bay Group</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-            </ul>
-
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
-    </div>
-
+    
 <div class="container">
-
-<div id="search_bar">
+<div id="filter">
 	<table>
 	<tr>
-    
     <td>
     <select class="span3" id="options" size = "1" onchange="#">
 	       <option value="today"> Today
     </select>
     </td>
-    
     </tr>
     </table>
 </div>
 
+<div id="upload">
+	<table><tr>
+	<form enctype="multipart/form-data" method="post" action="/upload/">
+	    {% csrf_token %}
+		<td><font size=3>Upload a CSV file:  </font></td>
+      	<td><input type='file' name='content' /></td>
+      	<td><input type='submit' value='Upload'/></td>
+	</form>
+	</tr></table>
+</div>
+
+<div class="hero-unit">
+
 <!-- trades list  -->
-<!-- <div align="right"><span id="count_info"></span></div> -->
 <div id="trades_container">
-	<table border="1">
+	<table class="table table-striped" style="margin-top:10px">
 		<tr>
 		<th>Account</th>
 		<th>Symbol</th>
@@ -84,6 +62,8 @@
 	{% endfor %}
 	</table>
 </div>
+</div>
+</div>
 
 <!--  
 <div id="paginator" align="right">
@@ -93,16 +73,7 @@
 </div>
 -->
 
-<div id="upload">
-	<table><tr>
-	<form enctype="multipart/form-data" method="post" action="/upload/">
-	    {% csrf_token %}
-		<td><font size=3>Upload a CSV file:  </font></td>
-      	<td><input type='file' name='content' /></td>
-      	<td><input type='submit' value='Upload'/></td>
-	</form>
-	</tr></table>
-</div>
-
 </body>
 </html>
+
+{% endblock %}
