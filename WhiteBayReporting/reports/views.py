@@ -30,10 +30,14 @@ def reportView(request):
             report_date = report_list[0].reportDate
             report_list = Report.objects.filter(Q(reportDate__year=report_date.year) & Q(reportDate__month=report_date.month) & Q(reportDate__day=report_date.day))
         else:
-            return HttpResponseRedirect("/")
+            error = True
+            error_message = "No reports yet."
+            return render(request,"reports_view.html", locals())
         total = report_list.get(symbol="Total")
         report_list = report_list.exclude(symbol="Total")
-    except:
-        return HttpResponseRedirect("/")
+    except Exception, e:
+        error = True
+        error_message = str(e.message)
+        return render(request,"reports_view.html", locals())
     
     return render(request,"reports_view.html", locals())

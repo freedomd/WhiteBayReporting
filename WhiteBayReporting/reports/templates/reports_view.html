@@ -24,16 +24,22 @@
 <div style="float:right">
 	Report Date: {{ report_date|date:'Y-m-d' }}
 </div>
+<div style="clear:both;"></div> 
+<hr>
 </div>
 
-<div class="container">
-<div class="hero-unit">
 
+<div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+
+{% if error %}
+	<div id="error_message">{{ error_message }}</div>
+{% else %}
 <!-- trades list  -->
-<div id="trades_container">
-	<table class="table table-striped" style="margin-top:10px">
+<div id="reports_container">
+	<table class="table table-striped table-bordered" style="margin-top:10px">
 		<tr>
 		<th>Symbol</th>
+		<th>SOD</th>
 		<th>Buys</th>
 		<th>Buy Ave</th>
 		<th>Sells</th>
@@ -44,10 +50,13 @@
 		<th>Net PNL</th>
 		<th>LMV</th>
 		<th>SMV</th>
+		<th>EOD</th>
+		<th>Mark</th>
 		</tr>
 	{% for report in report_list %}
 		<tr>
 		<td>{{ report.symbol }}</td>
+		<td>{{ report.SOD }}</td>
 		<td>{{ report.buys }}</td>
 		<td>{{ report.buyAve }}</td>
 		<td>{{ report.sells }}</td>
@@ -58,10 +67,13 @@
 		<td>{{ report.netPNL }}</td>
 		<td>{{ report.LMV }}</td>
 		<td>{{ report.SMV }}</td>
+		<td>{{ report.EOD }}</td>
+		<td>{{ report.mark }}</td>
 		</tr>
 	{% endfor %}
 		<tr>
 		<th>{{ total.symbol }}</th>
+		<th>{{ total.SOD }}</th>
 		<th>{{ total.buys }}</th>
 		<th>-</th>
 		<th>{{ total.sells }}</th>
@@ -72,10 +84,13 @@
 		<th>{{ total.netPNL }}</th>
 		<th>{{ total.LMV }}</th>
 		<th>{{ total.SMV }}</th>
+		<th>{{ total.EOD }}</th>
+		<th>-</th>
 		</tr>
 	</table>
 </div>
-</div>
+{% endif %}
+
 </div>
 
 <!--  

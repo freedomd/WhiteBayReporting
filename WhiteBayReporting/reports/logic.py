@@ -36,17 +36,51 @@ def getReport():
             total += trade.quantity * trade.price # new total
             new_report.buys += trade.quantity # new buys
             new_report.buyAve = total / new_report.buys # new buy ave
+            new_report.EOD = new_report.EOD + trade.quantity
             
         elif trade.side == "SEL":
             total = new_report.sells * new_report.sellAve
             total += trade.quantity * trade.price # new total
             new_report.sells += trade.quantity # new sells
             new_report.sellAve = total / new_report.sells # new sell ave
+            new_report.EOD = new_report.EOD - trade.quantity
         
         new_report.save() # save result
     
+    getPNLs(today) # calculate PNLS
     getTotal(today) # get summary date
-    
+
+# calcluate pnls for each report
+def getPNLs(report_date):
+    report_list = Report.objects.filter( Q(reportDate = report_date) )
+    for report in report_list: 
+        mark = report.mark # mark to market value
+        #SOD = report.SOD
+        buys = report.buys
+        buyAve = report.buyAve
+        sells = report.sells
+        sellAve = report.sellAve
+        if buys >= sells:
+            common = sells
+        else:
+            common = buys
+            
+        # gross PNL    
+        grossPNL = common * (sellAve - buyAve)
+        report.grossPNL = grossPNL
+        
+        # left shares
+        buys -= common
+        sells -= common
+        unrealizedPNL = (mark - buyAve) * buys + (sellAve - mark) * sells
+        report.unrealizedPNL = unrealizedPNL
+        
+        report.netPNL = grossPNL + unrealizedPNL - report.fees
+        report.LMV = buys * mark
+        report.SMV = -sells * mark
+        
+        report.save()
+   
   
 # get summary data of reports with a specific date
 def getTotal(report_date):
@@ -63,6 +97,7 @@ def getTotal(report_date):
         total.netPNL += report.netPNL
         total.LMV += report.LMV
         total.SMV += report.SMV
+        total.EOD += report.EOD
     total.reportDate = report_date
     total.save()
 
