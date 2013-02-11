@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<html>
+<head> 
+<title>LogIn</title>
+</head>
+
+<body>
+	<div class="container">
+      <div class="hero-unit">
+      	<div align="center">
+      		<div>
+      		<table>
+      			<tr><h2 style="margin-bottom:5px">Log In</h2></tr>
+      			<tr><h4 style="margin-bottom:30px">Or click <a href="/register/">here</a> to register</h4></tr>
+      		</table>		
+      		</div>
+
+      		
+      		{% if error %}
+      			<p><font color="#FF0000">{{ error_message }}</font></p>
+  			{% endif %}
+      		
+        	<form method="post" action=".">
+        		{% csrf_token %}
+        		<table>
+				<tr>
+					<td>E-mail: </td><td><input type="text" name="email" /></td>
+				</tr>
+				<tr>
+					<td>Password:</td><td><input type="password" name="password" /></td>
+				</tr>
+				<tr>
+            		<td></td><td align="right"><input type="submit" class="btn btn-primary" value="LogIn"></td>
+         		</tr>
+         		</table>
+			</form>
+
+		</div>
+      </div>
+    </div> <!-- /container -->
+
+</body>
+</html>
+{% endblock content %}

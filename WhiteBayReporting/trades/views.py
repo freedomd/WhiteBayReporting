@@ -1,12 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 import csv
 from trades.models import Trade
 from reports.models import Report
 from datetime import date
 from django.db.models import Q
 
-def home(request):
+@login_required
+def tradeView(request):
     #trade_list = Trade.objects.order_by('tradeDate', 'executionId').all()
     today = date.today()
     #print today.day
@@ -16,7 +18,7 @@ def home(request):
         error_message = "No trades yet."
     return render(request,"trades_view.html", locals())
 
-
+@login_required
 def upload(request):
     if request.POST:
         try:
@@ -47,6 +49,7 @@ def upload(request):
 
     return HttpResponseRedirect("/")
 
+@login_required
 def uploadMarks(request):
     today = date.today()
     

@@ -1,4 +1,4 @@
-AccountNumber,Symbol,Side,Quantity,Price,Broker,Date,Exchange,ExecutionID
+Account,Symbol,Side,Quantity,Price,Broker,Date,Exchange,ExecutionID
 1,GOOG,SEL,100,200.5,D,2013-02-11,NASQNY,1
 1,GOOG,BUY,100,210.5,D,2013-02-11,NASQNY,2
 1,FB,BUY,100,15.5,D,2013-02-11,NASQNY,3

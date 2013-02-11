@@ -30,14 +30,35 @@
       <div class="navbar-inner">
        <div class="container">
           <a class="brand" href="/">White Bay Group</a>
+          
+          {% if user.first_name != None %}
           <div class="btn-group pull-right">
-            <a class="btn btn-primary" href="/report/">Report</a>
+            <a class="btn dropdown-toggle" data-toggle="dropdown">
+              <i class="icon-user"></i><i>{{ user.first_name }}</i>
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/logout/">Log Out</a></li>
+            </ul>
           </div>
+          {% endif %}
        </div>
       </div> 
     </div>
     </div>
     
+    <div class="container">
+    	{% if user.is_active %}
+      	<ul id="tabs" class="nav nav-tabs">
+  		<li id="trade_tab" class="active">
+    		<a href="/tradeView/">Trades</a>
+  		</li>
+  		<li id="report_tab"><a href="/reportView/">Reports</a></li>
+		</ul>
+      	{% endif %}
+    </div>
+      
+
     {% block content %}
 
     {% endblock content %}

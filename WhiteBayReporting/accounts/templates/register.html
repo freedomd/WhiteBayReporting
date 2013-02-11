@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<html>
+<head> 
+<title>Register</title>
+
+    <style>
+      .error_info {
+      	 color: red;
+  		 padding-left: 10px;
+	  }		
+    </style>
+    
+	<script type="text/javascript">
+		function test(){
+			alert("test");
+		}
+	
+		function validate_required(field) {
+			with (field) {
+  				if (value == null || value == ""){
+  					return false;
+  				}
+  				else {
+  					return true;
+  				}
+  			}
+  		}
+
+	
+		function validate_email(field) {
+			with (field) {
+				if (value == null || value == "") {
+					$("#message").html("You must enter an email address!");
+  					return false;
+  				} else {
+					apos = value.indexOf("@")
+					dotpos = value.lastIndexOf(".")
+				   	if (apos < 1 || dotpos - apos < 2) {
+				   		$("#message").html("Your email address is invalid");
+						return false;
+					} else {
+						$("#message").html("");
+						return true;
+					}
+				}
+			}
+		}
+		
+
+		function validate_form(thisform) {
+			var check = true;
+			$("#message").html("");
+			with (thisform) {
+				if (validate_email(email) == false) {
+					email.focus();
+					return false;
+				}
+				if (validate_required(password) == false) {
+					$("#message").html("You must enter a password!");
+					password.focus();
+					return false;
+				} else {
+					$("#message").html("");
+				}
+				if (validate_required(firstname) == false) {
+					$("#message").html("You must enter your first name!");
+					firstname.focus();
+					return false;
+				} else {
+					$("#message").html("");
+				}
+				if (validate_required(lastname) == false)	{
+					$("#message").html("You must enter your last name!");
+					lastname.focus();
+					return false;
+				} else {
+					$("#message").html("");
+				}
+				return true;
+			}	
+		}	
+
+		</script>
+</head>
+
+<body>
+	<div class="container">
+      <div class="hero-unit">
+      	<div align="center">
+      	    <div>
+      		<table>
+      			<tr><h2>Register</h2></tr>
+      		</table>		
+      		</div>
+      		<p><font color="#FF0000"><span id="message">{{ error_message }}</span></font></p>
+        	<form method="post" action="." onsubmit = "return validate_form(this)"> 
+        		{% csrf_token %}
+        		<table>
+				<tr>
+					<td>E-mail: </td><td><input type="text" name="email" id="email" value = "{{ email }}" /></td>
+				</tr>
+				<tr>
+					<td>Password:</td><td><input type="password" name="password" id="password" value = "{{ password }}" /></td>
+				</tr>
+				<tr>
+					<td>First Name:</td><td><input type="text" name="firstname" id="firstname" value = "{{ firstname }}" /></td>
+				</tr>
+				<tr>
+					<td>Last Name:</td><td><input type="text" name="lastname" id="lastname" value = "{{ lastname }}" /></td>
+				</tr>
+				<tr>
+            		<td></td><td align="right"><input type="submit" class="btn btn-primary" value="Register"></td>
+         		</tr>
+         		</table>
+			</form>
+		</div>
+      </div>
+    </div> <!-- /container -->
+
+</body>
+</html>
+{% endblock content %}

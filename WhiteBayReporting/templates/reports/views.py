@@ -1,14 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.contrib.auth.decorators import login_required
 from reports.models import Report
 from datetime import date
 from django.db.models import Q
 import datetime
 from reports.logic import *
 
-
-@login_required
 def reportView(request):
     today = date.today()
     

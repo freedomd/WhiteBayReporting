@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     'hello',
     'trades',
     'reports',
+    'accounts',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -183,3 +184,6 @@ CELERYBEAT_SCHEDULE = {
 }
 
 CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+
+#--------------------------- others
+LOGIN_URL = "/login/"

@@ -5,29 +5,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<script type="text/javascript">
-		function setActive(){
-			$("#tabs").find('li').removeClass("active")
-			$("#report_tab").addClass("active")
-		}
-	</script>
 </head>
 
-<body onload=setActive()>
+<body>
     
 <div class="container">
-<!-- <div id="filter" style="float:left">
+<div id="filter" style="float:left">
 	<table>
 	<tr>
     <td>
+    <select class="span3" id="options" size = "1" onchange="#">
+	       <option value="today"> Today
+    </select>
     </td>
     </tr>
     </table>
-</div> -->
+</div>
 <div style="float:right">
 	Report Date: {{ report_date|date:'Y-m-d' }}
 </div>
 <div style="clear:both;"></div> 
+<hr>
 </div>
 
 

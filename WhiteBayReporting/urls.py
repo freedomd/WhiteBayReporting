@@ -2,6 +2,7 @@ from django.conf.urls import patterns, include, url
 from hello.views import hello_world
 from trades.views import *
 from reports.views import *
+from accounts.views import *
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -12,7 +13,16 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^$', home),
-    url(r'^report/', reportView),
+    # accounts
+    url(r'^register/', register),
+    url(r'^login/', login),
+    url(r'^logout/', logout_view),
+    
+    # reports
+    url(r'^reportView/', reportView),
+    
+    # trades & files
+    url(r'^tradeView/', tradeView),
     url(r'^upload/', upload),
     url(r'^uploadMarks/', uploadMarks),
     
