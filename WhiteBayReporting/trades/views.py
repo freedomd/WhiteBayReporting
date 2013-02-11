@@ -42,9 +42,8 @@ def upload(request):
                     count += 1
                 
         except Exception, e:
-            error = True
-            error_message = str(e.message)
-            return render(request,"trades_view.html", locals())
+            print e.message
+            return HttpResponseRedirect("/")
 
     return HttpResponseRedirect("/")
 
@@ -68,13 +67,11 @@ def uploadMarks(request):
                         new_report.mark = row[1]
                         new_report.reportDate = today
                         new_report.save()
-                        
                 else:
                     count += 1
                 
         except Exception, e:
-            error = True
-            error_message = str(e.message)
-            return render(request,"trades_view.html", locals())
+            print e.message
+            return HttpResponseRedirect("/")
 
     return HttpResponseRedirect("/")
