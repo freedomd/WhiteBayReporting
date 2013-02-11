@@ -11,6 +11,9 @@ def home(request):
     today = date.today()
     #print today.day
     trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('tradeDate', 'executionId')
+    if len(trade_list) == 0:
+        error = True
+        error_message = "No trades yet."
     return render(request,"trades_view.html", locals())
 
 
@@ -39,8 +42,9 @@ def upload(request):
                     count += 1
                 
         except Exception, e:
-            print str(e.message)
-            return HttpResponseRedirect("/")
+            error = True
+            error_message = str(e.message)
+            return render(request,"trades_view.html", locals())
 
     return HttpResponseRedirect("/")
 
@@ -69,7 +73,8 @@ def uploadMarks(request):
                     count += 1
                 
         except Exception, e:
-            print str(e.message)
-            return HttpResponseRedirect("/")
+            error = True
+            error_message = str(e.message)
+            return render(request,"trades_view.html", locals())
 
     return HttpResponseRedirect("/")
