@@ -33,8 +33,13 @@ def reportView(request):
             error = True
             error_message = "No reports yet."
             return render(request,"reports_view.html", locals())
-        total = report_list.get(symbol="Total")
-        report_list = report_list.exclude(symbol="Total")
+        try:
+            total = report_list.get(symbol="Total")
+            report_list = report_list.exclude(symbol="Total")
+        except: # no today's new report
+            error = True
+            error_message = "No reports yet."
+            return render(request,"reports_view.html", locals())
     except Exception, e:
         error = True
         error_message = str(e.message)
