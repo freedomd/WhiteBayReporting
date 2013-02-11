@@ -163,10 +163,23 @@ LOGGING = {
     }
 }
 
-#--------------------------celery
+#-------------------------- celery
 
 BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 
 import djcelery
 djcelery.setup_loader()
+
+#--------------------------- tasks
+from celery.schedules import crontab
+
+CELERYBEAT_SCHEDULE = {
+    # Executes every evening at 8:00 P.M.
+    'get_report': {
+        'task': 'reports.tasks.get_report',
+        'schedule': crontab(hour=20, minute=0), #crontab(minute='*/1')
+    },
+}
+
+CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"

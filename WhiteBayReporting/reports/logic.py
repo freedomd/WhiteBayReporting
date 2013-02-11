@@ -31,14 +31,14 @@ def getReport():
             new_report.reportDate = today
         
         # update report
-        if trade.side == "BUY":
+        if trade.side == "B":
             total = new_report.buys * new_report.buyAve
             total += trade.quantity * trade.price # new total
             new_report.buys += trade.quantity # new buys
             new_report.buyAve = total / new_report.buys # new buy ave
             new_report.EOD = new_report.EOD + trade.quantity
             
-        elif trade.side == "SEL":
+        elif trade.side == "S":
             total = new_report.sells * new_report.sellAve
             total += trade.quantity * trade.price # new total
             new_report.sells += trade.quantity # new sells
