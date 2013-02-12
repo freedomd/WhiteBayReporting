@@ -6,6 +6,7 @@ from trades.models import Trade
 from reports.models import Report
 from datetime import date
 from django.db.models import Q
+from reports.logic import newReport
 
 @login_required
 def tradeView(request):
@@ -15,8 +16,12 @@ def tradeView(request):
     trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('tradeDate', 'executionId')
     if len(trade_list) == 0:
         error = True
-        error_message = "No trades yet."
+        error_message = "No trades yet today."
     return render(request,"trades_view.html", locals())
+
+@login_required
+def documentView(request):
+    return render(request,"documents_view.html", locals())
 
 @login_required
 def upload(request):
@@ -45,9 +50,9 @@ def upload(request):
                 
         except Exception, e:
             print e.message
-            return HttpResponseRedirect("/")
+            return HttpResponseRedirect("/trade/")
 
-    return HttpResponseRedirect("/")
+    return HttpResponseRedirect("/trade/")
 
 @login_required
 def uploadMarks(request):
@@ -59,17 +64,9 @@ def uploadMarks(request):
             count = 1
             for row in csv.reader(file.read().splitlines(), delimiter=','):
                 if count != 1: # Ignore the header row
-                    try:
-                        report = Report.objects.get(Q(symbol=row[0]) & Q(reportDate__year=today.year) & 
-                                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
-                        report.mark = row[1]
-                        report.save()
-                    except Report.DoesNotExist:
-                        new_report = Report()
-                        new_report.symbol = row[0]
-                        new_report.mark = row[1]
-                        new_report.reportDate = today
-                        new_report.save()
+                    new_report = newReport(row[0]) # create new report for today
+                    new_report.mark = row[1]
+                    new_report.save()
                 else:
                     count += 1
                 

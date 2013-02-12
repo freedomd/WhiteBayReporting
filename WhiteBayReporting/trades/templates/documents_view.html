@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script type="text/javascript">
+		function setActive(){
+			$("#tabs").find('li').removeClass("active")
+			$("#document_tab").addClass("active")
+		}
+	</script>
+</head>
+
+<body onload=setActive()>
+    
+<div class="container">
+
+<div id="upload">
+	<table>
+	<form enctype="multipart/form-data" method="post" action="/upload/">
+	    {% csrf_token %}
+	    <tr>
+		<td><font size=3>Upload a CSV file of <b>trading data</b>:  </font></td>
+      	<td><input type='file' name='content' /></td>
+      	<td><input type='submit' value='Upload'/></td>
+      	</tr>
+      	<td><a href="/assets/examples/trades.csv">See Example</a>
+      	</tr>
+	</form>
+	
+	
+	<form enctype="multipart/form-data" method="post" action="/uploadMarks/">
+	    {% csrf_token %}
+	    <tr>
+		<td><font size=3>Upload a CSV file of <b>closing prices</b>:  </font></td>
+     	<td><input type='file' name='content' /></td>
+      	<td><input type='submit' value='Upload'/></td>
+      	</tr>
+      	<tr>
+      	<td><a href="/assets/examples/marks.csv">See Example</a>
+      	</tr>
+	</form>
+	</table>
+</div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

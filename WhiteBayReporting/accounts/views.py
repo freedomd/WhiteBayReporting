@@ -5,10 +5,13 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from accounts.models import UserProfile
+from datetime import date
 
 @login_required
 def home(request):
-    return HttpResponseRedirect("/tradeView/")
+    today=date.today()
+    url="/monthlyReport/%s/%s/"%(str(today.year), str(today.month))
+    return HttpResponseRedirect(url)
 
 def register(request):
     try:
