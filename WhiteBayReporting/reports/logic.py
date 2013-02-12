@@ -1,34 +1,47 @@
 from trades.models import Trade
-from reports.models import Report
+from reports.models import Report, DailyReport, MonthlyReport
 from datetime import date
 import datetime
 from django.db.models import Q
 
-def getReport():
+def newReport(symbol):
     today = date.today()
     delta = datetime.timedelta(days=1)
     yesterday = today - delta
     
+    try:
+        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
+                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
+            
+    except Report.DoesNotExist: # today's new does not exist
+        try: # get yesterday's
+            old_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=yesterday.year) & 
+                                            Q(reportDate__month=yesterday.month) & Q(reportDate__day=yesterday.day))
+            old_report.pk = None
+            old_report.save() # clone a new one
+            new_report = old_report  
+            new_report.SOD = new_report.EOD # update 
+            new_report.buys = 0 
+            new_report.sells = 0 
+            new_report.buyAve = 0.0
+            new_report.sellAve = 0.0
+        except Report.DoesNotExist: # yesterday's old does not exist
+            new_report = Report()
+            new_report.symbol = symbol
+                
+        new_report.reportDate = today
+        new_report.save()
+        
+    return new_report
+    
+
+def getReport():
+    today = date.today()
+    
     trades = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day))
 
     for trade in trades:
-        try:
-            new_report = Report.objects.get(Q(symbol=trade.symbol) & Q(reportDate__year=today.year) & 
-                                            Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
-            
-        except Report.DoesNotExist: # today's new does not exist
-            try: # get yesterday's
-                old_report = Report.objects.get(Q(symbol=trade.symbol) & Q(reportDate__year=yesterday.year) & 
-                                                Q(reportDate__month=yesterday.month) & Q(reportDate__day=yesterday.day))
-                old_report.pk = None
-                old_report.save() # clone a new one
-                new_report = old_report  
-                new_report.SOD = new_report.EOD # update SOD
-            except Report.DoesNotExist: # yesterday's old does not exist
-                new_report = Report()
-                new_report.symbol = trade.symbol
-                
-            new_report.reportDate = today
+        new_report = newReport(trade.symbol)
         
         # update report
         if trade.side == "B":
@@ -48,14 +61,16 @@ def getReport():
         new_report.save() # save result
     
     getPNLs(today) # calculate PNLS
-    getTotal(today) # get summary date
+    getDailyReport(today) # get daily summary date
+
+
 
 # calcluate pnls for each report
 def getPNLs(report_date):
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     for report in report_list: 
         mark = report.mark # mark to market value
-        #SOD = report.SOD
+        SOD = report.SOD
         buys = report.buys
         buyAve = report.buyAve
         sells = report.sells
@@ -83,24 +98,48 @@ def getPNLs(report_date):
    
   
 # get summary data of reports with a specific date
-def getTotal(report_date):
-    total = Report()
-    total.symbol = "Total"
+def getDailyReport(report_date):
+    daily_report = DailyReport()
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     for report in report_list:
-        total.SOD += report.SOD
-        total.buys += report.buys
-        total.sells += report.sells
-        total.grossPNL += report.grossPNL
-        total.unrealizedPNL += report.unrealizedPNL
-        total.fees += report.fees
-        total.netPNL += report.netPNL
-        total.LMV += report.LMV
-        total.SMV += report.SMV
-        total.EOD += report.EOD
-    total.reportDate = report_date
-    total.save()
+        daily_report.SOD += report.SOD
+        daily_report.buys += report.buys
+        daily_report.sells += report.sells
+        daily_report.grossPNL += report.grossPNL
+        daily_report.unrealizedPNL += report.unrealizedPNL
+        daily_report.fees += report.fees
+        daily_report.netPNL += report.netPNL
+        daily_report.LMV += report.LMV
+        daily_report.SMV += report.SMV
+        daily_report.EOD += report.EOD
+    daily_report.reportDate = report_date
+    daily_report.save()
+    
+    getMonthlyReport(daily_report)
 
+
+
+def getMonthlyReport(daily_report):
+    year = daily_report.reportDate.year
+    month = daily_report.reportDate.month
+    today = date.today()
+    try:
+        monthly_report = MonthlyReport.objects.get(Q(reportDate__year = year) & Q(reportDate__month = month))
+    except MonthlyReport.DoesNotExist:
+        monthly_report = MonthlyReport(reportDate = today) # create a new for this month
+    
+    monthly_report.SOD += daily_report.SOD
+    monthly_report.buys += daily_report.buys
+    monthly_report.sells += daily_report.sells
+    monthly_report.grossPNL += daily_report.grossPNL
+    monthly_report.unrealizedPNL += daily_report.unrealizedPNL
+    monthly_report.fees += daily_report.fees
+    monthly_report.netPNL += daily_report.netPNL
+    monthly_report.LMV += daily_report.LMV
+    monthly_report.SMV += daily_report.SMV
+    monthly_report.EOD += daily_report.EOD
+    
+    monthly_report.save()
             
             
             
