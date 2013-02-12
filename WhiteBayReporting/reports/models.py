@@ -53,7 +53,7 @@ class DailyReport(models.Model):
 # report of summary data every month
 class MonthlyReport(models.Model):
     
-    SOD = models.IntegerField( default=0 )
+    #SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
     #buyAve = models.FloatField( default=0.00 )
     sells = models.IntegerField( default=0 )
@@ -65,7 +65,7 @@ class MonthlyReport(models.Model):
     LMV = models.FloatField( default=0.00 )
     SMV = models.FloatField( default=0.00 )
     mark = models.FloatField( default=0.00 ) # closing price of the day
-    EOD = models.IntegerField( default=0 )
+    #EOD = models.IntegerField( default=0 )
     reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 
