@@ -16,7 +16,8 @@ class Report(models.Model):
     netPNL = models.FloatField( default=0.00 )
     LMV = models.FloatField( default=0.00 )
     SMV = models.FloatField( default=0.00 )
-    mark = models.FloatField( default=0.00 ) # closing price of the day
+    mark = models.FloatField( default=0.00 ) # mark price of yesterday
+    closing = models.FloatField( default=0.00 ) # closing price of today
     EOD = models.IntegerField( default=0 )
     reportDate = models.DateTimeField( auto_now_add=False )
     
@@ -31,16 +32,13 @@ class DailyReport(models.Model):
     
     SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
-    #buyAve = models.FloatField( default=0.00 )
     sells = models.IntegerField( default=0 )
-    #sellAve = models.FloatField( default=0.00 )
     grossPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     fees = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     LMV = models.FloatField( default=0.00 )
     SMV = models.FloatField( default=0.00 )
-    mark = models.FloatField( default=0.00 ) # closing price of the day
     EOD = models.IntegerField( default=0 )
     reportDate = models.DateField( auto_now_add=False )
     
@@ -53,19 +51,14 @@ class DailyReport(models.Model):
 # report of summary data every month
 class MonthlyReport(models.Model):
     
-    #SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
-    #buyAve = models.FloatField( default=0.00 )
     sells = models.IntegerField( default=0 )
-    #sellAve = models.FloatField( default=0.00 )
     grossPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     fees = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     LMV = models.FloatField( default=0.00 )
     SMV = models.FloatField( default=0.00 )
-    mark = models.FloatField( default=0.00 ) # closing price of the day
-    #EOD = models.IntegerField( default=0 )
     reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 

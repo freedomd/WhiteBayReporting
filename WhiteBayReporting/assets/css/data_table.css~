@@ -2,6 +2,7 @@
 	margin-top: 5px;
 	font-size: 12px;
 	text-align: center;
+	table-layout: auto;
 }		
 
 .data_table th,

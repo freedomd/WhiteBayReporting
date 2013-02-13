@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block content %}
 
@@ -20,7 +21,7 @@
 {% else %}
 <div class="container">
 <div style="float:right">
-	Report Date: {{ report_date|date:'Y-m-d' }}
+	Last Update: {{ report_date|date:'Y-m-d' }}
 </div>
 <div style="clear:both;"></div> 
 </div>
@@ -28,7 +29,7 @@
 <!-- reports list  -->
 <div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
 <div id="reports_container">
-	<table id="data_table" class="table table-striped table-bordered" style="margin-top:10px;font-size:12px;">
+	<table class="table table-striped table-bordered data_table">
 		<tr>
 		<th>Symbol</th>
 		<th>SOD</th>
@@ -48,35 +49,69 @@
 	{% for report in report_list %}
 		<tr>
 		<td>{{ report.symbol }}</td>
-		<td>{{ report.SOD }}</td>
-		<td>{{ report.buys }}</td>
-		<td>{{ report.buyAve }}</td>
-		<td>{{ report.sells }}</td>
-		<td>{{ report.sellAve }}</td>
-		<td>{{ report.grossPNL }}</td>
-		<td>{{ report.unrealizedPNL }}</td>
-		<td>{{ report.fees }}</td>
-		<td>{{ report.netPNL }}</td>
-		<td>{{ report.LMV }}</td>
-		<td>{{ report.SMV }}</td>
-		<td>{{ report.EOD }}</td>
-		<td>{{ report.mark }}</td>
+		<td>{{ report.SOD|intcomma }}</td>
+		<td>{{ report.buys|intcomma }}</td>
+		<td>{{ report.buyAve|floatformat:2|intcomma }}</td>
+		<td>{{ report.sells|intcomma }}</td>
+		<td>{{ report.sellAve|floatformat:2|intcomma }}</td>
+		
+		{% if report.grossPNL < 0 %}
+		<td><span class="negative_data">{{ report.grossPNL|floatformat:2|intcomma }}</span></td>
+		{% else %}
+		<td><span class="positive_data">{{ report.grossPNL|floatformat:2|intcomma }}</span></td>
+		{% endif %}
+		
+		{% if report.unrealizedPNL < 0 %}
+		<td><span class="negative_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
+		{% else %}
+		<td><span class="positive_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
+		{% endif %}
+		
+		<td>{{ report.fees|floatformat:2|intcomma }}</td>
+		
+		{% if report.netPNL < 0 %}
+		<td><span class="negative_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
+		{% else %}
+		<td><span class="positive_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
+		{% endif %}
+		
+		<td>{{ report.LMV|floatformat:2|intcomma }}</td>
+		<td>{{ report.SMV|floatformat:2|intcomma }}</td>
+		<td>{{ report.EOD|intcomma }}</td>
+		<td>{{ report.mark|floatformat:2|intcomma }}</td>
 		</tr>
 	{% endfor %}
 		<tr>
 		<th>Total</th>
-		<th>{{ total.SOD }}</th>
-		<th>{{ total.buys }}</th>
+		<th>{{ total.SOD|intcomma }}</th>
+		<th>{{ total.buys|intcomma }}</th>
 		<th>-</th>
-		<th>{{ total.sells }}</th>
+		<th>{{ total.sells|intcomma }}</th>
 		<th>-</th>
-		<th>{{ total.grossPNL }}</th>
-		<th>{{ total.unrealizedPNL }}</th>
-		<th>{{ total.fees }}</th>
-		<th>{{ total.netPNL }}</th>
-		<th>{{ total.LMV }}</th>
-		<th>{{ total.SMV }}</th>
-		<th>{{ total.EOD }}</th>
+		
+		{% if total.grossPNL < 0 %}
+		<th><span class="negative_data">{{ total.grossPNL|floatformat:2|intcomma }}</span></th>
+		{% else %}
+		<th><span class="positive_data">{{ total.grossPNL|floatformat:2|intcomma }}</span></th>
+		{% endif %}
+		
+		{% if total.unrealizedPNL < 0 %}
+		<th><span class="negative_data">{{ total.unrealizedPNL|floatformat:2|intcomma }}</span></th>
+		{% else %}
+		<th><span class="positive_data">{{ total.unrealizedPNL|floatformat:2|intcomma }}</span></th>
+		{% endif %}
+		
+		<th>{{ total.fees|floatformat:2|intcomma }}</th>
+		
+		{% if total.netPNL < 0 %}
+		<th><span class="negative_data">{{ total.netPNL|floatformat:2|intcomma }}</span></th>
+		{% else %}
+		<th><span class="positive_data">{{ total.netPNL|floatformat:2|intcomma }}</span></th>
+		{% endif %}
+		
+		<th>{{ total.LMV|floatformat:2|intcomma }}</th>
+		<th>{{ total.SMV|floatformat:2|intcomma }}</th>
+		<th>{{ total.EOD|intcomma }}</th>
 		<th>-</th>
 		</tr>
 	</table>

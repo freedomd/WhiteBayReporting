@@ -1,3 +1,5 @@
+{% load dajaxice_templatetags %}
+
 <head>
     <meta charset="utf-8" />
     <title>White Bay Group</title>
@@ -21,6 +23,7 @@
         padding: 9px 0;
       }
     </style>
+    {% dajaxice_js_import %}
 </head>
 
 <body>
@@ -68,7 +71,7 @@
       
 
     {% block content %}
-
+	
     {% endblock content %}
     
     <div class="container">

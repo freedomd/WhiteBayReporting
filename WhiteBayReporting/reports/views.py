@@ -23,7 +23,8 @@ def monthlyReportView(request, year, month):
         month = today.month
     
     try:
-        report_list = DailyReport.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month)).order_by('-reportDate')
+        monthly_report_list = MonthlyReport.objects.filter(Q(reportDate__year=year))
+        report_list = DailyReport.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month)).order_by('reportDate')
         if len(report_list) != 0:
             report_date = report_list[0].reportDate
         else:
