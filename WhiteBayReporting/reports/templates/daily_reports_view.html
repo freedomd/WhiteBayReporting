@@ -33,6 +33,7 @@
 		<tr>
 		<th>Symbol</th>
 		<th>SOD</th>
+		<th>Mark</th>
 		<th>Buys</th>
 		<th>Buy Ave</th>
 		<th>Sells</th>
@@ -44,12 +45,13 @@
 		<th>LMV</th>
 		<th>SMV</th>
 		<th>EOD</th>
-		<th>Mark</th>
+		<th>Closing</th>
 		</tr>
 	{% for report in report_list %}
 		<tr>
 		<td>{{ report.symbol }}</td>
 		<td>{{ report.SOD|intcomma }}</td>
+		<td>{{ report.mark }}</td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.buyAve|floatformat:2|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>
@@ -78,12 +80,13 @@
 		<td>{{ report.LMV|floatformat:2|intcomma }}</td>
 		<td>{{ report.SMV|floatformat:2|intcomma }}</td>
 		<td>{{ report.EOD|intcomma }}</td>
-		<td>{{ report.mark|floatformat:2|intcomma }}</td>
+		<td>{{ report.closing|floatformat:2|intcomma }}</td>
 		</tr>
 	{% endfor %}
 		<tr>
 		<th>Total</th>
 		<th>{{ total.SOD|intcomma }}</th>
+		<th>-</th>
 		<th>{{ total.buys|intcomma }}</th>
 		<th>-</th>
 		<th>{{ total.sells|intcomma }}</th>

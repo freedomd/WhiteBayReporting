@@ -20,11 +20,13 @@ def newReport(symbol):
             old_report.pk = None
             old_report.save() # clone a new one
             new_report = old_report  
-            new_report.SOD = new_report.EOD # update 
-            new_report.buys = 0 
-            new_report.sells = 0 
-            new_report.buyAve = 0.0
+            new_report.buys = 0 # update 
+            new_report.sells = 0
+            new_report.buyAve = 0.0 
             new_report.sellAve = 0.0
+            new_report.SOD = new_report.EOD 
+            new_report.mark = new_report.closing
+                
         except Report.DoesNotExist: # yesterday's old does not exist
             new_report = Report()
             new_report.symbol = symbol
@@ -49,20 +51,21 @@ def getReport():
             total += trade.quantity * trade.price # new total
             new_report.buys += trade.quantity # new buys
             new_report.buyAve = total / new_report.buys # new buy ave
-            new_report.EOD = new_report.EOD + trade.quantity
             
-        elif trade.side == "S":
+        elif trade.side == "S" or trade.side == "SS":
             total = new_report.sells * new_report.sellAve
             total += trade.quantity * trade.price # new total
             new_report.sells += trade.quantity # new sells
             new_report.sellAve = total / new_report.sells # new sell ave
-            new_report.EOD = new_report.EOD - trade.quantity
         
+        else:
+            print "Error: Invalid Side."
+            continue
+   
         new_report.save() # save result
     
     getPNLs(today) # calculate PNLS
-    getDailyReport(today) # get daily summary date
-
+    getDailyReport(today) # get daily summary report
 
 
 # calcluate pnls for each report
@@ -70,11 +73,24 @@ def getPNLs(report_date):
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     for report in report_list: 
         mark = report.mark # mark to market value
-        SOD = report.SOD
+        closing = report.closing # closing price today
+        SOD = report.SOD # start of day
         buys = report.buys
         buyAve = report.buyAve
         sells = report.sells
         sellAve = report.sellAve
+        EOD = SOD + buys - sells
+        
+        if SOD >= 0:
+            total = buys * buyAve + mark * SOD
+            buys += SOD
+            buyAve = total / buys
+        else:
+            total = sells * sellAve + mark * (-SOD)
+            sells -= SOD
+            sellAve = total / sells
+            
+        
         if buys >= sells:
             common = sells
         else:
@@ -87,12 +103,21 @@ def getPNLs(report_date):
         # left shares
         buys -= common
         sells -= common
-        unrealizedPNL = (mark - buyAve) * buys + (sellAve - mark) * sells
+        unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
         report.unrealizedPNL = unrealizedPNL
         
+        # net PNL
         report.netPNL = grossPNL + unrealizedPNL - report.fees
-        report.LMV = buys * mark
-        report.SMV = -sells * mark
+        
+        # LMV and SMV
+        if EOD >=0:
+            report.LMV = EOD * closing
+            report.SMV = 0
+        else:
+            report.LMV = 0
+            report.SMV = EOD * closing
+        
+        report.EOD = EOD
         
         report.save()
    
@@ -118,7 +143,7 @@ def getDailyReport(report_date):
     getMonthlyReport(daily_report)
 
 
-
+# get summary data of reports for a specific month
 def getMonthlyReport(daily_report):
     year = daily_report.reportDate.year
     month = daily_report.reportDate.month
@@ -128,7 +153,6 @@ def getMonthlyReport(daily_report):
     except MonthlyReport.DoesNotExist:
         monthly_report = MonthlyReport(reportDate = today) # create a new for this month
     
-    monthly_report.SOD += daily_report.SOD
     monthly_report.buys += daily_report.buys
     monthly_report.sells += daily_report.sells
     monthly_report.grossPNL += daily_report.grossPNL
@@ -137,7 +161,6 @@ def getMonthlyReport(daily_report):
     monthly_report.netPNL += daily_report.netPNL
     monthly_report.LMV += daily_report.LMV
     monthly_report.SMV += daily_report.SMV
-    monthly_report.EOD += daily_report.EOD
     
     monthly_report.save()
             

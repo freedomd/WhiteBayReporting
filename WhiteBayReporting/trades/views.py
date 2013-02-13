@@ -65,7 +65,7 @@ def uploadMarks(request):
             for row in csv.reader(file.read().splitlines(), delimiter=','):
                 if count != 1: # Ignore the header row
                     new_report = newReport(row[0]) # create new report for today
-                    new_report.mark = row[1]
+                    new_report.closing = row[1]
                     new_report.save()
                 else:
                     count += 1
