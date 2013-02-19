@@ -23,7 +23,7 @@ def getTrade():
         temppath = TEMP_PATH + filename
         print filepath
         print temppath
-        #ftp.get(filepath, temppath) 
+        ftp.get(filepath, temppath) 
     except Exception, e:
         print str(e.message)
         
