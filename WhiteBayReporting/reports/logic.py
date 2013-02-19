@@ -29,20 +29,20 @@ def getTrade():
         with open(temppath, 'rb') as file:
             for row in csv.reader(file.read().splitlines(), delimiter=','):
                 if not header: # Ignore the header row
-                    try:
-                        Trade.objects.get( executionId = row[11] ) # ignore existed trade, identify by execution id
-                    except Trade.DoesNotExist:
-                        trade = Trade()
-                        trade.account = row[0]
-                        trade.symbol = row[1]
-                        trade.side= row[3]
-                        trade.quantity = row[4]
-                        trade.price = row[5]
-                        #trade.broker = row[5]
-                        trade.tradeDate = row[10]
-                        #trade.exchange = row[7]
-                        trade.executionId = row[11]
-                        trade.save()
+                    #try:
+                    #    Trade.objects.get( executionId = row[11] ) # ignore existed trade, identify by execution id
+                    #except Trade.DoesNotExist:
+                    trade = Trade()
+                    trade.account = row[0]
+                    trade.symbol = row[1]
+                    trade.side= row[3]
+                    trade.quantity = row[4]
+                    trade.price = row[5]
+                    #trade.broker = row[5]
+                    trade.tradeDate = row[10]
+                    #trade.exchange = row[7]
+                    trade.executionId = row[11]
+                    trade.save()
                 else:
                     header = False
         
