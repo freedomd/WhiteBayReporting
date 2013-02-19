@@ -14,7 +14,7 @@ def getTrade():
     ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
     ftp = ssh.open_sftp() 
     try:
-        ftp.get('trades.csv', 'rongdi.csv') 
+        ftp.get('.\Output\WBPT_LiquidEOD_2013_02_16.csv', 'rongdi.csv') 
     except Exception, e:
         print str(e.message)
         
