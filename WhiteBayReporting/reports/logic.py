@@ -3,6 +3,23 @@ from reports.models import Report, DailyReport, MonthlyReport
 from datetime import date
 import datetime
 from django.db.models import Q
+import paramiko
+from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
+
+def getTrade():
+    # create ssh tunnel to read files from ssh server
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
+    ftp = ssh.open_sftp() 
+    try:
+        ftp.get('trades.csv', 'rongdi.csv') 
+    except Exception, e:
+        print str(e.message)
+        
+
+
 
 def newReport(symbol):
     today = date.today()
