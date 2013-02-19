@@ -10,9 +10,9 @@ class Trade(models.Model):
     side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="S")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
-    broker = models.CharField( max_length=20, blank=True, null=True )
+    broker = models.CharField( max_length=20, blank=True, null=True, default="")
     tradeDate = models.DateTimeField( auto_now_add=False )
-    exchange = models.CharField( max_length=20, blank=True, null=True )
+    exchange = models.CharField( max_length=20, blank=True, null=True, default="")
     executionId = models.BigIntegerField( default=0 )
     
     def save(self, *args, **kwargs): 
