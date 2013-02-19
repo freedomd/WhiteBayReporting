@@ -13,7 +13,7 @@ class Trade(models.Model):
     broker = models.CharField( max_length=20, blank=True, null=True, default="")
     tradeDate = models.DateTimeField( auto_now_add=False )
     exchange = models.CharField( max_length=20, blank=True, null=True, default="")
-    executionId = models.BigIntegerField( default=0 )
+    executionId = models.CharField( max_length=50, default="0" )
     
     def save(self, *args, **kwargs): 
         super(Trade, self).save(*args, **kwargs)
