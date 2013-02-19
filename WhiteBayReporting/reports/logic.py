@@ -1,11 +1,14 @@
+import os
 from trades.models import Trade
 from reports.models import Report, DailyReport, MonthlyReport
 from datetime import date
 import datetime
 from django.db.models import Q
 import paramiko
+import csv
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import ROOT_PATH, TEMP_PATH
+
 
 def getTrade():
     # create ssh tunnel to read files from ssh server
@@ -17,13 +20,35 @@ def getTrade():
     try:
         today = date.today()
 #        filename = "WBPT_LiquidEOD_" + today.strftime('%Y_%m_%d') + ".csv"
-        filename = "WBPT_LiquidEOD_2013_02_16.csv"
-        print filename
+        filename = "WBPT_LiquidEOD_2013_02_15.csv"
         filepath = ROOT_PATH + filename
         temppath = TEMP_PATH + filename
-        print filepath
-        print temppath
         ftp.get(filepath, temppath) 
+        
+        header = True
+        with open(temppath, 'rb') as file:
+            for row in csv.reader(file.read().splitlines(), delimiter=','):
+                if not header: # Ignore the header row
+                    try:
+                        Trade.objects.get( executionId = row[10] ) # ignore existed trade, identify by execution id
+                    except Trade.DoesNotExist:
+                        trade = Trade()
+                        trade.account = row[0]
+                        trade.symbol = row[1]
+                        trade.side= row[3]
+                        trade.quantity = row[4]
+                        trade.price = row[5]
+                        #trade.broker = row[5]
+                        trade.tradeDate = row[10]
+                        #trade.exchange = row[7]
+                        trade.executionId = row[11]
+                        trade.save()
+                else:
+                    header = False
+        
+        # delete temp file
+        os.remove(temppath)
+        
     except Exception, e:
         print str(e.message)
         

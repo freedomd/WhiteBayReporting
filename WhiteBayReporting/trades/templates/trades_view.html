@@ -24,6 +24,7 @@
     </tr>
     </table>
 </div> -->
+</div>
 
 {% if error %}
 	<div class="container" id="error_message">{{ error_message }}</div>
@@ -38,9 +39,9 @@
 		<th>Side</th>
 		<th>Quantity</th>
 		<th>Price</th>
-		<th>Broker</th>
+		<!-- <th>Broker</th> -->
 		<th>Date</th>
-		<th>Exchange</th>
+		<!-- <th>Exchange</th> -->
 		<th>Execution ID</th>
 		</tr>
 	{% for trade in trade_list %}
@@ -50,9 +51,9 @@
 		<td>{{ trade.side }}</td>
 		<td>{{ trade.quantity }}</td>
 		<td>{{ trade.price }}</td>
-		<td>{{ trade.broker }}</td>
+		<!-- <td>{{ trade.broker }}</td> -->
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
-		<td>{{ trade.exchange }}</td>
+		<!-- <td>{{ trade.exchange }}</td> -->
 		<td>{{ trade.executionId }}</td>
 		</tr>
 	{% endfor %}

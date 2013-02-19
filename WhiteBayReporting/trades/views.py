@@ -13,7 +13,8 @@ def tradeView(request):
     #trade_list = Trade.objects.order_by('tradeDate', 'executionId').all()
     today = date.today()
     #print today.day
-    trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('tradeDate', 'executionId')
+    #trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('tradeDate', 'executionId')
+    trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=2) & Q(tradeDate__day=13)).order_by('tradeDate', 'executionId')
     if len(trade_list) == 0:
         error = True
         error_message = "No trades yet today."
