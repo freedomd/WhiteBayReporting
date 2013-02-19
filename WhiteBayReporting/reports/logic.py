@@ -29,18 +29,19 @@ def getTrade():
         with open(temppath, 'rb') as file:
             for row in csv.reader(file.read().splitlines(), delimiter=','):
                 if not header: # Ignore the header row
-                    trade = Trade()
-                    trade.account = row[0]
-                    trade.symbol = row[1]
-                    trade.side= row[3]
-                    trade.quantity = row[4]
-                    trade.price = row[5]
-                    #trade.broker = row[5]
-                    trade.tradeDate = row[10]
-                    #trade.exchange = row[7]
-                    trade.executionId = row[11]
-                    trade.save()
-                    print trade.pk
+                    try:
+                        trade = Trade()
+                        trade.account = row[0]
+                        trade.symbol = row[1]
+                        trade.side = row[3]
+                        trade.quantity = row[4]
+                        trade.price = row[5]
+                        trade.tradeDate = today
+                        trade.executionId = row[11]
+                        trade.save()
+                        #print trade.pk
+                    except:
+                        continue
                 else:
                     header = False
         
