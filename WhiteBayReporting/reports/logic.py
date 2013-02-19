@@ -9,8 +9,10 @@ import csv
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import ROOT_PATH, TEMP_PATH
 
+def getMarks():
+    return None
 
-def getTrade():
+def getTradeFile():
     # create ssh tunnel to read files from ssh server
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
@@ -24,39 +26,12 @@ def getTrade():
         filepath = ROOT_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
-        
-        header = True
-        with open(temppath, 'rb') as file:
-            for row in csv.reader(file.read().splitlines(), delimiter=','):
-                if not header: # Ignore the header row
-                    try:
-                        trade = Trade()
-                        trade.account = row[0]
-                        trade.symbol = row[1]
-                        trade.side = row[3]
-                        trade.quantity = row[4]
-                        trade.price = row[5]
-                        trade.tradeDate = today
-                        trade.executionId = row[11]
-                        trade.save()
-                        #print trade.pk
-                    except:
-                        continue
-                else:
-                    header = False
-        
-        # delete temp file
-        os.remove(temppath)
-        
+        return temppath # return file path
+            
     except Exception, e:
         print str(e.message)
-        try:
-            os.remove(temppath)
-        except Exception, e:
-            print str(e.message)
-        
-
-
+        return None
+    
 
 def newReport(symbol):
     today = date.today()
@@ -94,29 +69,49 @@ def newReport(symbol):
 def getReport():
     today = date.today()
     
-    trades = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day))
-
-    for trade in trades:
-        new_report = newReport(trade.symbol)
-        
-        # update report
-        if trade.side == "B":
-            total = new_report.buys * new_report.buyAve
-            total += trade.quantity * trade.price # new total
-            new_report.buys += trade.quantity # new buys
-            new_report.buyAve = total / new_report.buys # new buy ave
+    filepath = getTradeFile()
+    if filepath == None:
+        return "Cannot get data file."
+    
+    header = True
+    file = open(filepath, 'rb')
+    
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        if not header:
+            try:
+                trade = Trade()
+                trade.account = row[0]
+                trade.symbol = row[1]
+                trade.side = row[3]
+                trade.quantity = row[4]
+                trade.price = row[5]
+                trade.tradeDate = today
+                trade.executionId = row[11]
+                
+                new_report = newReport(trade.symbol) # create report
+                
+                # update report
+                if trade.side == "BUY":
+                    total = new_report.buys * new_report.buyAve
+                    total += trade.quantity * trade.price # new total
+                    new_report.buys += trade.quantity # new buys
+                    new_report.buyAve = total / new_report.buys # new buy ave
             
-        elif trade.side == "S" or trade.side == "SS":
-            total = new_report.sells * new_report.sellAve
-            total += trade.quantity * trade.price # new total
-            new_report.sells += trade.quantity # new sells
-            new_report.sellAve = total / new_report.sells # new sell ave
+                elif trade.side == "SEL" or trade.side == "SS":
+                    total = new_report.sells * new_report.sellAve
+                    total += trade.quantity * trade.price # new total
+                    new_report.sells += trade.quantity # new sells
+                    new_report.sellAve = total / new_report.sells # new sell ave
         
-        else:
-            print "Error: Invalid Side."
-            continue
-   
-        new_report.save() # save result
+                else:
+                    print "Error: Invalid Side."
+                    continue
+                
+                trade.save() # save into database
+                new_report.save() # save result
+                
+            except:
+                continue
     
     getPNLs(today) # calculate PNLS
     getDailyReport(today) # get daily summary report
@@ -144,7 +139,6 @@ def getPNLs(report_date):
             sells -= SOD
             sellAve = total / sells
             
-        
         if buys >= sells:
             common = sells
         else:
@@ -171,8 +165,7 @@ def getPNLs(report_date):
             report.LMV = 0
             report.SMV = EOD * closing
         
-        report.EOD = EOD
-        
+        report.EOD = EOD   
         report.save()
    
   

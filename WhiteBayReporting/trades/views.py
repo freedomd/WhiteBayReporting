@@ -10,14 +10,32 @@ from reports.logic import newReport
 
 @login_required
 def tradeView(request):
-    #trade_list = Trade.objects.order_by('tradeDate', 'executionId').all()
     today = date.today()
-    #print today.day
     trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('id')
-    #trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=2) & Q(tradeDate__day=13)).order_by('id')
-    if len(trade_list) == 0:
+    if trade_list.count() == 0:
         error = True
         error_message = "No trades yet today."
+    return render(request,"trades_view.html", locals())
+
+@login_required
+def symbolView(request, symbol, year, month, day):
+    
+    if symbol == None:
+        return HttpResponseRedirect("/report/")
+    
+    # get latest reports
+    if year == None or month == None or day == None:
+        today = date.today()
+        year = today.year
+        month = today.month
+        day = today.day
+        
+    today = date.today()
+    trade_list = Trade.objects.filter(Q(symbol=symbol) & Q(tradeDate__year=year) & 
+                                      Q(tradeDate__month=month) & Q(tradeDate__day=day)).order_by('id')
+    if trade_list.count() == 0:
+        error = True
+        error_message = "No trades today."
     return render(request,"trades_view.html", locals())
 
 @login_required

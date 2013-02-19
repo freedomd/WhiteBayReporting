@@ -11,5 +11,5 @@ def add(x, y):
 
 @celery.task
 def get_report():
-    print "get report"
-    getReport()
+    getMarks()
+    getReport() # pre-calculated

@@ -3,11 +3,11 @@ from django.contrib import admin
 
 class Trade(models.Model):
 
-    SIDE_CHOICES = (('S', 'S'), ('B', 'B'), ('SS', 'SS'))
+    SIDE_CHOICES = (('SEL', 'SEL'), ('BUY', 'BUY'), ('SS', 'SS'))
 
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=10 )
-    side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="S")
+    side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
     broker = models.CharField( max_length=20, blank=True, null=True, default="")
