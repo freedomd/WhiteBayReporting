@@ -5,6 +5,7 @@ import datetime
 from django.db.models import Q
 import paramiko
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
+from settings import ROOT_PATH, TEMP_PATH
 
 def getTrade():
     # create ssh tunnel to read files from ssh server
@@ -14,7 +15,15 @@ def getTrade():
     ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
     ftp = ssh.open_sftp() 
     try:
-        ftp.get('.\Output\WBPT_LiquidEOD_2013_02_16.csv', 'rongdi.csv') 
+        today = date.today()
+#        filename = "WBPT_LiquidEOD_" + today.strftime('%Y_%m_%d') + ".csv"
+        filename = "WBPT_LiquidEOD_2013_02_16.csv"
+        print filename
+        filepath = ROOT_PATH + filename
+        temppath = TEMP_PATH + filename
+        print filepath
+        print temppath
+        #ftp.get(filepath, temppath) 
     except Exception, e:
         print str(e.message)
         
