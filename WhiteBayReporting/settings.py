@@ -203,3 +203,5 @@ LOGIN_URL = "/login/"
 DATASOURCE = "64.20.181.85"
 DATASOURCE_USERNAME = "Rongdi"
 DATASOURCE_PASSWORD = "rongdi12"
+ROOT_PATH = ".\\Output\\"
+TEMP_PATH = os.path.join(PROJECT_PATH, 'temp/')
