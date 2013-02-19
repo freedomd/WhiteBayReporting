@@ -39,7 +39,7 @@ def getTrade():
                         trade.quantity = row[4]
                         trade.price = row[5]
                         #trade.broker = row[5]
-                        trade.tradeDate = row[10]
+                        trade.tradeDate = today # row[10]
                         #trade.exchange = row[7]
                         trade.executionId = row[11]
                         trade.save()
@@ -51,6 +51,10 @@ def getTrade():
         
     except Exception, e:
         print str(e.message)
+        try:
+            os.remove(temppath)
+        except Exception, e:
+            print str(e.message)
         
 
 
