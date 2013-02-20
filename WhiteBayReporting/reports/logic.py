@@ -90,11 +90,16 @@ def getMarks(today):
     file = open(filepath, 'rb')
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         try:
-            symbol = row[19].strip()
-            if symbol != "" or symbol != None:
-                new_report = newReport(symbol, today) # create new report for today
-                new_report.closing = float(row[12])
-                new_report.save()
+            type = str(row[4].strip())
+            if type == "0" or type == "4": 
+                symbol = row[19].strip()
+                if len(symbol) > 10 or symbol == "" or symbol == None:
+                    continue
+            
+                if symbol != "" or symbol != None:
+                    new_report = newReport(symbol, today) # create new report for today
+                    new_report.closing = float(row[12])
+                    new_report.save()
             else:
                 continue
         except Exception, e:
