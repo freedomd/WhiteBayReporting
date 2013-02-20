@@ -200,8 +200,16 @@ CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
 
 #--------------------------- others
 LOGIN_URL = "/login/"
+LOG_PATH = os.path.join(PROJECT_PATH, 'logs/')
+TASK_LOG = os.path.join(PROJECT_PATH, 'logs/task_log.txt')
+PER_PAGE = 200
+
+#--------------------------- datasource
 DATASOURCE = "64.20.181.85"
 DATASOURCE_USERNAME = "Rongdi"
 DATASOURCE_PASSWORD = "rongdi12"
-ROOT_PATH = ".\\Output\\"
+TRADE_PATH = ".\\Liquidity\\Output\\"
+TRADE_FILE_NAME = "WBPT_LiquidEOD_"
+MARK_PATH = ".\\ML Clear Files\\Decrypted\\"
+MARK_FILE_NAME = "WSB858TJ.CST425PO_"
 TEMP_PATH = os.path.join(PROJECT_PATH, 'temp/')

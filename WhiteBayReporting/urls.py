@@ -23,11 +23,11 @@ urlpatterns = patterns('',
     # reports
     url(r'^report/', reportView),
     url(r'^monthlyReport/(?P<year>\d{4})/(?P<month>\d{1,2})/$', monthlyReportView),
-    url(r'^dailyReport/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$', dailyReportView),
+    url(r'^dailyReport/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', dailyReportView),
     
     # trades & files
-    url(r'^trade/', tradeView),
-    url(r'^symbol/(?P<symbol>.+)/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$', symbolView),
+    url(r'^trade/(?P<strpage>\d+)/', tradeView),
+    url(r'^symbol/(?P<symbol>.+)/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', symbolView),
     url(r'^document/', documentView),
     url(r'^upload/', upload),
     url(r'^uploadMarks/', uploadMarks),

@@ -6,6 +6,7 @@
 	margin-top: 5px;
 	font-size: 12px;
 	text-align: center;
+	margin-bottom: 10px;
 }		
 
 .data_table th,
@@ -21,4 +22,8 @@
 
 .positive_data {
 	color:green;
+}
+
+.paginator {
+	float:right;
 }

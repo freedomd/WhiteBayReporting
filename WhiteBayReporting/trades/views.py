@@ -7,18 +7,44 @@ from reports.models import Report
 from datetime import date
 from django.db.models import Q
 from reports.logic import newReport
+from settings import PER_PAGE
 
 @login_required
-def tradeView(request):
+def tradeView(request, strpage):
     today = date.today()
-    trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day)).order_by('id')
-    if trade_list.count() == 0:
-        error = True
-        error_message = "No trades yet today."
+    
+    mypage = int(strpage)
+    if strpage == None:
+        mypage = 1
+        
+    start = (mypage - 1) * PER_PAGE
+    end = mypage * PER_PAGE
+    
+    trade_list = Trade.objects.filter(Q(tradeDate__year=today.year) & Q(tradeDate__month=today.month) & Q(tradeDate__day=today.day))[start:end]
+    count = trade_list.count()
+    if count == 0:
+        if  mypage == 1:
+            error = True
+            error_message = "No trades yet today."
+        else:
+            url="/trade/%s/"%(str(mypage-1))
+            return HttpResponseRedirect(url)
+    else:
+        if count == PER_PAGE:
+            nextPage = True
+            np = mypage + 1
+        else:
+            nextPage = False
+        if  mypage == 1:
+            previousPage = False
+        else:
+            previousPage = True
+            pp = mypage - 1
+            
     return render(request,"trades_view.html", locals())
 
 @login_required
-def symbolView(request, symbol, year, month, day):
+def symbolView(request, symbol, year, month, day, strpage):
     
     if symbol == None:
         return HttpResponseRedirect("/report/")
@@ -29,13 +55,38 @@ def symbolView(request, symbol, year, month, day):
         year = today.year
         month = today.month
         day = today.day
+    
+    mypage = int(strpage)
+    if strpage == None:
+        mypage = 1
+    
+    start = (mypage - 1) * PER_PAGE
+    end = mypage * PER_PAGE - 1
         
     today = date.today()
     trade_list = Trade.objects.filter(Q(symbol=symbol) & Q(tradeDate__year=year) & 
-                                      Q(tradeDate__month=month) & Q(tradeDate__day=day)).order_by('id')
-    if trade_list.count() == 0:
-        error = True
-        error_message = "No trades today."
+                                      Q(tradeDate__month=month) & Q(tradeDate__day=day))[start:end]
+    count = trade_list.count()
+                                    
+    if count == 0:
+        if mypage == 1:
+            error = True
+            error_message = "No trades of symbol %s." % symbol
+        else:
+            url="/symbol/year/month/day/%s/"%(str(mypage-1))
+            return HttpResponseRedirect(url)
+    else:
+        if count == PER_PAGE:
+            nextPage = True
+            np = mypage + 1
+        else:
+            nextPage = False
+        if  mypage == 1:
+            previousPage = False
+        else:
+            previousPage = True
+            pp = mypage - 1
+            
     return render(request,"trades_view.html", locals())
 
 @login_required

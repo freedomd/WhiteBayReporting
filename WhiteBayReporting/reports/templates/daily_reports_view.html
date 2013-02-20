@@ -49,7 +49,7 @@
 		</tr>
 	{% for report in report_list %}
 		<tr>
-		<td><a href="/symbol/{{ report.symbol }}/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/">{{ report.symbol }}</td>
+		<td><a href="/symbol/{{ report.symbol }}/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/1/">{{ report.symbol }}</td>
 		<td>{{ report.SOD|intcomma }}</td>
 		<td>{{ report.mark }}</td>
 		<td>{{ report.buys|intcomma }}</td>
@@ -83,6 +83,7 @@
 		<td>{{ report.closing|floatformat:2|intcomma }}</td>
 		</tr>
 	{% endfor %}
+		<!-- 
 		<tr>
 		<th>Total</th>
 		<th>{{ total.SOD|intcomma }}</th>
@@ -117,9 +118,23 @@
 		<th>{{ total.EOD|intcomma }}</th>
 		<th>-</th>
 		</tr>
+		-->
 	</table>
+	<div class="paginator">
+		{% if previousPage %}
+		<a href="/dailyReport/{{ year }}/{{ month }}/{{ day }}/{{ pp }}/">Previous</a>
+		{% endif %}
+		{% if previousPage and nextPage %} 
+		|
+		{% endif %}
+		{% if nextPage %}
+		<a href="/dailyReport/{{ year }}/{{ month }}/{{ day }}/{{ np }}/">Next</a>
+		{% endif %}
+	</div>
+	<div style="clear:both;"></div> 
 </div>
 </div>
+
 {% endif %}
 
 </body>

@@ -7,12 +7,13 @@ from django.db.models import Q
 import paramiko
 import csv
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
-from settings import ROOT_PATH, TEMP_PATH
+from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
+from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 
-def getMarks():
-    return None
 
-def getTradeFile():
+#############################################
+# get data files
+def getMarkFile(file_date):
     # create ssh tunnel to read files from ssh server
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
@@ -20,10 +21,29 @@ def getTradeFile():
     ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
     ftp = ssh.open_sftp() 
     try:
-        today = date.today()
-#        filename = "WBPT_LiquidEOD_" + today.strftime('%Y_%m_%d') + ".csv"
+#        filename = MARK_FILE_NAME + file_date.strftime('%Y%m%d') + ".CSV"
+        filename = "WSB858TJ.CST425PO_20130215.CSV"
+        filepath = MARK_PATH + filename
+        temppath = TEMP_PATH + filename
+        ftp.get(filepath, temppath) 
+        return temppath # return file path
+            
+    except Exception, e:
+        print str(e.message)
+        return None
+
+def getTradeFile(file_date):
+    # create ssh tunnel to read files from ssh server
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
+    ftp = ssh.open_sftp() 
+    try:
+#        today = date.today()
+#        filename = TRADE_FILE_NAME + file_date.strftime('%Y_%m_%d') + ".csv"
         filename = "WBPT_LiquidEOD_2013_02_15.csv"
-        filepath = ROOT_PATH + filename
+        filepath = TRADE_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
         return temppath # return file path
@@ -32,49 +52,14 @@ def getTradeFile():
         print str(e.message)
         return None
     
+#############################################
+# save data into database
 
-def newReport(symbol):
-    today = date.today()
-    delta = datetime.timedelta(days=1)
-    yesterday = today - delta
-    
-    try:
-        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
-                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
-            
-    except Report.DoesNotExist: # today's new does not exist
-        try: # get yesterday's
-            old_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=yesterday.year) & 
-                                            Q(reportDate__month=yesterday.month) & Q(reportDate__day=yesterday.day))
-            old_report.pk = None
-            old_report.save() # clone a new one
-            new_report = old_report  
-            new_report.buys = 0 # update 
-            new_report.sells = 0
-            new_report.buyAve = 0.0 
-            new_report.sellAve = 0.0
-            new_report.SOD = new_report.EOD 
-            new_report.mark = new_report.closing
-                
-        except Report.DoesNotExist: # yesterday's old does not exist
-            new_report = Report()
-            new_report.symbol = symbol
-                
-        new_report.reportDate = today
-        new_report.save()
-        
-    return new_report
-    
-
-def getReport():
-    today = date.today()
-    
-    filepath = getTradeFile()
-    if filepath == None:
-        return "Cannot get data file."
-    
+# this is a test function
+def getTrades(filepath):
     header = True
     file = open(filepath, 'rb')
+    today = date.today()
     
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         if not header:
@@ -87,8 +72,96 @@ def getReport():
                 trade.price = row[5]
                 trade.tradeDate = today
                 trade.executionId = row[11]
+                trade.save() # save into database
+            except Exception, e:
+                print str(e.message)
+                continue
+        else:
+            header = False
+
+def getMarks(today):
+    
+    filepath = getMarkFile(today)
+    if filepath == None:
+        return False
+    print "Getting marks..."
+#    filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
+    
+    file = open(filepath, 'rb')
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        try:
+            symbol = row[19].strip()
+            if symbol != "" or symbol != None:
+                new_report = newReport(symbol, today) # create new report for today
+                new_report.closing = float(row[12])
+                new_report.save()
+            else:
+                continue
+        except Exception, e:
+            #print str(e.message)
+            continue
+    
+    #os.remove(filepath) # remove temporary file
+    print "Done"
+    return True
+
+
+def newReport(symbol, today):
+#    today = date.today()
+#    delta = datetime.timedelta(days=1)
+#    yesterday = today - delta
+    
+    try:
+        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
+                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
+            
+    except Report.DoesNotExist: # today's new does not exist
+        try: # get latest report of this symbol
+#            old_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=yesterday.year) & 
+#                                            Q(reportDate__month=yesterday.month) & Q(reportDate__day=yesterday.day))
+            old_report = Report.objects.filter( symbol=symbol ).order_by("-reportDate")[0]
+            old_report.pk = None
+            old_report.save() # clone a new one
+            new_report = old_report  
+            new_report.buys = 0 # update 
+            new_report.sells = 0
+            new_report.buyAve = 0.0 
+            new_report.sellAve = 0.0
+            new_report.SOD = new_report.EOD 
+            new_report.mark = new_report.closing
                 
-                new_report = newReport(trade.symbol) # create report
+        except: # old report does not exist
+            new_report = Report()
+            new_report.symbol = symbol
+                
+        new_report.reportDate = today
+        new_report.save()
+        
+    return new_report
+    
+
+def getReport(today):
+    
+    filepath = getTradeFile()
+    if filepath == None:
+        return False
+    print "Getting reports..."
+#    filepath = './temp/WBPT_LiquidEOD_2013_02_15.csv'
+    file = open(filepath, 'rb')
+    header = True
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        if not header:
+            try:
+                trade = Trade()
+                trade.account = row[0]
+                trade.symbol = row[1]
+                trade.side = row[3]
+                trade.quantity = int(row[4])
+                trade.price = float(row[5])
+                trade.tradeDate = today
+                trade.executionId = row[11]
+                
+                new_report = newReport(trade.symbol, today) # get report
                 
                 # update report
                 if trade.side == "BUY":
@@ -110,13 +183,22 @@ def getReport():
                 trade.save() # save into database
                 new_report.save() # save result
                 
-            except:
+            except Exception, e:
+                print str(e.message)
                 continue
+        else:
+            header = False
     
+    print "Done"
+    print "Calculating PNLS and summary reports..."
     getPNLs(today) # calculate PNLS
     getDailyReport(today) # get daily summary report
+    print "Done"
+    #os.remove(filepath) # remove temporary file
+    return True
 
 
+###########################################################
 # calcluate pnls for each report
 def getPNLs(report_date):
     report_list = Report.objects.filter( Q(reportDate = report_date) )
@@ -130,11 +212,11 @@ def getPNLs(report_date):
         sellAve = report.sellAve
         EOD = SOD + buys - sells
         
-        if SOD >= 0:
+        if SOD > 0:
             total = buys * buyAve + mark * SOD
             buys += SOD
             buyAve = total / buys
-        else:
+        elif SOD < 0:
             total = sells * sellAve + mark * (-SOD)
             sells -= SOD
             sellAve = total / sells
@@ -143,6 +225,10 @@ def getPNLs(report_date):
             common = sells
         else:
             common = buys
+            
+        if common == 0: # no trades on this report
+            report.delete()
+            continue
             
         # gross PNL    
         grossPNL = common * (sellAve - buyAve)
