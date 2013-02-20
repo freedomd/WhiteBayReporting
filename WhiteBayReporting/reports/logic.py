@@ -142,7 +142,7 @@ def newReport(symbol, today):
 
 def getReport(today):
     
-    filepath = getTradeFile()
+    filepath = getTradeFile(today)
     if filepath == None:
         return False
     print "Getting reports..."
