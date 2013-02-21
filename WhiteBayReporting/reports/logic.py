@@ -22,7 +22,7 @@ def getMarkFile(file_date):
     ftp = ssh.open_sftp() 
     try:
 #        filename = MARK_FILE_NAME + file_date.strftime('%Y%m%d') + ".CSV"
-        filename = "WSB858TJ.CST425PO_20130215.CSV"
+        filename = "WSB858TJ.CST425PO_20130217.CSV"
         filepath = MARK_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
@@ -103,7 +103,7 @@ def getMarks(today):
             else:
                 continue
         except Exception, e:
-            #print str(e.message)
+            print str(e.message)
             continue
     
     #os.remove(filepath) # remove temporary file
