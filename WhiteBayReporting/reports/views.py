@@ -63,7 +63,7 @@ def dailyReportView(request, year, month, day, strpage):
     
     # get latest reports
     try:
-        report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day))[start:end]
+        report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by("symbol")[start:end]
         count = report_list.count()
         if count != 0:
             report_date = report_list[0].reportDate
