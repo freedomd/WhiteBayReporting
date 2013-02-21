@@ -91,7 +91,7 @@
 		</tr>
 	{% for report in report_list %}
 		<tr>
-		<td><a href="/dailyReport/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/1/">{{ report.reportDate|date:'m-d' }}</a></td>
+		<td><a href="/dailyReport/symbol/0/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/1/">{{ report.reportDate|date:'m-d' }}</a></td>
 		<td>{{ report.SOD|intcomma }}</td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>

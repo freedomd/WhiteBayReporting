@@ -46,7 +46,15 @@ def monthlyReportView(request, year, month):
     return render(request,"monthly_reports_view.html", locals())
 
 @login_required
-def dailyReportView(request, year, month, day, strpage):
+def dailyReportView(request, tab, strorder, year, month, day, strpage):
+    
+    # method 0 = ascending, 1 = descending
+    order = int(strorder)
+    if tab == None or strorder == None:
+        tab = "symbol"
+        order = 0
+    if order != 0 and order != 1:
+        order = 0
     
     if year == None or month == None or day == None:
         today = date.today()
@@ -61,9 +69,54 @@ def dailyReportView(request, year, month, day, strpage):
     start = (mypage - 1) * PER_PAGE
     end = mypage * PER_PAGE
     
+    # order for each tab
+    SY, SO, MA, BS, BA, SS, SA, GP, UP, FS, NP, LM, SM, EO, CL = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    new_order = (order + 1) % 2
+    if tab == "symbol":
+        SY = new_order
+    elif tab == "SOD":
+        SO = new_order
+    elif tab == "mark":
+        MA = new_order
+    elif tab == "buys":
+        BS = new_order
+    elif tab == "buyAve":
+        BA = new_order
+    elif tab == "sells":
+        SS = new_order
+    elif tab == "sellAve":
+        SA = new_order
+    elif tab == "grossPNL":
+        GP = new_order
+    elif tab == "unrealizedPNL":
+        UP = new_order
+    elif tab == "fees":
+        FS = new_order
+    elif tab == "netPNL":
+        NP = new_order
+    elif tab == "LMV":
+        LM = new_order
+    elif tab == "SMV":
+        SM = new_order
+    elif tab == "EOD":
+        EO = new_order
+    elif tab == "closing":
+        CL = new_order
+    else: # error tab
+        tab = "symbol"
+        SY = new_order
+    
+    
     # get latest reports
     try:
-        report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by("symbol")[start:end]
+        
+        # check tab
+        if order == 0:
+            method = tab
+        else:
+            method = "-" + tab
+        
+        report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
         count = report_list.count()
         if count != 0:
             report_date = report_list[0].reportDate
@@ -83,7 +136,7 @@ def dailyReportView(request, year, month, day, strpage):
                 error_message = "No reports for %s-%s-%s." % (str(year), str(month), str(day)) 
                 return render(request,"daily_reports_view.html", locals())
             else:
-                url="/dailyReport/%s/%s/%s/%s/"%(str(today.year), str(today.month), str(today.day), str(mypage-1))
+                url="/dailyReport/symbol/0/%s/%s/%s/%s/"%(str(today.year), str(today.month), str(today.day), str(mypage-1))
                 return HttpResponseRedirect(url)
 #        try:
 #            total = DailyReport.objects.get(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day))
