@@ -31,21 +31,21 @@
 <div id="reports_container" class="container data_container">
 	<table class="table table-striped table-bordered data_table">
 		<tr>
-		<th>Symbol</th>
-		<th>SOD</th>
-		<th>Mark</th>
-		<th>Buys</th>
-		<th>Buy Ave</th>
-		<th>Sells</th>
-		<th>Sell Ave</th>
-		<th>Gross PNL</th>
-		<th>Unrealized PNL</th>
-		<th>Fees</th>
-		<th>Net PNL</th>
-		<th>LMV</th>
-		<th>SMV</th>
-		<th>EOD</th>
-		<th>Closing</th>
+		<th><a class="tab" href="/dailyReport/symbol/{{ SY }}/{{ year }}/{{ month }}/{{ day }}/1/">Symbol</a></th>
+		<th><a class="tab" href="/dailyReport/SOD/{{ SO }}/{{ year }}/{{ month }}/{{ day }}/1/">SOD</a></th>
+		<th><a class="tab" href="/dailyReport/mark/{{ MA }}/{{ year }}/{{ month }}/{{ day }}/1/">Mark</a></th>
+		<th><a class="tab" href="/dailyReport/buys/{{ BS }}/{{ year }}/{{ month }}/{{ day }}/1/">Buys</a></th>
+		<th><a class="tab" href="/dailyReport/buyAve/{{ BA }}/{{ year }}/{{ month }}/{{ day }}/1/">Buy Ave</a></th>
+		<th><a class="tab" href="/dailyReport/sells/{{ SS }}/{{ year }}/{{ month }}/{{ day }}/1/">Sells</a></th>
+		<th><a class="tab" href="/dailyReport/sellAve/{{ SA }}/{{ year }}/{{ month }}/{{ day }}/1/">Sell Ave</a></th>
+		<th><a class="tab" href="/dailyReport/grossPNL/{{ GP }}/{{ year }}/{{ month }}/{{ day }}/1/">Gross PNL</a></th>
+		<th><a class="tab" href="/dailyReport/unrealizedPNL/{{ UP }}/{{ year }}/{{ month }}/{{ day }}/1/">Unrealized PNL</a></th>
+		<th><a class="tab" href="/dailyReport/fees/{{ FS }}/{{ year }}/{{ month }}/{{ day }}/1/">Fees</a></th>
+		<th><a class="tab" href="/dailyReport/netPNL/{{ NP }}/{{ year }}/{{ month }}/{{ day }}/1/">Net PNL</a></th>
+		<th><a class="tab" href="/dailyReport/LMV/{{ LM }}/{{ year }}/{{ month }}/{{ day }}/1/">LMV</a></th>
+		<th><a class="tab" href="/dailyReport/SMV/{{ SM }}/{{ year }}/{{ month }}/{{ day }}/1/">SMV</a></th>
+		<th><a class="tab" href="/dailyReport/EOD/{{ EO }}/{{ year }}/{{ month }}/{{ day }}/1/">EOD</a></th>
+		<th><a class="tab" href="/dailyReport/closing/{{ CL }}/{{ year }}/{{ month }}/{{ day }}/1/">Closing</a></th>
 		</tr>
 	{% for report in report_list %}
 		<tr>
@@ -122,13 +122,13 @@
 	</table>
 	<div class="paginator">
 		{% if previousPage %}
-		<a href="/dailyReport/{{ year }}/{{ month }}/{{ day }}/{{ pp }}/">Previous</a>
+		<a href="/dailyReport/{{ tab }}/{{ order }}/{{ year }}/{{ month }}/{{ day }}/{{ pp }}/">Previous</a>
 		{% endif %}
 		{% if previousPage and nextPage %} 
 		|
 		{% endif %}
 		{% if nextPage %}
-		<a href="/dailyReport/{{ year }}/{{ month }}/{{ day }}/{{ np }}/">Next</a>
+		<a href="/dailyReport/{{ tab }}/{{ order }}/{{ year }}/{{ month }}/{{ day }}/{{ np }}/">Next</a>
 		{% endif %}
 	</div>
 	<div style="clear:both;"></div> 

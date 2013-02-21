@@ -81,11 +81,11 @@ def getTrades(filepath):
 
 def getMarks(today):
     
-    filepath = getMarkFile(today)
-    if filepath == None:
-        return False
+#    filepath = getMarkFile(today)
+#    if filepath == None:
+#        return False
     print "Getting marks..."
-#    filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
+    filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
     
     file = open(filepath, 'rb')
     for row in csv.reader(file.read().splitlines(), delimiter=','):
@@ -143,11 +143,11 @@ def newReport(symbol, today):
 
 def getReport(today):
     
-    filepath = getTradeFile(today)
-    if filepath == None:
-        return False
+#    filepath = getTradeFile(today)
+#    if filepath == None:
+#        return False
     print "Getting reports..."
-#    filepath = './temp/WBPT_LiquidEOD_2013_02_15.csv'
+    filepath = './temp/WBPT_LiquidEOD_2013_02_15.csv'
     file = open(filepath, 'rb')
     header = True
     for row in csv.reader(file.read().splitlines(), delimiter=','):
