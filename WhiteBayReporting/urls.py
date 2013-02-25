@@ -26,7 +26,7 @@ urlpatterns = patterns('',
     url(r'^dailyReport/(?P<tab>.+)/(?P<strorder>\d{1})/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', dailyReportView),
     
     # trades & files
-    url(r'^trade/(?P<strpage>\d+)/', tradeView),
+    url(r'^trade/', queryView),
     url(r'^symbol/(?P<symbol>.+)/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', symbolView),
     url(r'^document/', documentView),
     url(r'^upload/', upload),

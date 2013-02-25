@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib import admin
+from settings import SESSION_REDIS_HOST, SESSION_REDIS_PORT
+import redis
 
 # report for each symbol everyday
 class Report(models.Model):
@@ -70,3 +72,104 @@ class MonthlyReport(models.Model):
 admin.site.register(Report)
 admin.site.register(DailyReport)
 admin.site.register(MonthlyReport)
+
+
+
+# -------------------------------------- Cache API
+class cacheReport:
+    def __init__(self):
+        pass
+
+
+class cacheReportApi:
+
+    def __init__(self):
+        self.server = redis.Redis(SESSION_REDIS_HOST, SESSION_REDIS_PORT)
+        
+    # cache report by date 
+    def cacheReport(self, report):
+
+        key = "report:%s" % str(report.id)
+        if self.server.hexists(key,"id"):
+            return 
+        self.server.hset(key, "symbol", report.symbol)
+        self.server.hset(key, "SOD", report.SOD)
+        self.server.hset(key, "mark", report.mark)
+        self.server.hset(key, "buys", report.buys)
+        self.server.hset(key, "buyAve", report.buyAve)
+        self.server.hset(key, "sells", report.sells)
+        self.server.hset(key, "sellAve", report.sellAve)
+        self.server.hset(key, "grossPNL", report.grossPNL)
+        self.server.hset(key, "unrealizedPNL", report.unrealizedPNL)
+        self.server.hset(key, "fees", report.fees)
+        self.server.hset(key, "netPNL", report.netPNL)
+        self.server.hset(key, "LMV", report.LMV)
+        self.server.hset(key, "SMV", report.SMV)
+        self.server.hset(key, "EOD", report.EOD)
+        self.server.hset(key, "closing", report.closing)
+
+        self.cacheReportToDate(report, key)
+    
+    def cacheReportToDate(self, report, key):
+        name = "reportDate:%s" % (report.reportDate.strftime("%Y-%m-%d"))
+        self.server.sadd(name, key) # add rkey to set
+    
+    def cacheReportConsistency(self):
+        reports = Report.objects.all()
+        for report in reports:
+            self.cacheReport(report)
+
+
+class getCacheReportApi:
+    
+    def __init__(self):
+        self.server = redis.Redis(SESSION_REDIS_HOST, SESSION_REDIS_PORT)
+    
+    def getReportsByDate(self, today):
+        name = "reportDate:%s" % (today.strftime("%Y-%m-%d")) 
+        keyList = self.server.smembers(name) # get all keys
+        
+        reports = []
+        for key in keyList:
+            report = self.server.hgetall(key)
+#            r = cacheReport()
+#            r.symbol = report['symbol']
+#            r.SOD = report['SOD']
+#            r.mark = report['mark']
+#            r.buys = report['buys']
+#            r.buyAve = report['buyAve']
+#            r.sells = report['sells']
+#            r.sellAve = report['sellAve']
+#            r.grossPNL = report['grossPNL']
+#            r.unrealizedPNL = report['unrealizedPNL']
+#            r.fees = report['fees']
+#            r.netPNL = report['netPNL']
+#            r.LMV = report['LMV']
+#            r.SMV = report['SMV']
+#            r.EOD = report['EOD']
+#            r.closing = report['closing']
+#            reports.append(r)
+            reports.append(report)
+        
+        if len(reports) == 0:
+            return None
+        
+        return reports
+
+
+class delCacheReportApi:
+    
+    def __init__(self):
+        self.server = redis.Redis(SESSION_REDIS_HOST, SESSION_REDIS_PORT)
+    
+    def delReportsByDate(self, today):
+        name = "reportDate:%s" % (today.strftime("%Y-%m-%d")) 
+        keyList = self.server.smembers(name) # get all keys
+
+        for key in keyList:
+            self.server.delete(key)
+        
+        self.server.delete(name)
+    
+    
+    

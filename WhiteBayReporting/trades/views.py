@@ -10,6 +10,11 @@ from reports.logic import newReport
 from settings import PER_PAGE
 
 @login_required
+def queryView(request):
+    message = "Please type in a query."            
+    return render(request,"query_view.html", locals())
+
+@login_required
 def tradeView(request, strpage):
     today = date.today()
     

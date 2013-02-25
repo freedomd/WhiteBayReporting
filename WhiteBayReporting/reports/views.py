@@ -1,12 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from reports.models import Report
+from reports.models import Report, getCacheReportApi
 from datetime import date
 from django.db.models import Q
 import datetime
 from reports.logic import *
 from settings import PER_PAGE
+from operator import attrgetter
 
 @login_required
 def reportView(request):
@@ -116,10 +117,16 @@ def dailyReportView(request, tab, strorder, year, month, day, strpage):
         else:
             method = "-" + tab
         
+        # get reports from cache
+#        api = getCacheReportApi()
+#        report_list = api.getReportsByDate(date(year=int(year), month=int(month), day=int(day)))[start:end]
+#        count = len(report_list)
+#        print count
+        
         report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
         count = report_list.count()
         if count != 0:
-            report_date = report_list[0].reportDate
+            #report_date = report_list[0].reportDate
             if count == PER_PAGE:
                 nextPage = True
                 np = mypage + 1
