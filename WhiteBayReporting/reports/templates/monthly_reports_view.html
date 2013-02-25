@@ -42,8 +42,8 @@
 		<th>Unrealized PNL</th>
 		<th>Fees</th>
 		<th>Net PNL</th>
-		<th>LMV</th>
-		<th>SMV</th>
+		<!-- <th>LMV</th>
+		<th>SMV</th> -->
 		</tr>
 	{% for report in monthly_report_list %}
 		<tr>
@@ -69,8 +69,8 @@
 		<td><span class="positive_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
-		<td>{{ report.LMV|floatformat:2|intcomma }}</td>
-		<td>{{ report.SMV|floatformat:2|intcomma }}</td>
+		<!-- <td>{{ report.LMV|floatformat:2|intcomma }}</td>
+		<td>{{ report.SMV|floatformat:2|intcomma }}</td> -->
 		</tr>
 	{% endfor %}
 	</table>
@@ -147,8 +147,8 @@
 		<th><span class="positive_data">{{ total.netPNL|floatformat:2|intcomma }}</span></th>
 		{% endif %}
 		
-		<th>{{ total.LMV|floatformat:2|intcomma }}</th>
-		<th>{{ total.SMV|floatformat:2|intcomma }}</th>
+		<th>-</th>
+		<th>-</th>
 		<th>-</th>
 		</tr>
 	</table>
