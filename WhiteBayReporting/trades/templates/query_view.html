@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/tradelist.js"></script>
+	<script type="text/javascript">
+		function setActive(){
+			$("#tabs").find('li').removeClass("active")
+			$("#trade_tab").addClass("active")
+		}
+	</script>
+</head>
+
+<body onload=setActive()>
+    
+<div class="container">
+<div id="filter">
+  	<input id="account" type="text" class="span3" placeholder="Account Number">
+  	<input id="symbol" type="text" class="span3" placeholder="Symbol">
+  	<input id="datefrom" type="text" class="span3" placeholder="Date From: e.g. 2013-02-21">
+  	<input id="dateto" type="text" class="span3" placeholder="Date To: e.g. 2013-02-22">
+  	<button class="btn btn-info" onclick="getTradeList(1);" style="float:right;">Search</button>
+  	<div style="clear:both;"></div> 
+</div> 
+</div>
+
+
+<div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+<!-- trades list  -->
+<div id="trades_container" class="container">
+</div>
+</div>
+
+
+</body>
+</html>
+
+{% endblock %}
