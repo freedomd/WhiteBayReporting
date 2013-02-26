@@ -22,7 +22,7 @@ def getMarkFile(file_date):
     ftp = ssh.open_sftp() 
     try:
 #        filename = MARK_FILE_NAME + file_date.strftime('%Y%m%d') + ".CSV"
-        filename = "WSB858TJ.CST425PO_20130217.CSV"
+        filename = "WSB858TJ.CST425PO_20130220.CSV"
         filepath = MARK_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
@@ -42,7 +42,7 @@ def getTradeFile(file_date):
     try:
 #        today = date.today()
 #        filename = TRADE_FILE_NAME + file_date.strftime('%Y_%m_%d') + ".csv"
-        filename = "WBPT_LiquidEOD_2013_02_15.csv"
+        filename = "WBPT_LiquidEOD_2013_02_19.csv"
         filepath = TRADE_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
@@ -95,7 +95,7 @@ def getMarks(today):
                 continue
             
             new_report = newReport(symbol, today) # create new report for today
-            new_report.closing = float(row[12])
+            new_report.closing = round(float(row[12]), 2)
             new_report.save()
 
         except Exception, e:
@@ -182,6 +182,9 @@ def getReport(today):
                     continue
                 
                 trade.save() # save into database
+                
+#                new_report.buyAve = round(new_report.buyAve, 2)
+#                new_report.sellAve = round(new_report.sellAve, 2)
                 new_report.save() # save result
                 
             except Exception, e:
@@ -213,6 +216,10 @@ def getPNLs(report_date):
         sellAve = report.sellAve
         EOD = SOD + buys - sells
         
+        if buys == 0 and sells == 0 and SOD == 0: # no trades on this report
+            report.delete()
+            continue
+
         if SOD > 0:
             total = buys * buyAve + mark * SOD
             buys += SOD
@@ -222,15 +229,14 @@ def getPNLs(report_date):
             sells -= SOD
             sellAve = total / sells
             
+#        buyAve = round(buyAve, 2)
+#        sellAve = round(sellAve, 2)
+            
         if buys >= sells:
             common = sells
         else:
             common = buys
-            
-        if common == 0: # no trades on this report
-            report.delete()
-            continue
-            
+        
         # gross PNL    
         grossPNL = common * (sellAve - buyAve)
         report.grossPNL = grossPNL
@@ -240,7 +246,7 @@ def getPNLs(report_date):
         sells -= common
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
         report.unrealizedPNL = unrealizedPNL
-        
+
         # net PNL
         report.netPNL = grossPNL + unrealizedPNL - report.fees
         
@@ -282,21 +288,37 @@ def getMonthlyReport(daily_report):
     year = daily_report.reportDate.year
     month = daily_report.reportDate.month
     today = date.today()
+    
     try:
         monthly_report = MonthlyReport.objects.get(Q(reportDate__year = year) & Q(reportDate__month = month))
+        monthly_report.buys += daily_report.buys
+        monthly_report.sells += daily_report.sells
+        monthly_report.grossPNL += daily_report.grossPNL
+        monthly_report.unrealizedPNL += daily_report.unrealizedPNL
+        monthly_report.fees += daily_report.fees
+        monthly_report.netPNL += daily_report.netPNL
+        monthly_report.LMV += daily_report.LMV
+        monthly_report.SMV += daily_report.SMV
+        monthly_report.save()
+        
     except MonthlyReport.DoesNotExist:
         monthly_report = MonthlyReport(reportDate = today) # create a new for this month
+        dreports = DailyReport.objects.filter(Q(reportDate__year = year) & Q(reportDate__month = month))
+        for dr in dreports:
+            monthly_report.buys += dr.buys
+            monthly_report.sells += dr.sells
+            monthly_report.grossPNL += dr.grossPNL
+            monthly_report.unrealizedPNL += dr.unrealizedPNL
+            monthly_report.fees += dr.fees
+            monthly_report.netPNL += dr.netPNL
+            monthly_report.LMV += dr.LMV
+            monthly_report.SMV += dr.SMV
+        monthly_report.save()
+        
     
-    monthly_report.buys += daily_report.buys
-    monthly_report.sells += daily_report.sells
-    monthly_report.grossPNL += daily_report.grossPNL
-    monthly_report.unrealizedPNL += daily_report.unrealizedPNL
-    monthly_report.fees += daily_report.fees
-    monthly_report.netPNL += daily_report.netPNL
-    monthly_report.LMV += daily_report.LMV
-    monthly_report.SMV += daily_report.SMV
     
-    monthly_report.save()
+    
+    
             
             
             
