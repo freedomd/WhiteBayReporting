@@ -3,6 +3,7 @@ from hello.views import hello_world
 from trades.views import *
 from reports.views import *
 from accounts.views import *
+from brokers.views import *
 from django.conf.urls.static import static
 from django.conf import settings
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
@@ -19,6 +20,11 @@ urlpatterns = patterns('',
     url(r'^register/', register),
     url(r'^login/', login),
     url(r'^logout/', logout_view),
+    
+    # admin
+    url(r'^management/', adminView),
+    url(r'^addBroker/', addBroker),
+    url(r'^delBroker/', delBroker),
     
     # reports
     url(r'^report/', reportView),

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/admin.js"></script>
+	<script type="text/javascript">
+		function setActive(){
+			$("#tabs").find('li').removeClass("active")
+			$("#admin_tab").addClass("active")
+		}
+	</script>
+</head>
+
+<body onload=setActive()>
+    
+<div class="container">
+<div id="filter">
+  	<select class="span3" id="brokers" size = "1" onchange="selectBroker(this.value)">
+  		<option value="default">--- Select Broker ---</option>
+  		<option value="add">Add a Broker</option>
+        {% for broker in broker_list %}
+			<option value="{{ broker.pk }}">{{ broker.name }}</option>
+		{% endfor %}
+    </select>
+</div> 
+</div>
+
+
+<div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+<!-- trades list  -->
+<div class="container">
+<div id="message" style="color:red;font-size:12px;">
+{{ message }}
+</div>
+<div id="mod_broker" style="display: none;">
+	<form method='post' class='form-inline' action='/delBroker/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		<input name='mod_name' id='mod_name' type='text' class='span3'>
+		<input name='mod_commission' id='mod_commission' type='text' class='span3'>
+		<!-- <button class='btn btn-info' onclick='modifyBroker()'>Save</button> -->
+		<input type='submit' class='btn btn-danger' value='Delete' onclick='return confirm_delete()'>
+	</form>
+</div>
+<div id="add_broker" style="display: none;">
+	<form method='post' class='form-inline' action='/addBroker/' onsubmit='return validate_form(this)'>
+		{% csrf_token %}
+		<input name='add_name' id='add_name' type='text' class='span3' placeholder='Broker Name'>
+		<input name='add_commission' id='add_commission' type='text' class='span3' placeholder='Commission'>
+		<input type='submit' class='btn btn-success' value='Add'>
+	</form>
+</div>
+</div>
+</div>
+
+
+</body>
+</html>
+
+{% endblock %}

@@ -12,7 +12,8 @@ def add(x, y):
 
 @celery.task
 def get_report():
-    today = date.today()
+    #today = date.today()
+    today = date(year=2013, month=2, day=15)
     if not getMarks(today): # get marks, create report
         # write to log in the future
         print "Cannot get mark file."

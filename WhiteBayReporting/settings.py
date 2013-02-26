@@ -147,6 +147,7 @@ INSTALLED_APPS = (
     'trades',
     'reports',
     'accounts',
+    'brokers',
 )
 
 # A sample logging configuration. The only tangible logging
