@@ -53,7 +53,7 @@
 		<tr>
 		<td><a href="/symbol/{{ report.symbol }}/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/1/">{{ report.symbol }}</td>
 		<td>{{ report.SOD|intcomma }}</td>
-		<td>{{ report.mark }}</td>
+		<td>{{ report.mark|floatformat:2|intcomma }}</td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.buyAve|floatformat:2|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>
