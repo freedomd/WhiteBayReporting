@@ -42,8 +42,8 @@ function createTradeList(data) {
 			html += "<td>" + data.trade_list[i].fields.symbol + "</td>";
 			html += "<td>" + data.trade_list[i].fields.side + "</td>";
 			html += "<td>" + data.trade_list[i].fields.quantity + "</td>";
-			html += "<td>" + data.trade_list[i].fields.price + "</td>";
-			html += "<td>" + data.trade_list[i].fields.tradeDate + "</td>";
+			html += "<td>" + data.trade_list[i].fields.price.toFixed(2) + "</td>";
+			html += "<td>" + data.trade_list[i].fields.tradeDate.substring(0, 10) + "</td>";
 			html += "<td>" + data.trade_list[i].fields.executionId + "</td>";
 			html += "</tr>"
 		}
