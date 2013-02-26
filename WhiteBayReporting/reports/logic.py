@@ -216,7 +216,11 @@ def getPNLs(report_date):
         sellAve = report.sellAve
         EOD = SOD + buys - sells
         
-        if buys == 0 and sells == 0 and SOD == 0: # no trades on this report
+#        if buys == 0 and sells == 0 and SOD == 0: # no trades on this report
+#            report.delete()
+#            continue
+        
+        if closing == 0: # invalid
             report.delete()
             continue
 
