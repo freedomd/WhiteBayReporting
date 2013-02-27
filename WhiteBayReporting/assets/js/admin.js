@@ -37,6 +37,22 @@ function modifyBroker() {
 }
 
 
+function validate_number(field){
+	with (field) {
+		if (value == null || value == "") {
+			return false;
+		}
+				
+		var exp = /^(\-)?\d+(\.\d+)?$/;
+		if(!exp.test(value)) { 
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+
 function validate_required(field) {
 	with (field) {
 		if (value == null || value == ""){
@@ -48,43 +64,40 @@ function validate_required(field) {
 }
 
 function validate_add(thisform) {
-	$("#message").html("");
+	$(".message").html("");
 	with (thisform) {
 		if (validate_required(add_name) == false) {
-			$("#message").html("You must enter a name.");
+			html = "<span class='help-inline message'>You must enter a name.</span>";
+			$("#add_name").after(html);
 			add_name.focus();
 			return false;
-		} else {
-			$("#message").html("");
-		}
-		if (validate_required(add_commission) == false) {
-			$("#message").html("You must enter the commission.");
+		} 
+		if (validate_number(add_commission) == false) {
+			html = "<span class='help-inline message'>You must enter a valid commission.</span>";
+			$("#add_commission").after(html);
 			add_commission.focus();
 			return false;
-		} else {
-			$("#message").html("");
 		}
 	}
 	return true
 }
 
 function validate_mod(thisform) {
-	$("#message").html("");
+	$(".message").html("");
 	with (thisform) {
 		if (validate_required(mod_name) == false) {
-			$("#message").html("You must enter a name.");
+			html = "<span class='help-inline message'>You must enter a name.</span>";
+			$("#mod_name").after(html);
 			mod_name.focus();
 			return false;
-		} else {
-			$("#message").html("");
-		}
-		if (validate_required(mod_commission) == false) {
-			$("#message").html("You must enter the commission.");
+		} 
+		
+		if (validate_number(mod_commission) == false) {
+			html = "<span class='help-inline message'>You must enter a valid commission.</span>";
+			$("#mod_commission").after(html);
 			mod_commission.focus();
 			return false;
-		} else {
-			$("#message").html("");
-		}
+		} 
 	}
 	return true
 }
