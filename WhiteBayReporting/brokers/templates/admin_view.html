@@ -46,7 +46,7 @@
 	</form>
 </div>
 <div id="add_broker" style="display: none;">
-	<form method='post' class='form-inline' action='/addBroker/' onsubmit='return validate_form(this)'>
+	<form method='post' class='form-inline' action='/addBroker/' onsubmit='return validate_add(this)'>
 		{% csrf_token %}
 		<input name='add_name' id='add_name' type='text' class='span3' placeholder='Broker Name'>
 		<input name='add_commission' id='add_commission' type='text' class='span3' placeholder='Commission'>
