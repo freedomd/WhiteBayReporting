@@ -25,15 +25,25 @@ def addBroker(request):
     return HttpResponseRedirect("/management/")
 
 @login_required
-def delBroker(request):
+def modBroker(request):
     if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
         pk = request.POST.get('mod_pk')
-
+        
         try:
-            Broker.objects.get(pk = pk).delete()
+            broker = Broker.objects.get(pk = pk)
+            if delete:
+                broker.delete()
+            elif save:
+                name = request.POST.get('mod_name')
+                commission = request.POST.get('mod_commission')
+                broker.name = name
+                broker.commission = commission
+                broker.save()
         except Exception, e:
             print str(e.message)
-    
+
     return HttpResponseRedirect("/management/")
 
 

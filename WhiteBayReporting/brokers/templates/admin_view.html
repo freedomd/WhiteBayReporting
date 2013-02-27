@@ -30,27 +30,59 @@
 
 
 <div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
-<!-- trades list  -->
 <div class="container">
 <div id="message" style="color:red;font-size:12px;">
 {{ message }}
 </div>
 <div id="mod_broker" style="display: none;">
-	<form method='post' class='form-inline' action='/delBroker/'>
+	<form method='post' class='form-horizontal' action='/modBroker/'>
 		{% csrf_token %}
 		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
-		<input name='mod_name' id='mod_name' type='text' class='span3'>
-		<input name='mod_commission' id='mod_commission' type='text' class='span3'>
-		<!-- <button class='btn btn-info' onclick='modifyBroker()'>Save</button> -->
-		<input type='submit' class='btn btn-danger' value='Delete' onclick='return confirm_delete()'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_name">Broker Name</label>
+    		<div class="controls">
+				<input name='mod_name' id='mod_name' type='text' class='span3'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_commission">Comission</label>
+    		<div class="controls">
+				<input name='mod_commission' id='mod_commission' type='text' class='span3'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete()'>
+			</div>
+		</div>
 	</form>
 </div>
 <div id="add_broker" style="display: none;">
-	<form method='post' class='form-inline' action='/addBroker/' onsubmit='return validate_add(this)'>
+	<form method='post' class='form-horizontal' action='/addBroker/' onsubmit='return validate_add(this)'>
 		{% csrf_token %}
-		<input name='add_name' id='add_name' type='text' class='span3' placeholder='Broker Name'>
-		<input name='add_commission' id='add_commission' type='text' class='span3' placeholder='Commission'>
-		<input type='submit' class='btn btn-success' value='Add'>
+		<div class="control-group">
+    		<label class="control-label" for="add_name">Broker Name</label>
+    		<div class="controls">
+				<input name='add_name' id='add_name' type='text' class='span3' placeholder='Broker Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_commission">Comission</label>
+    		<div class="controls">
+				<input name='add_commission' id='add_commission' type='text' class='span3' placeholder='Commission'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
 	</form>
 </div>
 </div>
