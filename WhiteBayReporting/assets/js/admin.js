@@ -33,7 +33,6 @@ function showBroker(data) {
 }
 
 function modifyBroker() {
-	
 	Dajaxice.brokers.modifyBroker(showBroker, {'pk': value}, {'error_callback': custom_error});
 }
 
@@ -61,6 +60,27 @@ function validate_add(thisform) {
 		if (validate_required(add_commission) == false) {
 			$("#message").html("You must enter the commission.");
 			add_commission.focus();
+			return false;
+		} else {
+			$("#message").html("");
+		}
+	}
+	return true
+}
+
+function validate_mod(thisform) {
+	$("#message").html("");
+	with (thisform) {
+		if (validate_required(mod_name) == false) {
+			$("#message").html("You must enter a name.");
+			mod_name.focus();
+			return false;
+		} else {
+			$("#message").html("");
+		}
+		if (validate_required(mod_commission) == false) {
+			$("#message").html("You must enter the commission.");
+			mod_commission.focus();
 			return false;
 		} else {
 			$("#message").html("");

@@ -24,7 +24,7 @@ urlpatterns = patterns('',
     # admin
     url(r'^management/', adminView),
     url(r'^addBroker/', addBroker),
-    url(r'^delBroker/', delBroker),
+    url(r'^modBroker/', modBroker),
     
     # reports
     url(r'^report/', reportView),
