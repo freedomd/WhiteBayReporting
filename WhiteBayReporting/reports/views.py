@@ -30,18 +30,18 @@ def monthlyReportView(request, year, month):
         if report_list.count() != 0:
             report_date = report_list[0].reportDate
         else:
-            error = True
+            month_error = True
             error_message = "No reports for this month yet."
             return render(request,"monthly_reports_view.html", locals())
         try:
             total = MonthlyReport.objects.get(Q(reportDate__year=year) & Q(reportDate__month=month))
         except: # no this month's new report
-            error = True
+            month_error = True
             error_message = "No reports for this month yet."
             return render(request,"monthly_reports_view.html", locals())
     except Exception, e:
-        error = True
-        error_message = str(e.message)
+        year_error = True
+        error_message = "No reports for this year yet."
         return render(request,"monthly_reports_view.html", locals())
     
     return render(request,"monthly_reports_view.html", locals())
