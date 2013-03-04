@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/reportlist.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#report_tab").addClass("active");
+		});
+	</script>
+</head>
+
+<body onload=getReportList(1)>
+<input id="tab" value="{{ default }}" style="display: none;">
+<input id="order" value="{{ default_order }}" style="display: none;">
+<input id="year" value="{{ year }}" style="display: none;">
+<input id="month" value="{{ month}}" style="display: none;">
+<input id="day" value="{{ day }}" style="display: none;">
+
+<!-- reports list  -->
+<div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+<div id="reports_container" class="container data_container">
+
+</div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

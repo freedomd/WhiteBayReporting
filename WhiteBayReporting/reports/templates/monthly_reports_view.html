@@ -7,19 +7,14 @@
 <html lang="en">
 <head>
 	<script type="text/javascript">
-		function setActive(){
-			$("#tabs").find('li').removeClass("active")
-			$("#report_tab").addClass("active")
-		}
-		
-		function test(data){
-			//alert("!!");
-    		alert(data.message);
-		}
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#report_tab").addClass("active");
+		});
 	</script>
 </head>
 
-<body onload=setActive()>
+<body>
 
 {% if year_error %}
 	<div class="container" id="error_message">{{ error_message }}</div>
@@ -96,7 +91,7 @@
 		</tr>
 	{% for report in report_list %}
 		<tr>
-		<td><a href="/dailyReport/symbol/0/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/1/">{{ report.reportDate|date:'m-d' }}</a></td>
+		<td><a href="/dailyReport/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/">{{ report.reportDate|date:'m-d' }}</a></td>
 		<td>{{ report.SOD|intcomma }}</td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>

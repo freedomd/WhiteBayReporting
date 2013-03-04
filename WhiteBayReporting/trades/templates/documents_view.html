@@ -6,14 +6,14 @@
 <html lang="en">
 <head>
 	<script type="text/javascript">
-		function setActive(){
-			$("#tabs").find('li').removeClass("active")
-			$("#document_tab").addClass("active")
-		}
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#document_tab").addClass("active");
+		});
 	</script>
 </head>
 
-<body onload=setActive()>
+<body>
     
 <div class="container">
 
