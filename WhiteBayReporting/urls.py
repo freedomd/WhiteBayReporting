@@ -29,7 +29,9 @@ urlpatterns = patterns('',
     # reports
     url(r'^report/', reportView),
     url(r'^monthlyReport/(?P<year>\d{4})/(?P<month>\d{1,2})/$', monthlyReportView),
-    url(r'^dailyReport/(?P<tab>.+)/(?P<strorder>\d{1})/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', dailyReportView),
+    url(r'^dailyReport/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$', dailyReportViewAjax),
+    #url(r'^dailyReport/(?P<tab>.+)/(?P<strorder>\d{1})/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', dailyReportViewAjax),
+    #url(r'^dailyReport/(?P<tab>.+)/(?P<strorder>\d{1})/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<strpage>\d+)/$', dailyReportView),
     
     # trades & files
     url(r'^trade/', queryView),

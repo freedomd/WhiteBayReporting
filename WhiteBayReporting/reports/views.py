@@ -47,6 +47,13 @@ def monthlyReportView(request, year, month):
     return render(request,"monthly_reports_view.html", locals())
 
 @login_required
+def dailyReportViewAjax(request, year, month, day):
+    default = "symbol" # default order
+    default_order = 0 # ascending, 1 for descending
+    return render(request,"daily_reports_view_ajax.html", locals())
+
+'''
+@login_required
 def dailyReportView(request, tab, strorder, year, month, day, strpage):
     
     # method 0 = ascending, 1 = descending
@@ -157,3 +164,4 @@ def dailyReportView(request, tab, strorder, year, month, day, strpage):
         return render(request,"daily_reports_view.html", locals())
 
     return render(request,"daily_reports_view.html", locals())
+'''

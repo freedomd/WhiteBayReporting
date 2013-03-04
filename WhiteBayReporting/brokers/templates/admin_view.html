@@ -7,10 +7,10 @@
 <head>
 	<script src="{{ STATIC_URL }}js/admin.js"></script>
 	<script type="text/javascript">
-		function setActive(){
-			$("#tabs").find('li').removeClass("active")
-			$("#admin_tab").addClass("active")
-		}
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#admin_tab").addClass("active");
+		});
 	</script>
 	<style type="text/css">
       .message {
@@ -20,7 +20,7 @@
     </style>
 </head>
 
-<body onload=setActive()>
+<body>
     
 <div class="container">
 <div id="filter">

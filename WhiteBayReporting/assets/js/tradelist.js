@@ -2,6 +2,18 @@ function custom_error(){
     // do nothing
 }
 
+function addCommas(number) {
+	number += '';
+	var x = number.split('.');
+	var x1 = x[0];
+	var x2 = x.length > 1 ? '.' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	}
+	return x1 + x2;
+}
+
 function getTradeList(strpage) {
 	$("html,body").animate({scrollTop:0},0); // back to top
 	
@@ -37,14 +49,15 @@ function createTradeList(data) {
 		
 		
 		for(i = 0; i < number; i++) { // create a new list of trades
+			var trade = data.trade_list[i].fields;
 			html += "<tr>";
-			html += "<td>" + data.trade_list[i].fields.account + "</td>";
-			html += "<td>" + data.trade_list[i].fields.symbol + "</td>";
-			html += "<td>" + data.trade_list[i].fields.side + "</td>";
-			html += "<td>" + data.trade_list[i].fields.quantity + "</td>";
-			html += "<td>" + data.trade_list[i].fields.price.toFixed(2) + "</td>";
-			html += "<td>" + data.trade_list[i].fields.tradeDate.substring(0, 10) + "</td>";
-			html += "<td>" + data.trade_list[i].fields.executionId + "</td>";
+			html += "<td>" + trade.account + "</td>";
+			html += "<td>" + trade.symbol + "</td>";
+			html += "<td>" + trade.side + "</td>";
+			html += "<td>" + addCommas(trade.quantity) + "</td>";
+			html += "<td>" + addCommas(trade.price.toFixed(2)) + "</td>";
+			html += "<td>" + trade.tradeDate.substring(0, 10) + "</td>";
+			html += "<td>" + trade.executionId + "</td>";
 			html += "</tr>"
 		}
 		
