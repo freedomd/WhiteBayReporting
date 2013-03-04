@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/admin.js"></script>
+    <link href="{{ STATIC_URL }}css/admin.css" rel="stylesheet" media="screen">
+</head>
+
+<body>
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked">
+  	<li ><a href="/firmProfile/">Firm Profile</a></li>
+  	<li class="active"><a href=".">Trader Profile</a></li>
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+<div class="hero-unit admin_container">
+
+<div id="filter" style="padding-bottom:20px;">
+  	<select class="span3" id="traders" size = "1" onchange="selectTrader(this.value)">
+  		<option value="default">--- Select Trader ---</option>
+  		<option value="add">Add a Trader</option>
+        {% for trader in trader_list %}
+			<option value="{{ trader.pk }}">{{ trader.name }}</option>
+		{% endfor %}
+    </select>
+</div> 
+
+
+
+<div id="mod_trader" style="display: none;">
+	<form method='post' class='form-horizontal' action='/modTrader/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_name">Trader Name</label>
+    		<div class="controls">
+				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Trader Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_ssn">SSN</label>
+    		<div class="controls">
+				<input name='mod_ssn' id='mod_ssn' type='text' class='span4' placeholder='SSN'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_addr">Address</label>
+    		<div class="controls">
+				<input name='mod_addr' id='mod_addr' type='text' class='span4' placeholder='Address'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_phone">Phone Number</label>
+    		<div class="controls">
+				<input name='mod_phone' id='mod_phone' type='text' class='span4' placeholder='Phone Number'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_email">E-mail</label>
+    		<div class="controls">
+				<input name='mod_email' id='mod_email' type='text' class='span4' placeholder='E-mail'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_username">Username</label>
+    		<div class="controls">
+				<input name='mod_username' id='mod_username' type='text' class='span4' placeholder='Username'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_password">Password</label>
+    		<div class="controls">
+				<input name='mod_password' id='mod_password' type='text' class='span4' placeholder='Password'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_cfee">Clearance Fee</label>
+    		<div class="controls">
+				<input name='mod_cfee' id='mod_cfee' type='text' class='span4' placeholder='Clearance Fee'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_bfee">Broker Fee</label>
+    		<div class="controls">
+				<input name='mod_bfee' id='mod_bfee' type='text' class='span4' placeholder='Broker Fee'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_trader(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_trader()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_trader" style="display: none;">
+	<form method='post' class='form-horizontal' action='/addTrader/' onsubmit='return validate_add_trader(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_name">Trader Name</label>
+    		<div class="controls">
+				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Trader Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_ssn">SSN</label>
+    		<div class="controls">
+				<input name='add_ssn' id='add_ssn' type='text' class='span4' placeholder='SSN'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_addr">Address</label>
+    		<div class="controls">
+				<input name='add_addr' id='add_addr' type='text' class='span4' placeholder='Address'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_phone">Phone Number</label>
+    		<div class="controls">
+				<input name='add_phone' id='add_phone' type='text' class='span4' placeholder='Phone Number'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_email">E-mail</label>
+    		<div class="controls">
+				<input name='add_email' id='add_email' type='text' class='span4' placeholder='E-mail'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_username">Username</label>
+    		<div class="controls">
+				<input name='add_username' id='add_username' type='text' class='span4' placeholder='Username'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_password">Password</label>
+    		<div class="controls">
+				<input name='add_password' id='add_password' type='text' class='span4' placeholder='Password'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_cfee">Clearance Fee</label>
+    		<div class="controls">
+				<input name='add_cfee' id='add_cfee' type='text' class='span4' placeholder='Clearance Fee'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_bfee">Broker Fee</label>
+    		<div class="controls">
+				<input name='add_bfee' id='add_bfee' type='text' class='span4' placeholder='Broker Fee'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

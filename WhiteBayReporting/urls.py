@@ -22,9 +22,12 @@ urlpatterns = patterns('',
     url(r'^logout/', logout_view),
     
     # admin
-    url(r'^management/', adminView),
+    url(r'^firmProfile/', firmView),
+    url(r'^traderProfile/', traderView),
     url(r'^addBroker/', addBroker),
     url(r'^modBroker/', modBroker),
+    url(r'^addTrader/', addTrader),
+    url(r'^modTrader/', modTrader),
     
     # reports
     url(r'^report/', reportView),
