@@ -12,7 +12,7 @@ function selectBroker(value) {
 		$('#mod_broker').hide();
 		$('#add_broker').show();
 	} else { 
-    	Dajaxice.brokers.getBroker(showBroker, {'pk': value}, {'error_callback': custom_error}); 		
+    	Dajaxice.admins.getBroker(showBroker, {'pk': value}, {'error_callback': custom_error}); 		
     }       
     
 }
@@ -33,7 +33,7 @@ function showBroker(data) {
 }
 
 function modifyBroker() {
-	Dajaxice.brokers.modifyBroker(showBroker, {'pk': value}, {'error_callback': custom_error});
+	Dajaxice.admins.modifyBroker(showBroker, {'pk': value}, {'error_callback': custom_error});
 }
 
 
