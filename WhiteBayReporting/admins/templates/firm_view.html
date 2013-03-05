@@ -1,31 +1,14 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block content %}
+{% block admin_content %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<script src="{{ STATIC_URL }}js/admin.js"></script>
-    <link href="{{ STATIC_URL }}css/admin.css" rel="stylesheet" media="screen">
-</head>
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#pills").find('li').removeClass("active");
+			$("#firm_pill").addClass("active");
+	});
+</script>
 
-<body>
-
-<div class="container">
-<div class="container-fluid">
-<div class="row-fluid">
-<div class="span2">
-<!--Sidebar content-->
-	<ul class="nav nav-pills nav-stacked">
-  	<li class="active"><a href=".">Firm Profile</a></li>
-  	<li><a href="/traderProfile/">Trader Profile</a></li>
-	</ul>
-</div>
-
-
-<div class="span10">
-<!--Body content-->
-<div class="hero-unit admin_container">
 
 <div id="filter" style="padding-bottom:20px;">
   	<select class="span3" id="brokers" size = "1" onchange="selectBroker(this.value)">
@@ -92,13 +75,5 @@
 	</form>
 </div>
 
-</div>
-</div>
-</div>
-</div>
-</div>
-
-</body>
-</html>
 
 {% endblock %}

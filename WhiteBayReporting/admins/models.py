@@ -13,6 +13,19 @@ class Broker(models.Model):
         return str(self.name)
 
 
+class System(models.Model):
+    
+    name = models.CharField( max_length=50 )
+    cost = models.FloatField( default=0.00 )
+    
+    def save(self, *args, **kwargs): 
+        super(System, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.name)
+
+
+
 class Trader(models.Model):
     
     name = models.CharField( max_length=30 )
@@ -24,6 +37,7 @@ class Trader(models.Model):
     password = models.CharField( max_length=30, blank=True, null=True, default="" )
     clearanceFee = models.FloatField( blank=True, null=True, default=0.00 )
     brokerFee = models.FloatField( blank=True, null=True, default=0.00 )
+    systems = models.ManyToManyField( System, blank=True, null=True )
     
     def save(self, *args, **kwargs): 
         super(Trader, self).save(*args, **kwargs)
@@ -33,3 +47,4 @@ class Trader(models.Model):
 
 admin.site.register(Broker)
 admin.site.register(Trader)
+admin.site.register(System)

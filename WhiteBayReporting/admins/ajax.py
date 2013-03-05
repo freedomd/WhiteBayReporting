@@ -1,7 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker
-from admins.models import Trader
+from admins.models import Broker, Trader, System
 from django.core import serializers
 
 @dajaxice_register
@@ -43,6 +42,8 @@ def modifyBroker(request, pk, name, commission):
 def getTrader(request, pk):
     try:
         trader = Trader.objects.get(pk = pk)
+        system_list = trader.systems.all()
+        system_list_serialized = serializers.serialize('json', system_list)
         success = "true"
         message = ""
     except:
@@ -53,6 +54,30 @@ def getTrader(request, pk):
             'addr': trader.addr, 'phone': trader.phone, 
             'email': trader.email, 'username': trader.username, 
             'password': trader.password, 'cfee': trader.clearanceFee, 'bfee': trader.brokerFee, 
+            'system_list': simplejson.loads(system_list_serialized),
             'success': success, 'message': message }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getSystem(request, systemIdList):
+    print systemIdList
+
+    try:
+        system_list = []
+        for system in systemIdList:
+            system_list.append(System.objects.get(pk=system))
+        
+        system_list_serialized = serializers.serialize('json', system_list)
+        success = "true"
+        message = ""
+    except Exception, e:
+        success = "false"
+        message = str(e.message)
+    
+    data = {'system_list': simplejson.loads(system_list_serialized),
+            'success': success, 'message': message }
+    
+    print data
     
     return simplejson.dumps(data)

@@ -1,8 +1,18 @@
+.data_container {
+ 	width: 1020px;
+}
+
+.tab {
+	font-size: 12px;
+	color: black;
+	font-weight: bold;
+}
+
 .data_table {
 	margin-top: 5px;
 	font-size: 12px;
 	text-align: center;
-	table-layout: auto;
+	margin-bottom: 10px;
 }		
 
 .data_table th,
@@ -18,4 +28,8 @@
 
 .positive_data {
 	color:green;
+}
+
+.paginator {
+	float:right;
 }

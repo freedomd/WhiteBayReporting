@@ -1,31 +1,15 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block content %}
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<script src="{{ STATIC_URL }}js/admin.js"></script>
-    <link href="{{ STATIC_URL }}css/admin.css" rel="stylesheet" media="screen">
-</head>
-
-<body>
-
-<div class="container">
-<div class="container-fluid">
-<div class="row-fluid">
-<div class="span2">
-<!--Sidebar content-->
-	<ul class="nav nav-pills nav-stacked">
-  	<li ><a href="/firmProfile/">Firm Profile</a></li>
-  	<li class="active"><a href=".">Trader Profile</a></li>
-	</ul>
-</div>
+{% block admin_content %}
 
 
-<div class="span10">
-<!--Body content-->
-<div class="hero-unit admin_container">
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#pills").find('li').removeClass("active");
+			$("#trader_pill").addClass("active");
+	});
+</script>
+
 
 <div id="filter" style="padding-bottom:20px;">
   	<select class="span3" id="traders" size = "1" onchange="selectTrader(this.value)">
@@ -108,6 +92,16 @@
 		</div>
 		
 		<div class="control-group">
+    		<label class="control-label" for="mod_systems">Systems</label>
+    		
+    		<div class="controls">
+    			<div class="system_list">
+    			</div>
+    			<a href="#systemBox" class="btn btn-small btn-primary" data-toggle="modal">Open System List</a>
+			</div>
+		</div>
+		
+		<div class="control-group">
     		<div class="controls">
 				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_trader(this)'>
 				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_trader()'>
@@ -183,6 +177,16 @@
 		</div>
 		
 		<div class="control-group">
+    		<label class="control-label" for="add_systems">Systems</label>
+    		
+    		<div class="controls">
+    			<div class="system_list">
+    			</div>
+    			<a href="#systemBox" class="btn btn-small btn-primary" data-toggle="modal">Open System List</a>
+			</div>
+		</div>
+		
+		<div class="control-group">
     		<div class="controls">
 				<input type='submit' class='btn btn-success' value='Add'>
 			</div>
@@ -190,13 +194,30 @@
 	</form>
 </div>
 
-</div>
-</div>
-</div>
-</div>
-</div>
 
-</body>
-</html>
+<div id="systemBox" class="modal hide fade" style="display:none;width:600px" data-backdrop="static" data-keyboard="false" >
+   	<div class="modal-header">
+    	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    	<h3>System List</h3>
+  	</div>  	
+			
+	<div class="modal-body" align="center">
+    	<table class="table system_table table-bordered">
+    		<tr><th>Check</th><th>Type</th><th>Cost</th></tr>
+    		{% for system in system_list %}
+    			<tr>
+    				<td><input type="checkbox" name="system" value="{{ system.pk }}" id="system{{ system.pk }}"></td>
+    				<td><span id="type{{ system.pk }}">{{ system.name }}</span></td>
+    				<td><span id="cost{{ system.pk }}">{{ system.cost }}</span></td>
+    			</tr>
+    		{% endfor %}
+    	</table>
+  	</div>
+  	
+  	<div class="modal-footer">
+    	<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    	<button class="btn btn-primary" data-dismiss="modal" aria-hidden="true" onclick="getSystem()">OK</button>
+  	</div>
+</div>
 
 {% endblock %}

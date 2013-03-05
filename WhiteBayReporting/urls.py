@@ -24,10 +24,13 @@ urlpatterns = patterns('',
     # admin
     url(r'^firmProfile/', firmView),
     url(r'^traderProfile/', traderView),
+    url(r'^systemProfile/', systemView),
     url(r'^addBroker/', addBroker),
     url(r'^modBroker/', modBroker),
     url(r'^addTrader/', addTrader),
     url(r'^modTrader/', modTrader),
+    url(r'^addSystem/', addSystem),
+    url(r'^modSystem/', modSystem),
     
     # reports
     url(r'^report/', reportView),

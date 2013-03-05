@@ -5743,7 +5743,7 @@ a.badge:hover {
 }
 
 .hero-unit p {
-  font-size: 10px;
+  font-size: 18px;
   font-weight: 200;
   line-height: 30px;
   color: inherit;
