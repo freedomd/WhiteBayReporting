@@ -2,6 +2,22 @@ function custom_error(){
     // do nothing
 }
 
+function validate_email(field) {
+	with (field) {
+		if (value == null || value == "") {
+			return true;
+		} else {
+			apos = value.indexOf("@")
+			dotpos = value.lastIndexOf(".")
+			if (apos < 1 || dotpos - apos < 2) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+	}
+}
+
 function validate_number(field){
 	with (field) {	
 		var exp = /^(\-)?\d*(\.\d+)?$/;
@@ -134,6 +150,14 @@ function showTrader(data) {
 		$('#mod_trader').show();
 		$('#mod_pk').val(data.pk);
 		$('#mod_name').val(data.name);
+		$('#mod_ssn').val(data.ssn);
+		$('#mod_addr').val(data.addr);
+		$('#mod_phone').val(data.phone);
+		$('#mod_email').val(data.email);
+		$('#mod_username').val(data.username);
+		$('#mod_password').val(data.password);
+		$('#mod_cfee').val(data.cfee.toFixed(2));
+		$('#mod_bfee').val(data.bfee.toFixed(2));
 	} else {
 		html = "";
 		html += data.message;
@@ -150,14 +174,20 @@ function validate_add_trader(thisform) {
 			add_name.focus();
 			return false;
 		} 
+		if (validate_email(add_email) == false) {
+			html = "<span class='help-inline message'>You must enter a valid email.</span>";
+			$("#add_email").after(html);
+			add_email.focus();
+			return false;
+		}
 		if (validate_number(add_cfee) == false) {
-			html = "<span class='help-inline message'>You must enter a valid clearance Fee.</span>";
+			html = "<span class='help-inline message'>You must enter a valid clearance fee.</span>";
 			$("#add_cfee").after(html);
 			add_cfee.focus();
 			return false;
 		}
 		if (validate_number(add_bfee) == false) {
-			html = "<span class='help-inline message'>You must enter a valid broker Fee.</span>";
+			html = "<span class='help-inline message'>You must enter a valid broker fee.</span>";
 			$("#add_bfee").after(html);
 			add_bfee.focus();
 			return false;
@@ -175,6 +205,12 @@ function validate_mod_trader(thisform) {
 			mod_name.focus();
 			return false;
 		} 
+		if (validate_email(mod_email) == false) {
+			html = "<span class='help-inline message'>You must enter a valid email.</span>";
+			$("#mod_email").after(html);
+			mod_email.focus();
+			return false;
+		}
 		if (validate_number(mod_cfee) == false) {
 			html = "<span class='help-inline message'>You must enter a valid clearance Fee.</span>";
 			$("#mod_cfee").after(html);
