@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/admin.js"></script>
+    <link href="{{ STATIC_URL }}css/admin.css" rel="stylesheet" media="screen">
+    <script type="text/javascript">
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#admin_tab").addClass("active");
+		});
+	</script>
+</head>
+
+<body>
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  	<li id="firm_pill" class="active"><a href="/firmProfile/">Firm Profile</a></li>
+  	<li id="trader_pill"><a href="/traderProfile/">Trader Profile</a></li>
+  	<li id="system_pill"><a href="/systemProfile/">Systems</a></li>
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+<div class="hero-unit admin_container">
+
+{% block admin_content %}
+	
+{% endblock admin_content %}
+
+
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

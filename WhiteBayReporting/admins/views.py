@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader
+from admins.models import Broker, Trader, System
 
 @login_required
 def adminView(request):
@@ -19,7 +19,13 @@ def firmView(request):
 @login_required
 def traderView(request):
     trader_list = Trader.objects.all().order_by("name")  
+    system_list = System.objects.all().order_by("name")
     return render(request,"trader_view.html", locals())
+
+@login_required
+def systemView(request):  
+    system_list = System.objects.all().order_by("name")
+    return render(request,"system_view.html", locals())
 
 @login_required
 def addBroker(request):
@@ -69,6 +75,7 @@ def addTrader(request):
         password = request.POST.get('add_password')
         cfee = request.POST.get('add_cfee')
         bfee = request.POST.get('add_bfee')
+        systems = request.POST.getlist('systems')
         
         if cfee == "" or cfee == None:
             cfee = 0.0
@@ -76,8 +83,19 @@ def addTrader(request):
             bfee = 0.0
 
         try:
-            Trader.objects.create(name = name, SSN = ssn, addr = addr, phone = phone, email = email,
-                                  username = username, password = password, clearanceFee = cfee, brokerFee = bfee)
+            trader = Trader.objects.create(name = name, SSN = ssn, addr = addr, phone = phone,
+                                           email = email, username = username, password = password, 
+                                           clearanceFee = cfee, brokerFee = bfee)
+            
+            for system in systems:
+                try:
+                    trader.systems.add(System.objects.get(pk=system))
+                except Exception, e:
+                    print str(e.message)
+                    continue
+            
+            trader.save()
+            
         except Exception, e:
             print str(e.message)
     
@@ -104,6 +122,7 @@ def modTrader(request):
                 password = request.POST.get('mod_password')
                 cfee = request.POST.get('mod_cfee')
                 bfee = request.POST.get('mod_bfee')
+                systems = request.POST.getlist('systems')
                 
                 if cfee == "" or cfee == None:
                     cfee = 0.0
@@ -119,9 +138,51 @@ def modTrader(request):
                 trader.password = password
                 trader.clearanceFee = cfee
                 trader.brokerFee = bfee
+                trader.systems.clear()
+                for system in systems:
+                    try:
+                        trader.systems.add(System.objects.get(pk=system))
+                    except:
+                        continue
+                    
                 trader.save()
         except Exception, e:
             print str(e.message)
 
     return HttpResponseRedirect("/traderProfile/")
+
+@login_required
+def addSystem(request):
+    if request.POST:
+        name = request.POST.get('name')
+        cost = request.POST.get('cost')
+
+        try:
+            System.objects.create(name = name, cost = cost)
+        except Exception, e:
+            print str(e.message)
+    
+    return HttpResponseRedirect("/systemProfile/")
+
+@login_required
+def modSystem(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('pk')
+        
+        try:
+            system = System.objects.get(pk = pk)
+            if delete:
+                system.delete()
+            elif save:
+                name = request.POST.get('name')
+                cost = request.POST.get('cost')
+                system.name = name
+                system.cost = cost
+                system.save()
+        except Exception, e:
+            print str(e.message)
+
+    return HttpResponseRedirect("/systemProfile/")
 

@@ -1,0 +1,41 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#pills").find('li').removeClass("active");
+			$("#system_pill").addClass("active");
+	});
+</script>
+
+<div id="system_list">
+<table class="table system_table table-bordered">
+    <tr><th>Type</th><th>Cost</th><th>Operations</th></tr>
+    {% for system in system_list %}
+    	<form method='post' action='/modSystem/' onsubmit='return validate_system(this)'>
+		{% csrf_token %}
+    	<tr>
+    	<input style="display:none;" type="text" name="pk" value="{{ system.pk }}">
+    	<td><input style="margin-bottom:0px;" type="text" name="name" value="{{ system.name }}"></td>
+    	<td><input style="margin-bottom:0px;" type="text" name="cost" value="{{ system.cost|floatformat:2 }}"></td>
+    	<td>
+    		<input type='submit' name="save" class='btn btn-info' value='Save'>
+			<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_system()'>
+    	</td>
+    	</tr>
+    	</form>
+    {% endfor %}
+    <form method='post' action='/addSystem/' onsubmit='return validate_system(this)'>
+		{% csrf_token %}
+		<tr>
+		<td><input style="margin-bottom:0px;" name='name' type='text' placeholder='Type'></td>
+		<td><input style="margin-bottom:0px;" name='cost' type='text' placeholder='Cost'></td>
+		<td><input type='submit' class='btn btn-success' value='Add'></td>
+		</tr>
+	</form>
+</table>
+<div>
+
+
+{% endblock %}
