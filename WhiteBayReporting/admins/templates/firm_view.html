@@ -4,11 +4,77 @@
 
 <script type="text/javascript">
 	$(document).ready(function () {
-  			$("#pills").find('li').removeClass("active");
-			$("#firm_pill").addClass("active");
+  			$("#stacks").find('li').removeClass("active");
+			$("#firm_stack").addClass("active");
 	});
 </script>
 
+
+<div id="firm_info">
+	<form method='post' class='form-horizontal' action='/modFirm/'>
+		{% csrf_token %}
+		<input name='pk' id='pk' style='display: none;' type='text' value={{ firm.pk }}>
+		
+		<div class="control-group">
+    		<label class="control-label"><strong>Clearance Fees</strong></label>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="equity">Equity</label>
+    		<div class="controls">
+				<input name='equity' id='equity' type='text' class='span4' value={{ firm.equity|floatformat:2 }} placeholder='Equity'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="DVP">DVP</label>
+    		<div class="controls">
+				<input name='DVP' id='DVP' type='text' class='span4' value={{ firm.DVP|floatformat:2 }} placeholder='DVP'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="options">Options</label>
+    		<div class="controls">
+				<input name='options' id='options' type='text' class='span4' value={{ firm.options|floatformat:2 }} placeholder='Options'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="H2B">H2B</label>
+    		<div class="controls">
+				<input name='H2B' id='H2B' type='text' class='span4' value={{ firm.H2B|floatformat:2 }} placeholder='H2B'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="secFee"><strong>Sec Fee</strong></label>
+    		<div class="controls">
+				<input name='secFee' id='secFee' type='text' class='span4' value={{ firm.secFee|floatformat:2 }} placeholder='Sec Fee'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="rent"><strong>Rent</strong></label>
+    		<div class="controls">
+				<input name='rent' id='rent' type='text' class='span4' value={{ firm.rent|floatformat:2 }} placeholder='Rent'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="technology"><strong>Technology</strong></label>
+    		<div class="controls">
+				<input name='technology' id='technology' type='text' class='span4' value='{{ firm.technology }}' placeholder='Technology'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_firm(this)'>
+			</div>
+		</div>
+	</form>
+<div>
 
 <div id="filter" style="padding-bottom:20px;">
   	<select class="span3" id="brokers" size = "1" onchange="selectBroker(this.value)">
@@ -35,7 +101,7 @@
 		</div>
 		
 		<div class="control-group">
-    		<label class="control-label" for="mod_commission">Comission</label>
+    		<label class="control-label" for="mod_commission">Commission</label>
     		<div class="controls">
 				<input name='mod_commission' id='mod_commission' type='text' class='span4' placeholder='Commission'>
 			</div>

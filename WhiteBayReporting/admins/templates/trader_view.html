@@ -5,25 +5,34 @@
 
 <script type="text/javascript">
 	$(document).ready(function () {
-  			$("#pills").find('li').removeClass("active");
-			$("#trader_pill").addClass("active");
+  			$("#stacks").find('li').removeClass("active");
+			$("#trader_stack").addClass("active");
+			{% if pk %}
+			selectTrader({{ pk }})
+			{% endif %}
 	});
 </script>
 
 
-<div id="filter" style="padding-bottom:20px;">
-  	<select class="span3" id="traders" size = "1" onchange="selectTrader(this.value)">
-  		<option value="default">--- Select Trader ---</option>
-  		<option value="add">Add a Trader</option>
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectTrader('add')">Add a Trader</a></li>
         {% for trader in trader_list %}
-			<option value="{{ trader.pk }}">{{ trader.name }}</option>
+			<li id="pill{{ trader.pk }}"><a class="btn-link" onclick="selectTrader({{ trader.pk }})">{{ trader.name }}</a></li>
 		{% endfor %}
-    </select>
-</div> 
+	</ul>
+</div>
 
 
+<div class="span10">
+<!--Body content-->
 
-<div id="mod_trader" style="display: none;">
+<div id="mod_trader" style="display: none; margin-top:10px;">
 	<form method='post' class='form-horizontal' action='/modTrader/'>
 		{% csrf_token %}
 		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
@@ -110,7 +119,7 @@
 	</form>
 </div>
 
-<div id="add_trader" style="display: none;">
+<div id="add_trader" style="margin-top:10px">
 	<form method='post' class='form-horizontal' action='/addTrader/' onsubmit='return validate_add_trader(this)'>
 		{% csrf_token %}
 		<div class="control-group">
@@ -194,6 +203,11 @@
 	</form>
 </div>
 
+</div>
+</div>
+</div>
+</div>
+
 
 <div id="systemBox" class="modal hide fade" style="display:none;width:600px" data-backdrop="static" data-keyboard="false" >
    	<div class="modal-header">
@@ -208,7 +222,7 @@
     			<tr>
     				<td><input type="checkbox" name="system" value="{{ system.pk }}" id="system{{ system.pk }}"></td>
     				<td><span id="type{{ system.pk }}">{{ system.name }}</span></td>
-    				<td><span id="cost{{ system.pk }}">{{ system.cost }}</span></td>
+    				<td><span id="cost{{ system.pk }}">{{ system.cost|floatformat:2 }}</span></td>
     			</tr>
     		{% endfor %}
     	</table>
