@@ -1,0 +1,79 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#employer_stack").addClass("active");
+			{% if pk %}
+			selectEmployer({{ pk }})
+			{% endif %}
+	});
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectEmployer('add')">Add a Employer</a></li>
+        {% for employer in employer_list %}
+			<li id="pill{{ employer.pk }}"><a class="btn-link" onclick="selectEmployer({{ employer.pk }})">{{ employer.name }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="mod_employer" style="display: none; margin-top:10px;">
+	<form method='post' class='form-horizontal' action='/modEmployer/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_name">Employer Name</label>
+    		<div class="controls">
+				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Employer Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_employer(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_employer()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_employer" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addEmployer/' onsubmit='return validate_add_employer(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_name">Employer Name</label>
+    		<div class="controls">
+				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Employer Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

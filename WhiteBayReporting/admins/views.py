@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader, System
+from admins.models import Broker, Trader, System, Firm, Employer
 
 @login_required
 def adminView(request):
@@ -13,14 +13,24 @@ def adminView(request):
 def firmView(request):
     if request.GET:
         message = request.GET.get('message')
+    firm = Firm.objects.all()[0]
     broker_list = Broker.objects.all().order_by("name")          
     return render(request,"firm_view.html", locals())
 
 @login_required
 def traderView(request):
+    pk = request.GET.get('pk')
+    print pk
     trader_list = Trader.objects.all().order_by("name")  
     system_list = System.objects.all().order_by("name")
     return render(request,"trader_view.html", locals())
+
+@login_required
+def employerView(request):
+    pk = request.GET.get('pk')
+    print pk
+    employer_list = Employer.objects.all().order_by("name")  
+    return render(request,"employer_view.html", locals())
 
 @login_required
 def systemView(request):  
@@ -34,7 +44,10 @@ def addBroker(request):
         commission = request.POST.get('add_commission')
 
         try:
-            Broker.objects.create(name = name, commission = commission)
+            broker = Broker.objects.create(name = name, commission = commission)
+            firm = Firm.objects.all()[0]
+            firm.brokers.add(broker)
+            firm.save()
         except Exception, e:
             print str(e.message)
     
@@ -112,6 +125,7 @@ def modTrader(request):
             trader = Trader.objects.get(pk = pk)
             if delete:
                 trader.delete()
+                url = "/traderProfile/"
             elif save:
                 name = request.POST.get('mod_name')
                 ssn = request.POST.get('mod_ssn')
@@ -146,10 +160,12 @@ def modTrader(request):
                         continue
                     
                 trader.save()
+                url = "/traderProfile/?pk=" + str(pk)
         except Exception, e:
             print str(e.message)
+            url = "/traderProfile/"
 
-    return HttpResponseRedirect("/traderProfile/")
+    return HttpResponseRedirect(url)
 
 @login_required
 def addSystem(request):
@@ -185,4 +201,60 @@ def modSystem(request):
             print str(e.message)
 
     return HttpResponseRedirect("/systemProfile/")
+
+@login_required
+def modFirm(request):
+    if request.POST:
+        try:
+            firm = Firm.objects.get(pk=request.POST.get('pk'))
+                        
+            firm.equity = request.POST.get('equity')
+            firm.DVP = request.POST.get('DVP')
+            firm.options = request.POST.get('options')
+            firm.H2B = request.POST.get('H2B')
+            firm.secFee = request.POST.get('secFee')
+            firm.rent = request.POST.get('rent')
+            firm.technology = request.POST.get('technology')
+            firm.save()
+        except Exception, e:
+            print str(e.message)
+
+    return HttpResponseRedirect("/firmProfile/")
+
+@login_required
+def addEmployer(request):
+    if request.POST:
+        name = request.POST.get('add_name')
+        
+        try:
+            Employer.objects.create(name = name)
+
+        except Exception, e:
+            print str(e.message)
+    
+    return HttpResponseRedirect("/employerProfile/")
+
+@login_required
+def modEmployer(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('mod_pk')
+        
+        try:
+            employer = Employer.objects.get(pk = pk)
+            if delete:
+                employer.delete()
+                url = "/employerProfile/"
+            elif save:
+                name = request.POST.get('mod_name')
+                
+                employer.name = name
+                employer.save()
+                url = "/employerProfile/?pk=" + str(pk)
+        except Exception, e:
+            print str(e.message)
+            url = "/employerProfile/"
+
+    return HttpResponseRedirect(url)
 

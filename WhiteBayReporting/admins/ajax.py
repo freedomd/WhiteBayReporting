@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker, Trader, System
+from admins.models import Broker, Trader, System, Employer
 from django.core import serializers
 
 @dajaxice_register
@@ -79,5 +79,20 @@ def getSystem(request, systemIdList):
             'success': success, 'message': message }
     
     print data
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getEmployer(request, pk):
+    try:
+        employer = Employer.objects.get(pk = pk)
+        success = "true"
+        message = ""
+    except:
+        success = "false"
+        message = "No such trader found."
+    
+    data = {'pk': employer.pk, 'name': employer.name,
+            'success': success, 'message': message }
     
     return simplejson.dumps(data)

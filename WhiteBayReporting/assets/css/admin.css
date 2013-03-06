@@ -3,6 +3,10 @@
 	color: red;
 }
 
+.admin {
+	width:1080px;
+}
+
 .admin_container {
 	padding: 20px;
 }
@@ -45,3 +49,4 @@
 	text-align: center;
 	vertical-align: middle;
 }
+

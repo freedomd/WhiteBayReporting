@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib import admin
 
+
 class Broker(models.Model):
     
     name = models.CharField( max_length=50 )
@@ -44,7 +45,38 @@ class Trader(models.Model):
     
     def __unicode__(self):
         return str(self.name)
+    
+class Employer(models.Model):
+    
+    name = models.CharField( max_length=30 )
+    
+    def save(self, *args, **kwargs): 
+        super(Employer, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.name)
+    
+    
+class Firm(models.Model):
+    
+    # clearance fee
+    equity = models.FloatField( default=0.00 )
+    DVP = models.FloatField( default=0.00 )
+    options = models.FloatField( default=0.00 )
+    H2B = models.FloatField( default=0.00 )
+    brokers = models.ManyToManyField( Broker, blank=True, null=True )
+    secFee = models.FloatField( default=0.00 )
+    rent = models.FloatField( default=0.00 )
+    technology = models.CharField( max_length=30, blank=True, null=True, default="" )
+    
+    
+    def save(self, *args, **kwargs): 
+        super(Firm, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.id)
 
 admin.site.register(Broker)
 admin.site.register(Trader)
 admin.site.register(System)
+admin.site.register(Firm)

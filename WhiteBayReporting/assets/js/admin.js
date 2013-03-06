@@ -130,6 +130,8 @@ function confirm_delete_broker() {
 
 function selectTrader(value) {
 	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
 	
 	// empty system checks
 	$(".system_list").html("");
@@ -312,3 +314,116 @@ function removeSystem(pk) {
 	$("#system"+pk).removeAttr('checked');
 }
 
+/*****************************************************************************************
+/* Firm
+*/
+
+function validate_firm(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_number(equity) == false || validate_required(equity) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#equity").after(html);
+			equity.focus();
+			return false;
+		}
+		if (validate_number(DVP) == false || validate_required(DVP) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#DVP").after(html);
+			DVP.focus();
+			return false;
+		}
+		if (validate_number(options) == false || validate_required(options) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#options").after(html);
+			options.focus();
+			return false;
+		}
+		if (validate_number(H2B) == false || validate_required(H2B) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#H2B").after(html);
+			H2B.focus();
+			return false;
+		}
+		if (validate_number(secFee) == false || validate_required(secFee) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#secFee").after(html);
+			secFee.focus();
+			return false;
+		}
+		if (validate_number(rent) == false || validate_required(rent) == false ) {
+			html = "<span class='help-inline message'>You must enter a valid number.</span>";
+			$("#rent").after(html);
+			rent.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+/*****************************************************************************************
+/* Trader
+*/
+
+function selectEmployer(value) {
+	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
+	
+	if(value == "default") {
+		$('#mod_employer').hide();
+		$('#add_employer').hide();
+		return ;
+	} else if(value == "add") {
+		$('#mod_employer').hide();
+		$('#add_employer').show();
+	} else { 
+    	Dajaxice.admins.getEmployer(showEmployer, {'pk': value}, {'error_callback': custom_error}); 		
+    }       
+    
+}
+
+function showEmployer(data) {
+	$('#mod_employer').hide();
+	$('#add_employer').hide();
+	if(data.success == "true") {
+		$('#mod_employer').show();
+		$('#mod_pk').val(data.pk);
+		$('#mod_name').val(data.name);
+	} else {
+		html = "";
+		html += data.message;
+		$('#message').append(html);
+	}
+}
+
+function validate_add_employer(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_name) == false) {
+			html = "<span class='help-inline message'>You must enter a name.</span>";
+			$("#add_name").after(html);
+			add_name.focus();
+			return false;
+		} 
+	}
+	return true
+}
+
+function validate_mod_employer(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(mod_name) == false) {
+			html = "<span class='help-inline message'>You must enter a name.</span>";
+			$("#mod_name").after(html);
+			mod_name.focus();
+			return false;
+		} 
+	}
+	return true
+}
+
+function confirm_delete_employer() {
+	var result = confirm("Delete This Employer?")
+  	return result;
+}
