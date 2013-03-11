@@ -187,7 +187,7 @@ def getMarksByDir(path):
                     new_report.closing = closing
                     new_report.save()
                 except Report.DoesNotExist:
-                    new_report = Report(symbol=symbol, reportDate=report_date, closing=closing)
+                    new_report = Report.objects.create(symbol=symbol, reportDate=report_date, closing=closing)
                 
 
             except Exception, e:
@@ -444,7 +444,7 @@ def clearReports():
         report.EOD = 0
         report.save()
 
-def getReport311(today):
+def getReport311():
 
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
@@ -478,7 +478,6 @@ def getReport311(today):
     
     print "Done"
     time_pool.sort()
-    print time_pool
     
     print "Calculating reports..."
     for today in time_pool:
@@ -513,7 +512,7 @@ def getReport311(today):
         getPNLs(today) # calculate PNLS
         getDailyReport(today) # get daily summary report
     print "Done"
-    #os.remove(filepath) # remove temporary file
+
     return True
     
     
