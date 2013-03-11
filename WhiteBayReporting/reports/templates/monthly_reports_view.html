@@ -19,14 +19,23 @@
 {% if year_error %}
 	<div class="container" id="error_message">{{ error_message }}</div>
 {% else %}
-<!--
+
 <div class="container">
-<div style="float:right">
-	Last Update: {{ report_date|date:'Y-m-d' }}
+	<div style="float:right">
+		<div class="pagination-small">
+ 			<ul>
+ 			{% if prevYear %}
+ 			<li class="active"><a href="#">{{ prevYear }}</a></li>
+ 			{% endif %}
+    		<li class="disabled"><a href="#">{{ year }}</a></li>
+    		{% if nextYear %}
+    		<li class="active"><a href="#">{{ nextYear }}</a></li>
+    		{% endif %}
+  			</ul>
+		</div>
+	</div>
+	<div style="clear:both;"></div> 
 </div>
-<div style="clear:both;"></div> 
-</div>
--->
 
 <!-- reports list  -->
 <div class="hero-unit" style="background-color: #FFFFFF;padding:20px;">
