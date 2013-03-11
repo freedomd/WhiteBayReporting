@@ -46,7 +46,7 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
     else:
         method = "-" + tab
         
-    report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
+    report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).exclude(Q(SOD=0) & Q(buys=0) & Q(sells=0)).order_by(method)[start:end]
     count = report_list.count()
     
     if count != 0:
