@@ -179,8 +179,16 @@ def getMarksByDir(path):
                 
                 #new_report = newReport(symbol, report_date) # create new report for this date
                 #new_report.closing = closing
-                new_report = Report(symbol=symbol, reportDate=report_date, closing=closing)
-                new_report.save()
+                #new_report.save()
+                
+                try:
+                    new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=report_date.year) & 
+                                                    Q(reportDate__month=report_date.month) & Q(reportDate__day=report_date.day))
+                    new_report.closing = closing
+                    new_report.save()
+                except Report.DoesNotExist:
+                    new_report = Report(symbol=symbol, reportDate=report_date, closing=closing)
+                
 
             except Exception, e:
                 print str(e.message)
@@ -201,8 +209,6 @@ def newReport(symbol, today):
             
     except Report.DoesNotExist: # today's new does not exist
         try: # get latest report of this symbol
-#            old_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=yesterday.year) & 
-#                                            Q(reportDate__month=yesterday.month) & Q(reportDate__day=yesterday.day))
             old_report = Report.objects.filter( symbol=symbol ).order_by("-reportDate")[0]
             old_report.pk = None
             old_report.save() # clone a new one
@@ -286,6 +292,7 @@ def getReport(today):
     print "Calculating PNLS and summary reports..."
     
     for today in time_pool:
+        print today
         getPNLs(today) # calculate PNLS
         getDailyReport(today) # get daily summary report
     print "Done"
@@ -298,6 +305,7 @@ def getReport(today):
 def getPNLs(report_date):
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     for report in report_list: 
+        symbol = report.symbol
         mark = report.mark # mark to market value
         closing = report.closing # closing price today
         SOD = report.SOD # start of day
@@ -307,13 +315,20 @@ def getPNLs(report_date):
         sellAve = report.sellAve
         EOD = SOD + buys - sells
         
-#        if buys == 0 and sells == 0 and SOD == 0: # no trades on this report
-#            report.delete()
-#            continue
-        
         if closing == 0: # invalid
             report.delete()
             continue
+        
+        
+        # get mark
+        if mark == 0:
+            rdate = report.reportDate
+            try:
+                last_report = Report.objects.filter(symbol=symbol).exclude(reportDate=rdate).order_by("-reportDate")[0]
+                mark = last_report.closing
+                report.mark = mark
+            except:
+                pass
 
         if SOD > 0:
             total = buys * buyAve + mark * SOD
@@ -410,6 +425,96 @@ def getMonthlyReport(daily_report):
             monthly_report.SMV += dr.SMV
         monthly_report.save()
         
+        
+# some help functions
+def clearReports():
+    reports = Report.objects.all()
+    for report in reports:
+        report.buys = 0 # update 
+        report.sells = 0
+        report.buyAve = 0.0 
+        report.sellAve = 0.0
+        report.SOD = 0
+        report.grossPNL = 0.0
+        report.unrealizedPNL = 0.0
+        report.fees = 0.0
+        report.netPNL = 0.0
+        report.LMV = 0.0
+        report.SMV = 0.0
+        report.EOD = 0
+        report.save()
+
+def getReport311(today):
+
+    print "Getting reports..."
+    filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
+    time_pool = []
+    file = open(filepath, 'rb')
+    header = True
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        if not header:
+            try:
+                date_str = row[10].split("/")
+                today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                if today not in time_pool:
+                    time_pool.append(today)
+                
+                trade = Trade()
+                trade.account = row[0]
+                trade.symbol = row[1]
+                trade.side = row[3]
+                trade.quantity = int(row[4])
+                trade.price = float(row[5])
+                trade.tradeDate = today
+                trade.executionId = row[11]
+                
+                trade.save() # save into database
+                
+            except Exception, e:
+                print str(e.message)
+                continue
+        else:
+            header = False
+    
+    print "Done"
+    time_pool.sort()
+    print time_pool
+    
+    print "Calculating reports..."
+    for today in time_pool:
+        trades = Trade.objects.filter(tradeDate = today)
+        print today
+        for trade in trades:
+            new_report = newReport(trade.symbol, today) # get report
+                
+            # update report
+            if trade.side == "BUY":
+                total = new_report.buys * new_report.buyAve
+                total += trade.quantity * trade.price # new total
+                new_report.buys += trade.quantity # new buys
+                new_report.buyAve = total / new_report.buys # new buy ave
+            
+            elif trade.side == "SEL" or trade.side == "SS":
+                total = new_report.sells * new_report.sellAve
+                total += trade.quantity * trade.price # new total
+                new_report.sells += trade.quantity # new sells
+                new_report.sellAve = total / new_report.sells # new sell ave
+        
+            else:
+                print "Error: Invalid Side."
+                continue
+            new_report.save() # save result
+    
+    
+    print "Calculating PNLS and summary reports..."
+    
+    for today in time_pool:
+        print today
+        getPNLs(today) # calculate PNLS
+        getDailyReport(today) # get daily summary report
+    print "Done"
+    #os.remove(filepath) # remove temporary file
+    return True
     
     
     
