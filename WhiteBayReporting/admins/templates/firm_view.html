@@ -9,75 +9,61 @@
 	});
 </script>
 
-
+<div style="float:left;width:350px;margin:0px;padding:0px;">
 <div id="firm_info">
-	<form method='post' class='form-horizontal' action='/modFirm/'>
+	<form method='post'  action='/modFirm/'>
 		{% csrf_token %}
 		<input name='pk' id='pk' style='display: none;' type='text' value={{ firm.pk }}>
 		
-		<div class="control-group">
-    		<label class="control-label"><strong>Clearance Fees</strong></label>
+		<strong>Clearance Fees</strong>
+		<div class="sub_title">Equity</div>
+		<div class="sub_input">
+		<input name='equity' id='equity' type='text' value={{ firm.equity|floatformat:2 }} placeholder='Equity'>
 		</div>
 		
-		<div class="control-group">
-    		<label class="control-label" for="equity">Equity</label>
-    		<div class="controls">
-				<input name='equity' id='equity' type='text' class='span4' value={{ firm.equity|floatformat:2 }} placeholder='Equity'>
-			</div>
+		<div class="sub_title">DVP</div>
+		<div class="sub_input">
+		<input name='DVP' id='DVP' type='text'value={{ firm.DVP|floatformat:2 }} placeholder='DVP'>
 		</div>
 		
-		<div class="control-group">
-    		<label class="control-label" for="DVP">DVP</label>
-    		<div class="controls">
-				<input name='DVP' id='DVP' type='text' class='span4' value={{ firm.DVP|floatformat:2 }} placeholder='DVP'>
-			</div>
+		<div class="sub_title">Options</div>
+		<div class="sub_input">
+		<input name='options' id='options' type='text' value={{ firm.options|floatformat:2 }} placeholder='Options'>
+		</div>
+
+		<div class="sub_title">H2B</div>
+		<div class="sub_input">
+		<input name='H2B' id='H2B' type='text' value={{ firm.H2B|floatformat:2 }} placeholder='H2B'>
+		</div>
+
+		<div style="margin-top:10px"><strong>Sec Fee</strong></div>
+		<div class="sub_title">
+		<input name='secFee' id='secFee' type='text' value={{ firm.secFee|floatformat:2 }} placeholder='Sec Fee'>
 		</div>
 		
-		<div class="control-group">
-    		<label class="control-label" for="options">Options</label>
-    		<div class="controls">
-				<input name='options' id='options' type='text' class='span4' value={{ firm.options|floatformat:2 }} placeholder='Options'>
-			</div>
+		<div><strong>Rent</strong></div>
+		<div class="sub_title">
+		<input name='rent' id='rent' type='text'  value={{ firm.rent|floatformat:2 }} placeholder='Rent'>
 		</div>
-		
-		<div class="control-group">
-    		<label class="control-label" for="H2B">H2B</label>
-    		<div class="controls">
-				<input name='H2B' id='H2B' type='text' class='span4' value={{ firm.H2B|floatformat:2 }} placeholder='H2B'>
-			</div>
+
+		<div><Strong>Technology</strong></div>
+		<div class="sub_title">
+		<input name='technology' id='technology' type='text'value='{{ firm.technology }}' placeholder='Technology'>
 		</div>
-		
-		<div class="control-group">
-    		<label class="control-label" for="secFee"><strong>Sec Fee</strong></label>
-    		<div class="controls">
-				<input name='secFee' id='secFee' type='text' class='span4' value={{ firm.secFee|floatformat:2 }} placeholder='Sec Fee'>
-			</div>
-		</div>
-		
-		<div class="control-group">
-    		<label class="control-label" for="rent"><strong>Rent</strong></label>
-    		<div class="controls">
-				<input name='rent' id='rent' type='text' class='span4' value={{ firm.rent|floatformat:2 }} placeholder='Rent'>
-			</div>
-		</div>
-		
-		<div class="control-group">
-    		<label class="control-label" for="technology"><strong>Technology</strong></label>
-    		<div class="controls">
-				<input name='technology' id='technology' type='text' class='span4' value='{{ firm.technology }}' placeholder='Technology'>
-			</div>
-		</div>
-		
-		<div class="control-group">
-    		<div class="controls">
-				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_firm(this)'>
-			</div>
+
+		<div class="sub_title">
+		<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_firm(this)'>
 		</div>
 	</form>
-<div>
+</div>
 
+</div>
+
+
+<div style="float:right;width:400px;margin:0px;padding:0px" >
+<strong>Brokers</strong>
 <div id="filter" style="padding-bottom:20px;">
-  	<select class="span3" id="brokers" size = "1" onchange="selectBroker(this.value)">
+  	<select  id="brokers" size = "1" onchange="selectBroker(this.value)">
   		<option value="default">--- Select Broker ---</option>
   		<option value="add">Add a Broker</option>
         {% for broker in broker_list %}
@@ -89,7 +75,7 @@
 
 
 <div id="mod_broker" style="display: none;">
-	<form method='post' class='form-horizontal' action='/modBroker/'>
+	<form method='post' action='/modBroker/'>
 		{% csrf_token %}
 		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
 		
@@ -117,7 +103,7 @@
 </div>
 
 <div id="add_broker" style="display: none;">
-	<form method='post' class='form-horizontal' action='/addBroker/' onsubmit='return validate_add_broker(this)'>
+	<form method='post' action='/addBroker/' onsubmit='return validate_add_broker(this)'>
 		{% csrf_token %}
 		<div class="control-group">
     		<label class="control-label" for="add_name">Broker Name</label>
@@ -140,6 +126,9 @@
 		</div>
 	</form>
 </div>
+</div>
+
+<div style="clear:both;"></div>
 
 
 {% endblock %}
