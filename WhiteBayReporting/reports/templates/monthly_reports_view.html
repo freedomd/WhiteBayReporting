@@ -25,11 +25,13 @@
 		<div class="pagination-small">
  			<ul>
  			{% if prevYear %}
- 			<li class="active"><a href="#">{{ prevYear }}</a></li>
+ 			<li class="active"><a href="{{ prevURL }}">&laquo;</a></li>
+ 			<li class="active"><a href="{{ prevURL }}">{{ prevYear }}</a></li>
  			{% endif %}
     		<li class="disabled"><a href="#">{{ year }}</a></li>
     		{% if nextYear %}
-    		<li class="active"><a href="#">{{ nextYear }}</a></li>
+    		<li class="active"><a href="{{ nextURL }}">{{ nextYear }}</a></li>
+    		<li class="active"><a href="{{ nextURL }}">&raquo;</a></li>
     		{% endif %}
   			</ul>
 		</div>
