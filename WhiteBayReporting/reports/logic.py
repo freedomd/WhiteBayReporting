@@ -177,17 +177,17 @@ def getMarksByDir(path):
                 date_str = row[2].split("/")
                 report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
                 
-                #new_report = newReport(symbol, report_date) # create new report for this date
-                #new_report.closing = closing
-                #new_report.save()
+                new_report = newReport(symbol, report_date) # create new report for this date
+                new_report.closing = closing
+                new_report.save()
                 
-                try:
-                    new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=report_date.year) & 
-                                                    Q(reportDate__month=report_date.month) & Q(reportDate__day=report_date.day))
-                    new_report.closing = closing
-                    new_report.save()
-                except Report.DoesNotExist:
-                    new_report = Report.objects.create(symbol=symbol, reportDate=report_date, closing=closing)
+#                try:
+#                    new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=report_date.year) & 
+#                                                    Q(reportDate__month=report_date.month) & Q(reportDate__day=report_date.day))
+#                    new_report.closing = closing
+#                    new_report.save()
+#                except Report.DoesNotExist:
+#                    new_report = Report.objects.create(symbol=symbol, reportDate=report_date, closing=closing)
                 
 
             except Exception, e:
@@ -318,7 +318,6 @@ def getPNLs(report_date):
         if closing == 0: # invalid
             report.delete()
             continue
-        
         
         # get mark
         if mark == 0:
