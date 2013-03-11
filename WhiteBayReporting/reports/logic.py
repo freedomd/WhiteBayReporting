@@ -177,8 +177,9 @@ def getMarksByDir(path):
                 date_str = row[2].split("/")
                 report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
                 
-                new_report = newReport(symbol, report_date) # create new report for this date
-                new_report.closing = closing
+                #new_report = newReport(symbol, report_date) # create new report for this date
+                #new_report.closing = closing
+                new_report = Report(symbol=symbol, reportDate=report_date, closing=closing)
                 new_report.save()
 
             except Exception, e:
@@ -230,11 +231,17 @@ def getReport(today):
 #        return False
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
+    time_pool = []
     file = open(filepath, 'rb')
     header = True
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         if not header:
             try:
+                date_str = row[10].split("/")
+                today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                if today not in time_pool:
+                    time_pool.append(today)
+                
                 trade = Trade()
                 trade.account = row[0]
                 trade.symbol = row[1]
@@ -277,8 +284,10 @@ def getReport(today):
     
     print "Done"
     print "Calculating PNLS and summary reports..."
-    getPNLs(today) # calculate PNLS
-    getDailyReport(today) # get daily summary report
+    
+    for today in time_pool:
+        getPNLs(today) # calculate PNLS
+        getDailyReport(today) # get daily summary report
     print "Done"
     #os.remove(filepath) # remove temporary file
     return True
