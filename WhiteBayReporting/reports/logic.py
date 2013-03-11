@@ -2,7 +2,7 @@ import os
 from trades.models import Trade
 from reports.models import Report, DailyReport, MonthlyReport
 from datetime import date
-import datetime
+import time
 from django.db.models import Q
 import paramiko
 import csv
@@ -93,6 +93,14 @@ def getMarks(today):
             symbol = row[19].strip()
             if symbol == "" or symbol == None:
                 continue
+                
+            closing = round(float(row[12]), 2)
+            if closing == 0.0: # invalid symbol
+                continue
+                
+            type = row[4].strip()
+            if type == "B" or type == "J":
+                continue
             
             new_report = newReport(symbol, today) # create new report for today
             new_report.closing = round(float(row[12]), 2)
@@ -103,6 +111,80 @@ def getMarks(today):
             continue
     
     #os.remove(filepath) # remove temporary file
+    print "Done"
+    return True
+
+
+
+def getMarksByFile(filepath):
+
+    print "Getting marks..."
+    
+    file = open(filepath, 'rb')
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        try:
+            symbol = row[19].strip()
+            if symbol == "" or symbol == None:
+                continue
+                
+            closing = round(float(row[12]), 2)
+            if closing == 0.0: # invalid symbol
+                continue
+                
+            type = row[4].strip()
+            if type == "B" or type == "J":
+                continue
+            
+            date_str = row[2].split("/")
+            report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+            new_report = newReport(symbol, report_date) # create new report for today
+            new_report.closing = round(float(row[12]), 2)
+            new_report.save()
+
+        except Exception, e:
+            print str(e.message)
+            continue
+    
+    print "Done"
+    return True
+
+
+
+def getMarksByDir(path):
+    
+    print "Getting marks..."    
+    filelist = os.listdir(path)
+    filelist.sort()
+    
+    for filename in filelist:
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        for row in csv.reader(file.read().splitlines(), delimiter=','):
+            try:
+                symbol = row[19].strip()
+                if symbol == "" or symbol == None:
+                    continue
+                
+                closing = round(float(row[12]), 2)
+                if closing == 0.0: # invalid symbol
+                    continue
+                
+                type = row[4].strip()
+                if type == "B" or type == "J":
+                    continue
+                
+                date_str = row[2].split("/")
+                report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                
+                new_report = newReport(symbol, report_date) # create new report for this date
+                new_report.closing = closing
+                new_report.save()
+
+            except Exception, e:
+                print str(e.message)
+                continue
+    
     print "Done"
     return True
 
@@ -147,7 +229,7 @@ def getReport(today):
 #    if filepath == None:
 #        return False
     print "Getting reports..."
-    filepath = './temp/WBPT_LiquidEOD_2013_02_15.csv'
+    filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
     file = open(filepath, 'rb')
     header = True
     for row in csv.reader(file.read().splitlines(), delimiter=','):
