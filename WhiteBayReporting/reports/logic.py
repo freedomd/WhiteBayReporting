@@ -209,7 +209,7 @@ def newReport(symbol, today):
             
     except Report.DoesNotExist: # today's new does not exist
         try: # get latest report of this symbol
-            old_report = Report.objects.filter( symbol=symbol ).order_by("-reportDate")[0]
+            old_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=today) ).order_by("-reportDate")[0]
             old_report.pk = None
             old_report.save() # clone a new one
             new_report = old_report  
@@ -313,21 +313,23 @@ def getPNLs(report_date):
         buyAve = report.buyAve
         sells = report.sells
         sellAve = report.sellAve
-        EOD = SOD + buys - sells
         
         if closing == 0: # invalid
             report.delete()
             continue
         
-        # get mark
-        if mark == 0:
-            rdate = report.reportDate
+        # check mark and SOD
+        if mark == 0 or SOD == 0:
             try:
-                last_report = Report.objects.filter(symbol=symbol).exclude(reportDate=rdate).order_by("-reportDate")[0]
+                last_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=report_date) ).order_by("-reportDate")[0]
+                SOD = last_report.EOD
                 mark = last_report.closing
                 report.mark = mark
+                report.SOD = SOD
             except:
                 pass
+        
+        EOD = SOD + buys - sells
 
         if SOD > 0:
             total = buys * buyAve + mark * SOD
@@ -396,7 +398,7 @@ def getDailyReport(report_date):
 def getMonthlyReport(daily_report):
     year = daily_report.reportDate.year
     month = daily_report.reportDate.month
-    today = date.today()
+    #today = date.today()
     
     try:
         monthly_report = MonthlyReport.objects.get(Q(reportDate__year = year) & Q(reportDate__month = month))
@@ -411,7 +413,7 @@ def getMonthlyReport(daily_report):
         monthly_report.save()
         
     except MonthlyReport.DoesNotExist:
-        monthly_report = MonthlyReport(reportDate = today) # create a new for this month
+        monthly_report = MonthlyReport(reportDate = daily_report.reportDate) # create a new for this month
         dreports = DailyReport.objects.filter(Q(reportDate__year = year) & Q(reportDate__month = month))
         for dr in dreports:
             monthly_report.buys += dr.buys
@@ -427,24 +429,34 @@ def getMonthlyReport(daily_report):
         
 # some help functions
 def clearReports():
-    reports = Report.objects.all()
-    for report in reports:
-        report.buys = 0 # update 
-        report.sells = 0
-        report.buyAve = 0.0 
-        report.sellAve = 0.0
-        report.SOD = 0
-        report.grossPNL = 0.0
-        report.unrealizedPNL = 0.0
-        report.fees = 0.0
-        report.netPNL = 0.0
-        report.LMV = 0.0
-        report.SMV = 0.0
-        report.EOD = 0
-        report.save()
+    time_pool = []
+    dreports = DailyReport.objects.all()
+    for dreport in dreports:
+        time_pool.append(dreport.reportDate)
+    
+    for time in time_pool:
+        reports = Report.objects.filter(reportDate=time)
+        for report in reports:
+            report.buys = 0 # update 
+            report.sells = 0
+            report.buyAve = 0.0 
+            report.sellAve = 0.0
+            report.SOD = 0
+            report.grossPNL = 0.0
+            report.unrealizedPNL = 0.0
+            report.fees = 0.0
+            report.netPNL = 0.0
+            report.LMV = 0.0
+            report.SMV = 0.0
+            report.EOD = 0
+            report.save()
+    
+    dreports.delete()
+    MonthlyReport.objects.all().delete()
 
-def getReport311():
+def getReport311(time_pool):
 
+    '''
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
     time_pool = []
@@ -476,8 +488,9 @@ def getReport311():
             header = False
     
     print "Done"
-    time_pool.sort()
+    '''
     
+    time_pool.sort()
     print "Calculating reports..."
     for today in time_pool:
         trades = Trade.objects.filter(tradeDate = today)
@@ -511,8 +524,6 @@ def getReport311():
         getPNLs(today) # calculate PNLS
         getDailyReport(today) # get daily summary report
     print "Done"
-
-    return True
     
     
     
