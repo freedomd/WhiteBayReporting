@@ -1,6 +1,6 @@
 import os
 from trades.models import Trade
-from reports.models import Report, DailyReport, MonthlyReport
+from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
 import time
 from django.db.models import Q
@@ -56,10 +56,10 @@ def getTradeFile(file_date):
 # save data into database
 
 # this is a test function
-def getTrades(filepath):
+def getTrades(today):
+    filepath = getTradeFile(today)
     header = True
     file = open(filepath, 'rb')
-    today = date.today()
     
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         if not header:
@@ -78,6 +78,7 @@ def getTrades(filepath):
                 continue
         else:
             header = False
+            
 
 def getMarks(today):
     
@@ -102,9 +103,15 @@ def getMarks(today):
             if type == "B" or type == "J":
                 continue
             
-            new_report = newReport(symbol, today) # create new report for today
-            new_report.closing = round(float(row[12]), 2)
-            new_report.save()
+            date_str = row[2].split("/")
+            mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+            
+            try:
+                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDatet=mark_date))
+                new_symbol.closing = closing
+                new_symbol.save()
+            except Symbol.DoesNotExist:
+                new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
 
         except Exception, e:
             print str(e.message)
@@ -115,52 +122,18 @@ def getMarks(today):
     return True
 
 
-
-def getMarksByFile(filepath):
-
-    print "Getting marks..."
-    
-    file = open(filepath, 'rb')
-    for row in csv.reader(file.read().splitlines(), delimiter=','):
-        try:
-            symbol = row[19].strip()
-            if symbol == "" or symbol == None:
-                continue
-                
-            closing = round(float(row[12]), 2)
-            if closing == 0.0: # invalid symbol
-                continue
-                
-            type = row[4].strip()
-            if type == "B" or type == "J":
-                continue
-            
-            date_str = row[2].split("/")
-            report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
-            new_report = newReport(symbol, report_date) # create new report for today
-            new_report.closing = round(float(row[12]), 2)
-            new_report.save()
-
-        except Exception, e:
-            print str(e.message)
-            continue
-    
-    print "Done"
-    return True
-
-
-
 def getMarksByDir(path):
     
-    print "Getting marks..."    
+    print "Getting marks and calculating reports..."    
     filelist = os.listdir(path)
     filelist.sort()
     
-    for filename in filelist:
+    for filename in filelist: # each file represent one day
         filepath = os.path.join(path, filename)
         print filepath
         file = open(filepath, 'rb')
-        for row in csv.reader(file.read().splitlines(), delimiter=','):
+        
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             try:
                 symbol = row[19].strip()
                 if symbol == "" or symbol == None:
@@ -175,37 +148,31 @@ def getMarksByDir(path):
                     continue
                 
                 date_str = row[2].split("/")
-                report_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
                 
-                new_report = newReport(symbol, report_date) # create new report for this date
-                new_report.closing = closing
-                new_report.save()
+                try:
+                    new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
+                    new_symbol.closing = closing
+                    new_symbol.save()
+                except Symbol.DoesNotExist:
+                    new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
                 
-#                try:
-#                    new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=report_date.year) & 
-#                                                    Q(reportDate__month=report_date.month) & Q(reportDate__day=report_date.day))
-#                    new_report.closing = closing
-#                    new_report.save()
-#                except Report.DoesNotExist:
-#                    new_report = Report.objects.create(symbol=symbol, reportDate=report_date, closing=closing)
-                
-
             except Exception, e:
                 print str(e.message)
                 continue
+            
+        getReportByDate(mark_date)
     
     print "Done"
     return True
 
 
 def newReport(symbol, today):
-#    today = date.today()
-#    delta = datetime.timedelta(days=1)
-#    yesterday = today - delta
     
     try:
-        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
-                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
+#        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
+#                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
+        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate=today))
             
     except Report.DoesNotExist: # today's new does not exist
         try: # get latest report of this symbol
@@ -226,6 +193,7 @@ def newReport(symbol, today):
                 
         new_report.reportDate = today
         new_report.save()
+        #new_report = Report.objects.create(symbol=symbol, reportDate=today)
         
     return new_report
     
@@ -237,7 +205,6 @@ def getReport(today):
 #        return False
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
-    time_pool = []
     file = open(filepath, 'rb')
     header = True
     for row in csv.reader(file.read().splitlines(), delimiter=','):
@@ -245,8 +212,6 @@ def getReport(today):
             try:
                 date_str = row[10].split("/")
                 today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
-                if today not in time_pool:
-                    time_pool.append(today)
                 
                 trade = Trade()
                 trade.account = row[0]
@@ -277,9 +242,6 @@ def getReport(today):
                     continue
                 
                 trade.save() # save into database
-                
-#                new_report.buyAve = round(new_report.buyAve, 2)
-#                new_report.sellAve = round(new_report.sellAve, 2)
                 new_report.save() # save result
                 
             except Exception, e:
@@ -291,11 +253,10 @@ def getReport(today):
     print "Done"
     print "Calculating PNLS and summary reports..."
     
-    for today in time_pool:
-        print today
-        getPNLs(today) # calculate PNLS
-        getDailyReport(today) # get daily summary report
-    print "Done"
+    getPNLs(today) # calculate PNLS
+    getDailyReport(today) # get daily summary report
+    # now delete marks lt today, we do not need them anymore
+    Symbol.objects.filter( symbolDate__lt=today ).delete() 
     #os.remove(filepath) # remove temporary file
     return True
 
@@ -314,21 +275,32 @@ def getPNLs(report_date):
         sells = report.sells
         sellAve = report.sellAve
         
-        if closing == 0: # invalid
-            report.delete()
-            continue
+        # check closing 
+        try:
+            symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
+            closing = symbol_mark.closing
+            report.closing = closing
+        except: # ignore this right now, TODO: log this error
+            pass 
         
-        # check mark and SOD
-        if mark == 0 or SOD == 0:
+        if mark == 0: # check mark
+            try:
+                symbol_mark = Symbol.objects.filter( Q(symbol=symbol) & Q(symbolDate__lt=report_date) ).order_by("-reportDate")[0]
+                mark = symbol_mark.closing
+                report.mark = mark
+            except: # ignore this right now, TODO: log this error
+                pass 
+        
+        # check SOD
+        if SOD == 0:
             try:
                 last_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=report_date) ).order_by("-reportDate")[0]
                 SOD = last_report.EOD
-                mark = last_report.closing
-                report.mark = mark
                 report.SOD = SOD
             except:
                 pass
         
+        # calculate EOD
         EOD = SOD + buys - sells
 
         if SOD > 0:
@@ -339,9 +311,6 @@ def getPNLs(report_date):
             total = sells * sellAve + mark * (-SOD)
             sells -= SOD
             sellAve = total / sells
-            
-#        buyAve = round(buyAve, 2)
-#        sellAve = round(sellAve, 2)
             
         if buys >= sells:
             common = sells
@@ -377,6 +346,10 @@ def getPNLs(report_date):
 def getDailyReport(report_date):
     daily_report = DailyReport()
     report_list = Report.objects.filter( Q(reportDate = report_date) )
+    
+    if report_list.count() == 0:
+        return 
+    
     for report in report_list:
         daily_report.SOD += report.SOD
         daily_report.buys += report.buys
@@ -408,8 +381,6 @@ def getMonthlyReport(daily_report):
         monthly_report.unrealizedPNL += daily_report.unrealizedPNL
         monthly_report.fees += daily_report.fees
         monthly_report.netPNL += daily_report.netPNL
-        monthly_report.LMV += daily_report.LMV
-        monthly_report.SMV += daily_report.SMV
         monthly_report.save()
         
     except MonthlyReport.DoesNotExist:
@@ -422,11 +393,45 @@ def getMonthlyReport(daily_report):
             monthly_report.unrealizedPNL += dr.unrealizedPNL
             monthly_report.fees += dr.fees
             monthly_report.netPNL += dr.netPNL
-            monthly_report.LMV += dr.LMV
-            monthly_report.SMV += dr.SMV
         monthly_report.save()
         
         
+def getReportByDate(today):
+    
+    trades = Trade.objects.filter( tradeDate = today )
+    
+    if trades.count() == 0: # no trades on this day
+        return 
+    
+    for trade in trades:
+        new_report = newReport(trade.symbol, today) # get report
+                
+        # update report
+        if trade.side == "BUY":
+            total = new_report.buys * new_report.buyAve
+            total += trade.quantity * trade.price # new total
+            new_report.buys += trade.quantity # new buys
+            new_report.buyAve = total / new_report.buys # new buy ave
+            
+        elif trade.side == "SEL" or trade.side == "SS":
+            total = new_report.sells * new_report.sellAve
+            total += trade.quantity * trade.price # new total
+            new_report.sells += trade.quantity # new sells
+            new_report.sellAve = total / new_report.sells # new sell ave
+        
+        else:
+            print "Error: Invalid Side."
+            continue
+        
+        new_report.save() # save result
+    
+    getPNLs(today) # calculate PNLS
+    getDailyReport(today) # get daily summary report
+    # now delete marks lt today, we do not need them anymore
+    Symbol.objects.filter( symbolDate__lt=today ).delete() 
+    
+
+
 # some help functions
 def clearReports():
     time_pool = []
@@ -453,79 +458,6 @@ def clearReports():
     
     dreports.delete()
     MonthlyReport.objects.all().delete()
-
-def getReport311(time_pool):
-
-    '''
-    print "Getting reports..."
-    filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
-    time_pool = []
-    file = open(filepath, 'rb')
-    header = True
-    for row in csv.reader(file.read().splitlines(), delimiter=','):
-        if not header:
-            try:
-                date_str = row[10].split("/")
-                today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
-                if today not in time_pool:
-                    time_pool.append(today)
-                
-                trade = Trade()
-                trade.account = row[0]
-                trade.symbol = row[1]
-                trade.side = row[3]
-                trade.quantity = int(row[4])
-                trade.price = float(row[5])
-                trade.tradeDate = today
-                trade.executionId = row[11]
-                
-                trade.save() # save into database
-                
-            except Exception, e:
-                print str(e.message)
-                continue
-        else:
-            header = False
-    
-    print "Done"
-    '''
-    
-    time_pool.sort()
-    print "Calculating reports..."
-    for today in time_pool:
-        trades = Trade.objects.filter(tradeDate = today)
-        print today
-        for trade in trades:
-            new_report = newReport(trade.symbol, today) # get report
-                
-            # update report
-            if trade.side == "BUY":
-                total = new_report.buys * new_report.buyAve
-                total += trade.quantity * trade.price # new total
-                new_report.buys += trade.quantity # new buys
-                new_report.buyAve = total / new_report.buys # new buy ave
-            
-            elif trade.side == "SEL" or trade.side == "SS":
-                total = new_report.sells * new_report.sellAve
-                total += trade.quantity * trade.price # new total
-                new_report.sells += trade.quantity # new sells
-                new_report.sellAve = total / new_report.sells # new sell ave
-        
-            else:
-                print "Error: Invalid Side."
-                continue
-            new_report.save() # save result
-    
-    
-    print "Calculating PNLS and summary reports..."
-    
-    for today in time_pool:
-        print today
-        getPNLs(today) # calculate PNLS
-        getDailyReport(today) # get daily summary report
-    print "Done"
-    
-    
     
     
             

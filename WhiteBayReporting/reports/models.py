@@ -3,6 +3,19 @@ from django.contrib import admin
 from settings import SESSION_REDIS_HOST, SESSION_REDIS_PORT
 import redis
 
+# symbol 
+class Symbol(models.Model):
+    
+    symbol = models.CharField( max_length=10 )
+    closing = models.FloatField( default=0.00 ) # closing price of day
+    symbolDate = models.DateField( auto_now_add=False )
+    
+    def save(self, *args, **kwargs): 
+        super(Symbol, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.symbol) + " " + str(self.symbolDate)
+
 # report for each symbol everyday
 class Report(models.Model):
     
@@ -21,7 +34,7 @@ class Report(models.Model):
     mark = models.FloatField( default=0.00 ) # mark price of yesterday
     closing = models.FloatField( default=0.00 ) # closing price of today
     EOD = models.IntegerField( default=0 )
-    reportDate = models.DateTimeField( auto_now_add=False )
+    reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 
         super(Report, self).save(*args, **kwargs)
@@ -59,8 +72,6 @@ class MonthlyReport(models.Model):
     unrealizedPNL = models.FloatField( default=0.00 )
     fees = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
-    LMV = models.FloatField( default=0.00 )
-    SMV = models.FloatField( default=0.00 )
     reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 
@@ -68,7 +79,8 @@ class MonthlyReport(models.Model):
     
     def __unicode__(self):
         return str(self.id)
-    
+
+admin.site.register(Symbol)    
 admin.site.register(Report)
 admin.site.register(DailyReport)
 admin.site.register(MonthlyReport)
