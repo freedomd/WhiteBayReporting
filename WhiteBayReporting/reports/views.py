@@ -19,39 +19,48 @@ def reportView(request):
 def monthlyReportView(request, year, month):
     
     # get latest reports
+    today = date.today()
     if year == None or month == None:
-        today = date.today()
         year = today.year
         month = today.month
     
+    year = int(year)
+    month = int(month)
+    
+    if year < today.year: # reports for next year
+        nextYear = year + 1
+        nextURL = "/monthlyReport/%s/1/"%(str(nextYear))
+        
+    tmp = MonthlyReport.objects.filter(Q(reportDate__year=year-1))
+    if tmp.count() > 0: # reports for previous year
+        prevYear = year - 1
+        prevURL = "/monthlyReport/%s/12/"%(str(prevYear))
+    
     try:
         monthly_report_list = MonthlyReport.objects.filter(Q(reportDate__year=year))
+        if monthly_report_list.count() == 0:
+            year_error = True
+            error_message = "No reports for year %s." % str(year)
+            return render(request,"monthly_reports_view.html", locals())
+        
         report_list = DailyReport.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month)).order_by('reportDate')
         if report_list.count() != 0:
             report_date = report_list[0].reportDate
         else:
             month_error = True
-            error_message = "No reports for this month yet."
+            error_message = "No reports for %s-%s." % (str(year), str(month))
             return render(request,"monthly_reports_view.html", locals())
         try:
             total = MonthlyReport.objects.get(Q(reportDate__year=year) & Q(reportDate__month=month))
         except: # no this month's new report
             month_error = True
-            error_message = "No reports for this month yet."
+            error_message = "No reports for %s-%s." % (str(year), str(month))
             return render(request,"monthly_reports_view.html", locals())
-        
-        tmp = MonthlyReport.objects.filter(Q(reportDate__year=year+1))
-        if tmp.count() > 0: # reports for next year
-            nextYear = year + 1
-            nextURL = "/monthlyReport/%s/1/"%(str(nextYear))
-        tmp = MonthlyReport.objects.filter(Q(reportDate__year=year-1))
-        if tmp.count() > 0: # reports for next year
-            prevYear = year - 1
-            prevURL = "/monthlyReport/%s/12/"%(str(prevYear))
             
     except Exception, e:
         year_error = True
-        error_message = "No reports for this year yet."
+        print
+        error_message = str(e.message)
         return render(request,"monthly_reports_view.html", locals())
     
     return render(request,"monthly_reports_view.html", locals())
