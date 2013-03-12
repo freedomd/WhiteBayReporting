@@ -16,28 +16,28 @@
 
 <body>
 
-{% if year_error %}
-	<div class="container" id="error_message">{{ error_message }}</div>
-{% else %}
-
 <div class="container">
-	<div style="float:right">
-		<div class="pagination-small">
+	<div style="float:right;">
+		<div class="pagination pagination-small" style="padding:0px;margin:0px;">
  			<ul>
  			{% if prevYear %}
- 			<li class="active"><a href="{{ prevURL }}">&laquo;</a></li>
- 			<li class="active"><a href="{{ prevURL }}">{{ prevYear }}</a></li>
+ 			<li><a href="{{ prevURL }}">&laquo;</a></li>
+ 			<li><a href="{{ prevURL }}">{{ prevYear }}</a></li>
  			{% endif %}
-    		<li class="disabled"><a href="#">{{ year }}</a></li>
+    		<li class="active"><a>{{ year }}</a></li>
     		{% if nextYear %}
-    		<li class="active"><a href="{{ nextURL }}">{{ nextYear }}</a></li>
-    		<li class="active"><a href="{{ nextURL }}">&raquo;</a></li>
+    		<li><a href="{{ nextURL }}">{{ nextYear }}</a></li>
+    		<li><a href="{{ nextURL }}">&raquo;</a></li>
     		{% endif %}
   			</ul>
 		</div>
 	</div>
-	<div style="clear:both;"></div> 
+	<div style="clear:both;"></div>
 </div>
+
+{% if year_error %}
+	<div class="container" id="error_message">{{ error_message }}</div>
+{% else %}
 
 <!-- reports list  -->
 <div class="hero-unit" style="background-color: #FFFFFF;padding:20px;">
