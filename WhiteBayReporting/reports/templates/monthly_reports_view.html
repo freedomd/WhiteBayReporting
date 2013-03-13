@@ -89,7 +89,6 @@
 	<table class="table table-striped table-bordered data_table">
 		<tr>
 		<th>Date</th>
-		<th>SOD</th>
 		<th>Buys</th>
 		<th>Sells</th>
 		<th>Gross PNL</th>
@@ -98,12 +97,10 @@
 		<th>Net PNL</th>
 		<th>LMV</th>
 		<th>SMV</th>
-		<th>EOD</th>
 		</tr>
 	{% for report in report_list %}
 		<tr>
 		<td><a href="/dailyReport/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/">{{ report.reportDate|date:'m-d' }}</a></td>
-		<td>{{ report.SOD|intcomma }}</td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>
 		
@@ -127,14 +124,12 @@
 		<td><span class="positive_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
-		<td>{{ report.LMV|floatformat:2|intcomma }}</td>
-		<td>{{ report.SMV|floatformat:2|intcomma }}</td>
-		<td>{{ report.EOD|intcomma }}</td>
+		<td>{{ report.LMV|floatformat:0|intcomma }}</td>
+		<td>{{ report.SMV|floatformat:0|intcomma }}</td>
 		</tr>
 	{% endfor %}
 		<tr>
 		<th>Total</th>
-		<th>-</th>
 		<th>{{ total.buys|intcomma }}</th>
 		<th>{{ total.sells|intcomma }}</th>
 		
@@ -158,7 +153,6 @@
 		<th><span class="positive_data">{{ total.netPNL|floatformat:2|intcomma }}</span></th>
 		{% endif %}
 		
-		<th>-</th>
 		<th>-</th>
 		<th>-</th>
 		</tr>

@@ -103,8 +103,8 @@ function createReportList(data) {
 				html += "<td><span class='negative_data'>" + addCommas(report.netPNL.toFixed(2)) + "</span></td>";
 			}
 
-			html += "<td>" + addCommas(report.LMV.toFixed(2)) + "</td>";
-			html += "<td>" + addCommas(report.SMV.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(report.LMV.toFixed(0)) + "</td>";
+			html += "<td>" + addCommas(report.SMV.toFixed(0)) + "</td>";
 			html += "<td>" + addCommas(report.EOD) + "</td>";
 			html += "<td>" + addCommas(report.closing.toFixed(2)) + "</td>";
 			html += "</tr>"
