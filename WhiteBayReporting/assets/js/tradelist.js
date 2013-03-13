@@ -53,7 +53,13 @@ function createTradeList(data) {
 			html += "<tr>";
 			html += "<td>" + trade.account + "</td>";
 			html += "<td>" + trade.symbol + "</td>";
-			html += "<td>" + trade.side + "</td>";
+			if(trade.side == "SEL") {
+				html += "<td>S</td>";
+			} else if (trade.side == "BUY") {
+				html += "<td>B</td>";
+			} else {
+				html += "<td>" + trade.side + "</td>";
+			}
 			html += "<td>" + addCommas(trade.quantity) + "</td>";
 			html += "<td>" + addCommas(trade.price.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(trade.fees.toFixed(2)) + "</td>";
