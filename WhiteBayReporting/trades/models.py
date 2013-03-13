@@ -14,6 +14,7 @@ class Trade(models.Model):
     tradeDate = models.DateTimeField( auto_now_add=False )
     exchange = models.CharField( max_length=20, blank=True, null=True, default="")
     executionId = models.CharField( max_length=50, default="0" )
+    fees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(Trade, self).save(*args, **kwargs)
