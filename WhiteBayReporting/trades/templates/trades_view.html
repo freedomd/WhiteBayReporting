@@ -49,7 +49,13 @@
 		<tr>
         <td>{{ trade.account }}</td>
 		<td>{{ trade.symbol }}</td>
+		{% if trade.side == "SEL" %}
+		<td>S</td>
+		{% elif trade.side == "BUY" %}
+		<td>B</td>
+		{% else %}
 		<td>{{ trade.side }}</td>
+		{% endif %}
 		<td>{{ trade.quantity }}</td>
 		<td>{{ trade.price }}</td>
 		<td>{{ trade.fees }}</td>
