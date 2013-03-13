@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block content %}
 
@@ -56,9 +57,9 @@
 		{% else %}
 		<td>{{ trade.side }}</td>
 		{% endif %}
-		<td>{{ trade.quantity }}</td>
-		<td>{{ trade.price }}</td>
-		<td>{{ trade.fees }}</td>
+		<td>{{ trade.quantity|intcomma }}</td>
+		<td>{{ trade.price|floatformat:2|intcomma }}</td>
+		<td>{{ trade.fees|floatformat:2|intcomma }}</td>
 		<!-- <td>{{ trade.broker }}</td> -->
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
 		<!-- <td>{{ trade.exchange }}</td> -->
