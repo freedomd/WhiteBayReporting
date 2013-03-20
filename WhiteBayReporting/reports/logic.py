@@ -200,30 +200,51 @@ def getSupplement(filepath, mark_date):
     return True
 
 
-def newReport(symbol, today):
+def refreshReports(today):
     
-    try:
-#        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate__year=today.year) & 
-#                                        Q(reportDate__month=today.month) & Q(reportDate__day=today.day))
-        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate=today))
-            
-    except Report.DoesNotExist: # today's new does not exist
-        try: # get latest report of this symbol
-            old_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=today) ).order_by("-reportDate")[0]
+    try: # get latest report date
+        last_date =  Report.objects.filter( Q(reportDate__lt=today) ).order_by("-reportDate")[0].reportDate
+        old_reports = Report.objects.filter( Q(reportDate=last_date) )
+        for old_report in old_reports:
             old_report.pk = None
             old_report.save() # clone a new one
             new_report = old_report  
-            new_report.buys = 0 # update 
+            new_report.buys = 0 
             new_report.sells = 0
             new_report.buyAve = 0.0 
             new_report.sellAve = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
+            new_report.reportDate = today
+            new_report.save()
                 
-        except: # old report does not exist
-            new_report = Report()
-            new_report.symbol = symbol
-                
+    except Exception, e: # old report does not exist
+        print str(e.message)
+
+
+def newReport(symbol, today):
+    
+    try:
+        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate=today))
+            
+    except Report.DoesNotExist: # today's new does not exist
+#        try: # get latest report of this symbol
+#            old_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=today) ).order_by("-reportDate")[0]
+#            old_report.pk = None
+#            old_report.save() # clone a new one
+#            new_report = old_report  
+#            new_report.buys = 0 # update 
+#            new_report.sells = 0
+#            new_report.buyAve = 0.0 
+#            new_report.sellAve = 0.0
+#            new_report.SOD = new_report.EOD 
+#            new_report.mark = new_report.closing
+#                
+#        except: # old report does not exist
+#            new_report = Report()
+#            new_report.symbol = symbol    
+        new_report = Report()
+        new_report.symbol = symbol      
         new_report.reportDate = today
         new_report.save()
         #new_report = Report.objects.create(symbol=symbol, reportDate=today)
@@ -239,6 +260,9 @@ def getReport(today):
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
     file = open(filepath, 'rb')
+    
+    refreshReports(today) # create 
+    
     header = True
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         if not header:
@@ -332,6 +356,10 @@ def getPNLs(report_date):
                 report.SOD = SOD
             except:
                 pass
+        
+        # discard useless report
+        if SOD == 0 and buys == 0 and sells == 0:
+            report.delete()
         
         # calculate EOD
         EOD = SOD + buys - sells
@@ -430,6 +458,8 @@ def getMonthlyReport(daily_report):
         
         
 def getReportByDate(today):
+    
+    refreshReports(today) # create new reports for those symbols have reports last trade date
     
     trades = Trade.objects.filter( tradeDate = today )
     
