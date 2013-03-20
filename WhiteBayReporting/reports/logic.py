@@ -166,6 +166,39 @@ def getMarksByDir(path):
     print "Done"
     return True
 
+def getSupplement(filepath, mark_date):
+    
+    print "Getting marks and calculating reports..."    
+    
+    print filepath + " " + str(mark_date)
+    file = open(filepath, 'rb')
+        
+    for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+        try:
+            symbol = row[5].strip()
+            if symbol == "" or symbol == None:
+                continue
+                
+            closing = round(float(row[13]), 2)
+            if closing == 0.0: # invalid symbol
+                continue
+
+            try:
+                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
+                new_symbol.closing = closing
+                new_symbol.save()
+            except Symbol.DoesNotExist:
+                new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
+                
+        except Exception, e:
+            print str(e.message)
+            continue
+            
+    getReportByDate(mark_date)
+    
+    print "Done"
+    return True
+
 
 def newReport(symbol, today):
     
