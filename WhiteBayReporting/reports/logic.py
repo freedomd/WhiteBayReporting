@@ -461,10 +461,7 @@ def getReportByDate(today):
     
     refreshReports(today) # create new reports for those symbols have reports last trade date
     
-    trades = Trade.objects.filter( tradeDate = today )
-    
-    if trades.count() == 0: # no trades on this day
-        return 
+    trades = Trade.objects.filter( tradeDate = today ) 
     
     for trade in trades:
         new_report = newReport(trade.symbol, today) # get report
