@@ -45,7 +45,8 @@ function createTradeList(data) {
 	} else {
 		var html = "";
 		html += "<table class='table table-striped table-bordered data_table'>";
-		html += "<tr><th>Account</th><th>Symbol</th><th>Side</th><th>Quantity</th><th>Price</th><th>Fees</th><th>Date</th><th>Execution ID</th></tr>";
+		html += "<tr><th>Account</th><th>Symbol</th><th>Security Type</th><th>Side</th><th>Quantity</th>";
+		html += "<th>Price</th><th>Route</th><th>Destination</th><th>Liq Flag</th><th>Commission</th><th>Clearance</th><th>SEC Fees</th><th>Date</th><th>Execution ID</th></tr>";
 		
 		
 		for(i = 0; i < number; i++) { // create a new list of trades
@@ -53,6 +54,7 @@ function createTradeList(data) {
 			html += "<tr>";
 			html += "<td>" + trade.account + "</td>";
 			html += "<td>" + trade.symbol + "</td>";
+			html += "<td>" + trade.securityType + "</td>";
 			if(trade.side == "SEL") {
 				html += "<td>S</td>";
 			} else if (trade.side == "BUY") {
@@ -62,7 +64,12 @@ function createTradeList(data) {
 			}
 			html += "<td>" + addCommas(trade.quantity) + "</td>";
 			html += "<td>" + addCommas(trade.price.toFixed(2)) + "</td>";
-			html += "<td>" + addCommas(trade.fees.toFixed(2)) + "</td>";
+			html += "<td>" + trade.route + "</td>";
+			html += "<td>" + trade.destination + "</td>";
+			html += "<td>" + trade.liqFlag + "</td>";
+			html += "<td>" + addCommas(trade.commission.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(trade.clearanceFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(trade.secFees.toFixed(2)) + "</td>";
 			html += "<td>" + trade.tradeDate.substring(0, 10) + "</td>";
 			html += "<td>" + trade.executionId + "</td>";
 			html += "</tr>"

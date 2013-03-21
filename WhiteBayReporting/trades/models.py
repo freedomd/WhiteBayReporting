@@ -7,14 +7,19 @@ class Trade(models.Model):
 
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=10 )
+    securityType = models.CharField( max_length=10, blank=True, null=True, default="")
     side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
     broker = models.CharField( max_length=20, blank=True, null=True, default="")
+    route = models.CharField( max_length=10, blank=True, null=True, default="")
+    destination = models.CharField( max_length=10, blank=True, null=True, default="")
+    liqFlag = models.CharField( max_length=5, blank=True, null=True, default="")
     tradeDate = models.DateTimeField( auto_now_add=False )
-    exchange = models.CharField( max_length=20, blank=True, null=True, default="")
     executionId = models.CharField( max_length=50, default="0" )
-    fees = models.FloatField( default=0.00 )
+    clearanceFees = models.FloatField( default=0.00 )
+    commission = models.FloatField( default=0.00 )
+    secFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(Trade, self).save(*args, **kwargs)

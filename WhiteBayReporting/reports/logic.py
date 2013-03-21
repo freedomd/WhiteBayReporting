@@ -56,20 +56,26 @@ def getTradeFile(file_date):
 # save data into database
 
 # this is a test function
-def getTrades(today):
-    filepath = getTradeFile(today)
+def getTrades(filepath):
     header = True
     file = open(filepath, 'rb')
     
     for row in csv.reader(file.read().splitlines(), delimiter=','):
         if not header:
             try:
+                date_str = row[10].split("/")
+                today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                
                 trade = Trade()
                 trade.account = row[0]
                 trade.symbol = row[1]
+                trade.securityType = row[2]
                 trade.side = row[3]
                 trade.quantity = row[4]
                 trade.price = row[5]
+                trade.route = row[6]
+                trade.destination = row[7]
+                trade.liqFlag = row[9]
                 trade.tradeDate = today
                 trade.executionId = row[11]
                 trade.save() # save into database
@@ -227,22 +233,7 @@ def newReport(symbol, today):
     try:
         new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate=today))
             
-    except Report.DoesNotExist: # today's new does not exist
-#        try: # get latest report of this symbol
-#            old_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=today) ).order_by("-reportDate")[0]
-#            old_report.pk = None
-#            old_report.save() # clone a new one
-#            new_report = old_report  
-#            new_report.buys = 0 # update 
-#            new_report.sells = 0
-#            new_report.buyAve = 0.0 
-#            new_report.sellAve = 0.0
-#            new_report.SOD = new_report.EOD 
-#            new_report.mark = new_report.closing
-#                
-#        except: # old report does not exist
-#            new_report = Report()
-#            new_report.symbol = symbol    
+    except Report.DoesNotExist: # today's new does not exist  
         new_report = Report()
         new_report.symbol = symbol      
         new_report.reportDate = today
@@ -273,9 +264,13 @@ def getReport(today):
                 trade = Trade()
                 trade.account = row[0]
                 trade.symbol = row[1]
+                trade.securityType = row[2]
                 trade.side = row[3]
-                trade.quantity = int(row[4])
-                trade.price = float(row[5])
+                trade.quantity = row[4]
+                trade.price = row[5]
+                trade.route = row[6]
+                trade.destination = row[7]
+                trade.liqFlag = row[9]
                 trade.tradeDate = today
                 trade.executionId = row[11]
                 
