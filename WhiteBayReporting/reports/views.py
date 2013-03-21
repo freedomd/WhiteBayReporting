@@ -37,7 +37,7 @@ def monthlyReportView(request, year, month):
         prevURL = "/monthlyReport/%s/12/"%(str(prevYear))
     
     try:
-        monthly_report_list = MonthlyReport.objects.filter(Q(reportDate__year=year))
+        monthly_report_list = MonthlyReport.objects.filter(Q(reportDate__year=year)).order_by('reportDate')
         if monthly_report_list.count() == 0:
             year_error = True
             error_message = "No reports for year %s." % str(year)
