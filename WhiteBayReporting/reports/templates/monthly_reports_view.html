@@ -48,10 +48,10 @@
 		<th>Month</th>
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
-		<th>Fees</th>
+		<th>Commission</th>
+		<th>SEC Fees</th>
+		<th>Clearance Fees</th>
 		<th>Net PNL</th>
-		<!-- <th>LMV</th>
-		<th>SMV</th> -->
 		</tr>
 	{% for report in monthly_report_list %}
 		<tr>
@@ -69,7 +69,9 @@
 		<td><span class="positive_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
-		<td>{{ report.fees|floatformat:2|intcomma }}</td>
+		<td>{{ report.commission|floatformat:2|intcomma }}</td>
+		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
+		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		
 		{% if report.netPNL < 0 %}
 		<td><span class="negative_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
@@ -93,7 +95,9 @@
 		<th>Sells</th>
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
-		<th>Fees</th>
+		<th>Commission</th>
+		<th>SEC Fees</th>
+		<th>Clearance Fees</th>
 		<th>Net PNL</th>
 		<th>LMV</th>
 		<th>SMV</th>
@@ -116,7 +120,9 @@
 		<td><span class="positive_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
-		<td>{{ report.fees|floatformat:2|intcomma }}</td>
+		<td>{{ report.commission|floatformat:2|intcomma }}</td>
+		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
+		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		
 		{% if report.netPNL < 0 %}
 		<td><span class="negative_data">{{ report.netPNL|floatformat:2|intcomma }}</span></td>
@@ -145,7 +151,9 @@
 		<th><span class="positive_data">{{ total.unrealizedPNL|floatformat:2|intcomma }}</span></th>
 		{% endif %}
 		
-		<th>{{ total.fees|floatformat:2|intcomma }}</th>
+		<td>{{ total.commission|floatformat:2|intcomma }}</td>
+		<td>{{ total.secFees|floatformat:2|intcomma }}</td>
+		<td>{{ total.clearanceFees|floatformat:2|intcomma }}</td>
 		
 		{% if total.netPNL < 0 %}
 		<th><span class="negative_data">{{ total.netPNL|floatformat:2|intcomma }}</span></th>

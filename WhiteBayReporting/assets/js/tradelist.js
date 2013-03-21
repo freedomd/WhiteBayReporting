@@ -46,7 +46,7 @@ function createTradeList(data) {
 		var html = "";
 		html += "<table class='table table-striped table-bordered data_table'>";
 		html += "<tr><th>Account</th><th>Symbol</th><th>Security Type</th><th>Side</th><th>Quantity</th>";
-		html += "<th>Price</th><th>Route</th><th>Destination</th><th>Liq Flag</th><th>Commission</th><th>Clearance</th><th>SEC Fees</th><th>Date</th><th>Execution ID</th></tr>";
+		html += "<th>Price</th><th>Route</th><th>Destination</th><th>Liq Flag</th><th>Commission</th><th>SEC Fees</th><th>Date</th><th>Execution ID</th></tr>";
 		
 		
 		for(i = 0; i < number; i++) { // create a new list of trades
@@ -68,7 +68,7 @@ function createTradeList(data) {
 			html += "<td>" + trade.destination + "</td>";
 			html += "<td>" + trade.liqFlag + "</td>";
 			html += "<td>" + addCommas(trade.commission.toFixed(2)) + "</td>";
-			html += "<td>" + addCommas(trade.clearanceFees.toFixed(2)) + "</td>";
+			//html += "<td>" + addCommas(trade.clearanceFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(trade.secFees.toFixed(2)) + "</td>";
 			html += "<td>" + trade.tradeDate.substring(0, 10) + "</td>";
 			html += "<td>" + trade.executionId + "</td>";

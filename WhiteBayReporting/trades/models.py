@@ -27,4 +27,24 @@ class Trade(models.Model):
     def __unicode__(self):
         return str(self.id)
     
+
+
+class RollTrade(models.Model):
+
+    SIDE_CHOICES = (('SEL', 'SEL'), ('BUY', 'BUY'), ('SS', 'SS'))
+    
+    symbol = models.CharField( max_length=10 )
+    side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
+    quantity = models.IntegerField( default=0 )
+    price = models.FloatField( default=0.00 )
+    tradeDate = models.DateTimeField( auto_now_add=False )
+    clearanceFees = models.FloatField( default=0.00 )
+    
+    def save(self, *args, **kwargs): 
+        super(RollTrade, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.id)
+
 admin.site.register(Trade)
+admin.site.register(RollTrade)
