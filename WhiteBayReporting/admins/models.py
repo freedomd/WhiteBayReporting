@@ -64,6 +64,8 @@ class Firm(models.Model):
     DVP = models.FloatField( default=0.00 )
     options = models.FloatField( default=0.00 )
     H2B = models.FloatField( default=0.00 )
+    clearanceMax = models.FloatField( default=3.00 )
+    clearanceMin = models.FloatField( default=0.01 )
     brokers = models.ManyToManyField( Broker, blank=True, null=True )
     secFee = models.FloatField( default=0.00 )
     rent = models.FloatField( default=0.00 )

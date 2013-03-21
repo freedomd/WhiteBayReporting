@@ -37,19 +37,24 @@
 		<tr>
 		<th>Account</th>
 		<th>Symbol</th>
+		<th>Security Type</th>
 		<th>Side</th>
 		<th>Quantity</th>
 		<th>Price</th>
-		<th>Fees</th>
-		<!-- <th>Broker</th> -->
+		<th>Route</th>
+		<th>Destination</th>
+		<th>Liq Flag</th>
+		<th>Commission</th>
+		<th>Clearance</th>
+		<th>SEC Fees</th>
 		<th>Date</th>
-		<!-- <th>Exchange</th> -->
 		<th>Execution ID</th>
 		</tr>
 	{% for trade in trade_list %}
 		<tr>
         <td>{{ trade.account }}</td>
 		<td>{{ trade.symbol }}</td>
+		<td>{{ trade.securityType }}</td>
 		{% if trade.side == "SEL" %}
 		<td>S</td>
 		{% elif trade.side == "BUY" %}
@@ -59,10 +64,13 @@
 		{% endif %}
 		<td>{{ trade.quantity|intcomma }}</td>
 		<td>{{ trade.price|floatformat:2|intcomma }}</td>
-		<td>{{ trade.fees|floatformat:2|intcomma }}</td>
-		<!-- <td>{{ trade.broker }}</td> -->
+		<td>{{ trade.route }}</td>
+		<td>{{ trade.destination }}</td>
+		<td>{{ trade.liqFlag }}</td>
+		<td>{{ trade.commission|floatformat:2|intcomma }}</td>
+		<td>{{ trade.clearanceFees|floatformat:2|intcomma }}</td>
+		<td>{{ trade.secFees|floatformat:2|intcomma }}</td>
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
-		<!-- <td>{{ trade.exchange }}</td> -->
 		<td>{{ trade.executionId }}</td>
 		</tr>
 	{% endfor %}
