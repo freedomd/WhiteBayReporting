@@ -1,5 +1,6 @@
 import os
-from trades.models import Trade
+from admins.models import Firm
+from trades.models import Trade, RollTrade
 from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
 import time
@@ -384,7 +385,7 @@ def getPNLs(report_date):
         report.unrealizedPNL = unrealizedPNL
 
         # net PNL
-        report.netPNL = grossPNL + unrealizedPNL - report.fees
+        report.netPNL = grossPNL + unrealizedPNL - report.secFees - report.clearanceFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -396,7 +397,85 @@ def getPNLs(report_date):
         
         report.EOD = EOD   
         report.save()
-   
+        
+###########################################################
+# calcluate fees for trades
+def getRollTrades(today):
+    trades = Trade.objects.filter(tradeDate=today)
+    for trade in trades:
+        try:
+            rtrade = RollTrade.objects.get( Q(symbol=trade.symbol) & Q(side=trade.side) & Q(price=trade.price) & Q(tradeDate=trade.tradeDate) )
+            rtrade.quantity += trade.quantity
+            rtrade.save()
+        except RollTrade.DoesNotExist:
+            RollTrade.objects.create(symbol=trade.symbol, side=trade.side, price=trade.price, quantity=trade.quantity, tradeDate=trade.tradeDate)
+    
+    return RollTrade.objects.filter(tradeDate=today)
+
+def getFees(today):
+    firm = Firm.objects.all()[0]
+    
+    # SEC fees for each trade
+    secRate = firm.secFee
+    trades = Trade.objects.filter(tradeDate=today)
+    
+    reports = Report.objects.filter(reportDate=today)
+    for report in reports:
+        report.secFees = 0
+        report.clearanceFees = 0
+        report.save()
+    
+    
+    rollTrades = getRollTrades(today)
+    for rtrade in rollTrades:
+        report = Report.objects.get( Q(symbol=rtrade.symbol) & Q(reportDate=today) )
+        clearance = rtrade.quantity * 0.0001
+        '''
+        rclearance = round(clearance, 2)
+        if clearance > rclearance:
+            clearance = clearance + 0.01
+        else:
+            clearance = rclearance
+        '''
+        if clearance > 3.00:
+            report.clearanceFees += 3.00
+        elif clearance < 0.01:
+            report.clearanceFees += 0.01
+        else:
+            report.clearanceFees += clearance
+        report.save()
+    rollTrades.delete()
+    
+        
+    for trade in trades:
+        trade.secFees = 0
+        trade.clearanceFees = 0
+        if trade.side != "BUY":
+            trade.secFees = trade.price * trade.quantity * secRate
+        
+        report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
+        report.secFees += trade.secFees
+        '''
+        clearance = trade.quantity * 0.0001
+        if clearance > 3.00:
+            report.clearanceFees += 3.00
+        elif clearance < 0.01:
+            report.clearanceFees += 0.01
+        else:
+            report.clearanceFees += clearance
+        '''
+        report.save()
+    
+    reports = Report.objects.filter(reportDate=today)
+    dreport = DailyReport.objects.get(reportDate=today)
+    dreport.secFees = 0
+    dreport.clearanceFees = 0
+    for report in reports:
+        dreport.secFees += report.secFees
+        dreport.clearanceFees += report.clearanceFees
+    dreport.save()
+    
+    
   
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
@@ -412,7 +491,9 @@ def getDailyReport(report_date):
         daily_report.sells += report.sells
         daily_report.grossPNL += report.grossPNL
         daily_report.unrealizedPNL += report.unrealizedPNL
-        daily_report.fees += report.fees
+        daily_report.secFees += report.secFees
+        daily_report.clearanceFees += report.clearanceFees
+        daily_report.commission += report.commission
         daily_report.netPNL += report.netPNL
         daily_report.LMV += report.LMV
         daily_report.SMV += report.SMV
@@ -435,7 +516,9 @@ def getMonthlyReport(daily_report):
         monthly_report.sells += daily_report.sells
         monthly_report.grossPNL += daily_report.grossPNL
         monthly_report.unrealizedPNL += daily_report.unrealizedPNL
-        monthly_report.fees += daily_report.fees
+        monthly_report.secFees += daily_report.secFees
+        monthly_report.clearanceFees += daily_report.clearanceFees
+        monthly_report.commission += daily_report.commission
         monthly_report.netPNL += daily_report.netPNL
         monthly_report.save()
         
@@ -447,7 +530,9 @@ def getMonthlyReport(daily_report):
             monthly_report.sells += dr.sells
             monthly_report.grossPNL += dr.grossPNL
             monthly_report.unrealizedPNL += dr.unrealizedPNL
-            monthly_report.fees += dr.fees
+            monthly_report.secFees += dr.secFees
+            monthly_report.clearanceFees += dr.clearanceFees
+            monthly_report.commission += dr.commission
             monthly_report.netPNL += dr.netPNL
         monthly_report.save()
         
@@ -478,6 +563,8 @@ def getReportByDate(today):
             print "Error: Invalid Side."
             continue
         
+        new_report.commission += trade.commission
+        
         new_report.save() # save result
     
     getPNLs(today) # calculate PNLS
@@ -504,7 +591,9 @@ def clearReports():
             report.SOD = 0
             report.grossPNL = 0.0
             report.unrealizedPNL = 0.0
-            report.fees = 0.0
+            report.commission = 0.0
+            report.secFees = 0.0
+            report.clearanceFees = 0.0
             report.netPNL = 0.0
             report.LMV = 0.0
             report.SMV = 0.0
