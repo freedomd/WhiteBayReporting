@@ -220,6 +220,9 @@ def refreshReports(today):
             new_report.sells = 0
             new_report.buyAve = 0.0 
             new_report.sellAve = 0.0
+            new_report.commission = 0.0
+            new_report.clearanceFees = 0.0
+            new_report.secFees = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
             new_report.reportDate = today
@@ -306,6 +309,7 @@ def getReport(today):
     print "Done"
     print "Calculating PNLS and summary reports..."
     
+    getFees(today) # calculate fees
     getPNLs(today) # calculate PNLS
     getDailyReport(today) # get daily summary report
     # now delete marks lt today, we do not need them anymore
@@ -422,21 +426,21 @@ def getFees(today):
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
         report.secFees = 0
-        report.clearanceFees = 0
+        #report.clearanceFees = 0
         report.save()
-    
-    
+        
+    '''
     rollTrades = getRollTrades(today)
     for rtrade in rollTrades:
         report = Report.objects.get( Q(symbol=rtrade.symbol) & Q(reportDate=today) )
         clearance = rtrade.quantity * 0.0001
-        '''
+        
         rclearance = round(clearance, 2)
         if clearance > rclearance:
             clearance = clearance + 0.01
         else:
             clearance = rclearance
-        '''
+        
         if clearance > 3.00:
             report.clearanceFees += 3.00
         elif clearance < 0.01:
@@ -445,36 +449,41 @@ def getFees(today):
             report.clearanceFees += clearance
         report.save()
     rollTrades.delete()
-    
+    '''
         
     for trade in trades:
         trade.secFees = 0
-        trade.clearanceFees = 0
+        #trade.clearanceFees = 0
         if trade.side != "BUY":
-            trade.secFees = trade.price * trade.quantity * secRate
+            secFees = round(trade.price * trade.quantity * secRate, 5)
+            rsecFees = round(secFees, 2)
+            
+            if secFees > rsecFees:
+                secFees = rsecFees + 0.01
+            else:
+                secFees = rsecFees
+            trade.secFees = secFees
+            trade.save()
         
         report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
         report.secFees += trade.secFees
-        '''
-        clearance = trade.quantity * 0.0001
-        if clearance > 3.00:
-            report.clearanceFees += 3.00
-        elif clearance < 0.01:
-            report.clearanceFees += 0.01
-        else:
-            report.clearanceFees += clearance
-        '''
         report.save()
-    
-    reports = Report.objects.filter(reportDate=today)
+        
+    # TODO: delete this part
     dreport = DailyReport.objects.get(reportDate=today)
     dreport.secFees = 0
-    dreport.clearanceFees = 0
+    #dreport.clearanceFees = 0
+    reports = Report.objects.filter(reportDate=today)
     for report in reports:
         dreport.secFees += report.secFees
-        dreport.clearanceFees += report.clearanceFees
+        #dreport.clearanceFees += report.clearanceFees
     dreport.save()
     
+    mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
+    mreport.secFees += dreport.secFees
+    #mreport.clearanceFees += dreport.clearanceFees
+    mreport.save()
+    # TODO: delete this part
     
   
 # get summary data of reports with a specific date
@@ -567,6 +576,7 @@ def getReportByDate(today):
         
         new_report.save() # save result
     
+    getFees(today) # calculate fees
     getPNLs(today) # calculate PNLS
     getDailyReport(today) # get daily summary report
     # now delete marks lt today, we do not need them anymore
