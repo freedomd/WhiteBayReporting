@@ -1,5 +1,5 @@
 import os
-from admins.models import Firm
+from admins.models import Firm, Broker
 from trades.models import Trade, RollTrade
 from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -419,7 +419,6 @@ def getRollTrades(today):
 def getFees(today):
     firm = Firm.objects.all()[0]
     
-    # SEC fees for each trade
     secRate = firm.secFee
     trades = Trade.objects.filter(tradeDate=today)
     
@@ -428,7 +427,8 @@ def getFees(today):
         report.secFees = 0
         #report.clearanceFees = 0
         report.save()
-        
+    
+    # clearance fees
     '''
     rollTrades = getRollTrades(today)
     for rtrade in rollTrades:
@@ -450,10 +450,11 @@ def getFees(today):
         report.save()
     rollTrades.delete()
     '''
-        
+    
+    # SEC fees and commission for each trade
     for trade in trades:
         trade.secFees = 0
-        #trade.clearanceFees = 0
+        
         if trade.side != "BUY":
             secFees = round(trade.price * trade.quantity * secRate, 5)
             rsecFees = round(secFees, 2)
@@ -463,10 +464,19 @@ def getFees(today):
             else:
                 secFees = rsecFees
             trade.secFees = secFees
-            trade.save()
+        '''
+        try:
+            broker = Broker.objects.get(name=trade.broker)
+            trade.commission = broker.commission * trade.quantity
+        except Broker.DoesNotExist:
+            trade.commission = 0
+        '''
+        
+        trade.save()
         
         report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
         report.secFees += trade.secFees
+        #report.commission += trade.commission
         report.save()
         
     # TODO: delete this part
@@ -477,14 +487,16 @@ def getFees(today):
     for report in reports:
         dreport.secFees += report.secFees
         #dreport.clearanceFees += report.clearanceFees
+        #dreport.commission += report.commission
     dreport.save()
-    
+    '''
     mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
     mreport.secFees += dreport.secFees
     #mreport.clearanceFees += dreport.clearanceFees
+    #mreport.commission += dreport.commission
     mreport.save()
     # TODO: delete this part
-    
+    '''
   
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
