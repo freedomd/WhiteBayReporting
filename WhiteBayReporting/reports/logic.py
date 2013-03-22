@@ -489,14 +489,14 @@ def getFees(today):
         #dreport.clearanceFees += report.clearanceFees
         #dreport.commission += report.commission
     dreport.save()
-    '''
+
     mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
     mreport.secFees += dreport.secFees
     #mreport.clearanceFees += dreport.clearanceFees
     #mreport.commission += dreport.commission
     mreport.save()
     # TODO: delete this part
-    '''
+    
   
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
@@ -587,7 +587,7 @@ def getReportByDate(today):
         new_report.commission += trade.commission
         
         new_report.save() # save result
-    
+        
     getFees(today) # calculate fees
     getPNLs(today) # calculate PNLS
     getDailyReport(today) # get daily summary report
