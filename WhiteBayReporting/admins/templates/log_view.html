@@ -1,0 +1,20 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#log_stack").addClass("active");
+	});
+</script>
+
+<div id="log_list">
+    {% for line in lines %}
+    	<span style="padding-bottom:5px;">{{ line }}</span>
+    	<br>
+    {% endfor %}
+<div>
+
+{% endblock %}

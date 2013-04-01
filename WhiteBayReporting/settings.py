@@ -31,7 +31,7 @@ DATABASES = {
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/New_York'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -224,7 +224,7 @@ CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
 #--------------------------- others
 LOGIN_URL = "/login/"
 LOG_PATH = os.path.join(PROJECT_PATH, 'logs/')
-TASK_LOG = os.path.join(PROJECT_PATH, 'logs/task_log.txt')
+ERROR_LOG = os.path.join(PROJECT_PATH, 'logs/error_log.txt')
 PER_PAGE = 200
 
 #--------------------------- datasource
