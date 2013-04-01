@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
 from admins.models import Broker, Trader, System, Firm, Employer
+from settings import ERROR_LOG
 
 @login_required
 def adminView(request):
@@ -36,6 +37,21 @@ def employerView(request):
 def systemView(request):  
     system_list = System.objects.all().order_by("name")
     return render(request,"system_view.html", locals())
+
+@login_required
+def logView(request):  
+    log = open(ERROR_LOG, "r")
+    lines = []
+    line = log.readline()
+    while line:
+        lines.append(line)
+        line = log.readline()
+   
+    lines.reverse()
+    lines = lines[1:20]
+
+    log.close()
+    return render(request,"log_view.html", locals())
 
 @login_required
 def addBroker(request):

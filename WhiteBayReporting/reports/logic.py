@@ -4,9 +4,11 @@ from trades.models import Trade, RollTrade
 from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
 import time
+from time import strftime
 from django.db.models import Q
 import paramiko
 import csv
+from settings import ERROR_LOG
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
 from settings import TRADE_FILE_NAME, MARK_FILE_NAME
@@ -16,14 +18,23 @@ from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 # get data files
 def getMarkFile(file_date):
     # create ssh tunnel to read files from ssh server
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
-    ftp = ssh.open_sftp() 
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
+        ftp = ssh.open_sftp() 
+    except Exception, e:
+        print str(e.message)
+        log = open(ERROR_LOG, "a")
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tCannot connect to datasource: %s\n" % str(e.message))
+        log.close()
+        return None
+        
     try:
 #        filename = MARK_FILE_NAME + file_date.strftime('%Y%m%d') + ".CSV"
-        filename = "WSB858TJ.CST425PO_20130220.CSV"
+        filename = "WSB858TJ.CST_20130220.CSV"
         filepath = MARK_PATH + filename
         temppath = TEMP_PATH + filename
         ftp.get(filepath, temppath) 
@@ -31,15 +42,28 @@ def getMarkFile(file_date):
             
     except Exception, e:
         print str(e.message)
+        log = open(ERROR_LOG, "a")
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tGet mark file failed: %s\n" % str(e.message))
+        log.close()
         return None
 
 def getTradeFile(file_date):
     # create ssh tunnel to read files from ssh server
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
-    ftp = ssh.open_sftp() 
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
+        ftp = ssh.open_sftp() 
+    except Exception, e:
+        print str(e.message)
+        log = open(ERROR_LOG, "a")
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tCannot connect to datasource: %s\n" % str(e.message))
+        log.close()
+        return None
+    
     try:
 #        today = date.today()
 #        filename = TRADE_FILE_NAME + file_date.strftime('%Y_%m_%d') + ".csv"
@@ -51,6 +75,10 @@ def getTradeFile(file_date):
             
     except Exception, e:
         print str(e.message)
+        log = open(ERROR_LOG, "a")
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tGet trade file failed: %s\n" % str(e.message))
+        log.close()
         return None
     
 #############################################
@@ -86,6 +114,8 @@ def getTrades(filepath):
         else:
             header = False
             
+    file.close()
+            
 
 def getMarks(today):
     
@@ -94,6 +124,7 @@ def getMarks(today):
 #        return False
     print "Getting marks..."
     filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
+    log = open(ERROR_LOG, "a")
     
     file = open(filepath, 'rb')
     for row in csv.reader(file.read().splitlines(), delimiter=','):
@@ -122,9 +153,13 @@ def getMarks(today):
 
         except Exception, e:
             print str(e.message)
+            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+            log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
             continue
     
     #os.remove(filepath) # remove temporary file
+    file.close()
+    log.close()
     print "Done"
     return True
 
@@ -134,6 +169,7 @@ def getMarksByDir(path):
     print "Getting marks and calculating reports..."    
     filelist = os.listdir(path)
     filelist.sort()
+    log = open(ERROR_LOG, "a")
     
     for filename in filelist: # each file represent one day
         filepath = os.path.join(path, filename)
@@ -166,10 +202,14 @@ def getMarksByDir(path):
                 
             except Exception, e:
                 print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
                 continue
             
+        file.close()
         getReportByDate(mark_date)
     
+    log.close()
     print "Done"
     return True
 
@@ -179,6 +219,7 @@ def getSupplement(filepath, mark_date):
     
     print filepath + " " + str(mark_date)
     file = open(filepath, 'rb')
+    log = open(ERROR_LOG, "a")
         
     for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
         try:
@@ -199,15 +240,20 @@ def getSupplement(filepath, mark_date):
                 
         except Exception, e:
             print str(e.message)
+            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+            log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
             continue
             
     getReportByDate(mark_date)
     
+    log.close()
+    file.close()
     print "Done"
     return True
 
 
 def refreshReports(today):
+    log = open(ERROR_LOG, "a")
     
     try: # get latest report date
         last_date =  Report.objects.filter( Q(reportDate__lt=today) ).order_by("-reportDate")[0].reportDate
@@ -230,6 +276,10 @@ def refreshReports(today):
                 
     except Exception, e: # old report does not exist
         print str(e.message)
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tRefresh reports Failed: %s\n" % str(e.message))
+    
+    log.close()
 
 
 def newReport(symbol, today):
@@ -255,6 +305,7 @@ def getReport(today):
     print "Getting reports..."
     filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
     file = open(filepath, 'rb')
+    log = open(ERROR_LOG, "a")
     
     refreshReports(today) # create 
     
@@ -302,6 +353,8 @@ def getReport(today):
                 
             except Exception, e:
                 print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write("\tGet report Failed: %s\n" % str(e.message))
                 continue
         else:
             header = False
@@ -315,12 +368,15 @@ def getReport(today):
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     #os.remove(filepath) # remove temporary file
+    file.close()
+    log.close()
     return True
 
 
 ###########################################################
 # calcluate pnls for each report
 def getPNLs(report_date):
+    log = open(ERROR_LOG, "a")
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     for report in report_list: 
         symbol = report.symbol
@@ -337,8 +393,9 @@ def getPNLs(report_date):
             symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
             closing = symbol_mark.closing
             report.closing = closing
-        except: # ignore this right now, TODO: log this error
-            pass 
+        except: 
+            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+            log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)
         
         if mark == 0: # check mark
             try:
@@ -346,7 +403,8 @@ def getPNLs(report_date):
                 mark = symbol_mark.closing
                 report.mark = mark
             except: # ignore this right now, TODO: log this error
-                pass 
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write("\tWarnning: Cannot get mark price of %s.\n" % symbol) 
         
         # check SOD
         if SOD == 0:
@@ -401,6 +459,8 @@ def getPNLs(report_date):
         
         report.EOD = EOD   
         report.save()
+    
+    log.close()
         
 ###########################################################
 # calcluate fees for trades
@@ -417,6 +477,7 @@ def getRollTrades(today):
     return RollTrade.objects.filter(tradeDate=today)
 
 def getFees(today):
+    log = open(ERROR_LOG, "a")
     firm = Firm.objects.all()[0]
     
     secRate = firm.secFee
@@ -424,12 +485,12 @@ def getFees(today):
     
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
-        report.secFees = 0
-        #report.clearanceFees = 0
+        #report.secFees = 0
+        report.clearanceFees = 0
         report.save()
     
     # clearance fees
-    '''
+    #'''
     rollTrades = getRollTrades(today)
     for rtrade in rollTrades:
         report = Report.objects.get( Q(symbol=rtrade.symbol) & Q(reportDate=today) )
@@ -449,8 +510,9 @@ def getFees(today):
             report.clearanceFees += clearance
         report.save()
     rollTrades.delete()
-    '''
+    #'''
     
+    '''
     # SEC fees and commission for each trade
     for trade in trades:
         trade.secFees = 0
@@ -464,13 +526,14 @@ def getFees(today):
             else:
                 secFees = rsecFees
             trade.secFees = secFees
-        '''
-        try:
-            broker = Broker.objects.get(name=trade.broker)
-            trade.commission = broker.commission * trade.quantity
-        except Broker.DoesNotExist:
-            trade.commission = 0
-        '''
+            
+#        try:
+#            broker = Broker.objects.get(name=trade.broker)
+#            trade.commission = broker.commission * trade.quantity
+#        except Broker.DoesNotExist:
+#            trade.commission = 0
+#            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+#            log.write("\tWarnning: Cannot get broker (commission) %s.\n" % trade.broker) 
         
         trade.save()
         
@@ -478,24 +541,27 @@ def getFees(today):
         report.secFees += trade.secFees
         #report.commission += trade.commission
         report.save()
+    '''
         
     # TODO: delete this part
     dreport = DailyReport.objects.get(reportDate=today)
-    dreport.secFees = 0
-    #dreport.clearanceFees = 0
+    #dreport.secFees = 0
+    dreport.clearanceFees = 0
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
-        dreport.secFees += report.secFees
-        #dreport.clearanceFees += report.clearanceFees
+        #dreport.secFees += report.secFees
+        dreport.clearanceFees += report.clearanceFees
         #dreport.commission += report.commission
     dreport.save()
 
     mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
-    mreport.secFees += dreport.secFees
-    #mreport.clearanceFees += dreport.clearanceFees
+    #mreport.secFees += dreport.secFees
+    mreport.clearanceFees += dreport.clearanceFees
     #mreport.commission += dreport.commission
     mreport.save()
     # TODO: delete this part
+    
+    log.close()
     
   
 # get summary data of reports with a specific date
