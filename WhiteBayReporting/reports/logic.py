@@ -368,6 +368,9 @@ def getReport(today):
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     #os.remove(filepath) # remove temporary file
+    
+    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+    log.write("\tReports calculating done.")
     file.close()
     log.close()
     return True
@@ -625,6 +628,7 @@ def getMonthlyReport(daily_report):
         
         
 def getReportByDate(today):
+    log = open(ERROR_LOG, "a")
     
     refreshReports(today) # create new reports for those symbols have reports last trade date
     
@@ -659,6 +663,10 @@ def getReportByDate(today):
     getDailyReport(today) # get daily summary report
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
+    
+    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+    log.write("\tReports calculating done.")
+    log.close()
     
 
 
