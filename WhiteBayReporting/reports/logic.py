@@ -480,12 +480,12 @@ def getRollTrades(today):
     return RollTrade.objects.filter(tradeDate=today)
 
 def fe():
-    s = date(2012, 11, 21) 
-        
-    ds = DailyReport.objects.filter(reportDate__gte = s)
-    for d in ds:
-        today = d.reportDate
-        getFees(today)
+#    s = date(2012, 11, 21) 
+#        
+#    ds = DailyReport.objects.filter(reportDate__gte = s)
+#    for d in ds:
+#        today = d.reportDate
+#        getFees(today)
         
     ms = MonthlyReport.objects.all()
     for m in ms:
@@ -493,6 +493,10 @@ def fe():
         m.secFees = 0
         m.clearanceFees = 0
         ds = DailyReport.objects.filter(Q(reportDate__year=today.year) & Q(reportDate__month=today.month))
+        for d in ds:
+            m.secFees += d.secFees
+            m.clearanceFees += d.clearanceFees
+            m.save()
         
 def getFees(today):
     log = open(ERROR_LOG, "a")
