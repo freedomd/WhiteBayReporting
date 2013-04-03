@@ -15,7 +15,7 @@ class Trade(models.Model):
     route = models.CharField( max_length=10, blank=True, null=True, default="")
     destination = models.CharField( max_length=10, blank=True, null=True, default="")
     liqFlag = models.CharField( max_length=5, blank=True, null=True, default="")
-    tradeDate = models.DateTimeField( auto_now_add=False )
+    tradeDate = models.DateField( auto_now_add=False )
     executionId = models.CharField( max_length=50, default="0" )
     clearanceFees = models.FloatField( default=0.00 )
     commission = models.FloatField( default=0.00 )
@@ -37,7 +37,7 @@ class RollTrade(models.Model):
     side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
-    tradeDate = models.DateTimeField( auto_now_add=False )
+    tradeDate = models.DateField( auto_now_add=False )
     clearanceFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
