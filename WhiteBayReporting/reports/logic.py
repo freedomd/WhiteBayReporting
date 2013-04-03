@@ -480,33 +480,34 @@ def getRollTrades(today):
     return RollTrade.objects.filter(tradeDate=today)
 
 def fe():
-    ms = MonthlyReport.objects.all()
-    for m in ms:
-        m.secFees = 0
-        m.clearanceFees = 0
-        m.save()
+    s = date(2012, 11, 21) 
         
-    ds= DailyReport.objects.all()
+    ds = DailyReport.objects.filter(reportDate__gte = s)
     for d in ds:
         today = d.reportDate
         getFees(today)
-
+        
+    ms = MonthlyReport.objects.all()
+    for m in ms:
+        today = m.reportDate
+        m.secFees = 0
+        m.clearanceFees = 0
+        ds = DailyReport.objects.filter(Q(reportDate__year=today.year) & Q(reportDate__month=today.month))
+        
 def getFees(today):
     log = open(ERROR_LOG, "a")
     firm = Firm.objects.all()[0]
-    
     secRate = firm.secFee
-    trades = Trade.objects.filter(tradeDate=today)
     
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
-        #report.secFees = 0
+        report.secFees = 0
         report.clearanceFees = 0
         report.save()
     
     # clearance fees
-    #'''
-    #rollTrades = getRollTrades(today)
+    # after 2012-11-20, should do roll up
+    trades = getRollTrades(today)
     for trade in trades:
         report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
         clearance = trade.quantity * 0.0001
@@ -519,14 +520,10 @@ def getFees(today):
         else:
             report.clearanceFees += clearance
         report.save()
-    #rollTrades.delete()
-    #'''
     
-    '''
+    
     # SEC fees and commission for each trade
     for trade in trades:
-        trade.secFees = 0
-        
         if trade.side != "BUY":
             secFees = trade.price * trade.quantity * secRate
             rsecFees = round(secFees, 2)
@@ -535,7 +532,8 @@ def getFees(today):
                 secFees = rsecFees + 0.01
             else:
                 secFees = rsecFees
-            trade.secFees = secFees
+        else:
+            secFees = 0
             
 #        try:
 #            broker = Broker.objects.get(name=trade.broker)
@@ -545,32 +543,34 @@ def getFees(today):
 #            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
 #            log.write("\tWarnning: Cannot get broker (commission) %s.\n" % trade.broker) 
         
-        trade.save()
+        #trade.save()
         
         report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
-        report.secFees += trade.secFees
+        report.secFees += secFees #trade.secFees
         #report.commission += trade.commission
         report.save()
-    '''
     
     
     # TODO: delete this part
     dreport = DailyReport.objects.get(reportDate=today)
-    #dreport.secFees = 0
+    dreport.secFees = 0
     dreport.clearanceFees = 0
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
-        #dreport.secFees += report.secFees
+        dreport.secFees += report.secFees
         dreport.clearanceFees += report.clearanceFees
         #dreport.commission += report.commission
     dreport.save()
-
-    mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
-    #mreport.secFees += dreport.secFees
-    mreport.clearanceFees += dreport.clearanceFees
-    #mreport.commission += dreport.commission
-    mreport.save()
-    # TODO: delete this part
+    
+    
+#    mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
+#    mreport.secFees += dreport.secFees
+#    mreport.clearanceFees += dreport.clearanceFees
+#    #mreport.commission += dreport.commission
+#    mreport.save()
+#    # TODO: delete this part
+    
+    trades.delete()
     
     log.close()
     
@@ -657,7 +657,7 @@ def getReportByDate(today):
             total += trade.quantity * trade.price # new total
             new_report.sells += trade.quantity # new sells
             new_report.sellAve = total / new_report.sells # new sell ave
-        
+            
         else:
             print "Error: Invalid Side."
             continue
