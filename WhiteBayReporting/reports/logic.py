@@ -479,6 +479,18 @@ def getRollTrades(today):
     
     return RollTrade.objects.filter(tradeDate=today)
 
+def fe():
+    ms = MonthlyReport.objects.all()
+    for m in ms:
+        m.secFees = 0
+        m.clearanceFees = 0
+        m.save()
+        
+    ds= DailyReport.objects.all()
+    for d in ds:
+        today = d.reportDate
+        getFees(today)
+
 def getFees(today):
     log = open(ERROR_LOG, "a")
     firm = Firm.objects.all()[0]
@@ -494,16 +506,11 @@ def getFees(today):
     
     # clearance fees
     #'''
-    rollTrades = getRollTrades(today)
-    for rtrade in rollTrades:
-        report = Report.objects.get( Q(symbol=rtrade.symbol) & Q(reportDate=today) )
-        clearance = rtrade.quantity * 0.0001
-        
-        rclearance = round(clearance, 2)
-        if clearance > rclearance:
-            clearance = clearance + 0.01
-        else:
-            clearance = rclearance
+    #rollTrades = getRollTrades(today)
+    for trade in trades:
+        report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
+        clearance = trade.quantity * 0.0001
+        clearance = round(clearance, 2)
         
         if clearance > 3.00:
             report.clearanceFees += 3.00
@@ -512,7 +519,7 @@ def getFees(today):
         else:
             report.clearanceFees += clearance
         report.save()
-    rollTrades.delete()
+    #rollTrades.delete()
     #'''
     
     '''
@@ -521,7 +528,7 @@ def getFees(today):
         trade.secFees = 0
         
         if trade.side != "BUY":
-            secFees = round(trade.price * trade.quantity * secRate, 5)
+            secFees = trade.price * trade.quantity * secRate
             rsecFees = round(secFees, 2)
             
             if secFees > rsecFees:
@@ -545,7 +552,8 @@ def getFees(today):
         #report.commission += trade.commission
         report.save()
     '''
-        
+    
+    
     # TODO: delete this part
     dreport = DailyReport.objects.get(reportDate=today)
     #dreport.secFees = 0
