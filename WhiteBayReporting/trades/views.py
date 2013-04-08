@@ -10,9 +10,9 @@ from reports.logic import newReport
 from settings import PER_PAGE
 
 @login_required
-def queryView(request):
+def tradeQueryView(request):
     message = "Please type in a query."            
-    return render(request,"query_view.html", locals())
+    return render(request,"trade_query_view.html", locals())
 
 @login_required
 def tradeView(request, strpage):
@@ -67,7 +67,8 @@ def symbolView(request, symbol, year, month, day, strpage):
     
     start = (mypage - 1) * PER_PAGE
     end = mypage * PER_PAGE - 1
-        
+    
+    reportDate = date(int(year), int(month), int(day))
     today = date.today()
     trade_list = Trade.objects.filter(Q(symbol=symbol) & Q(tradeDate__year=year) & 
                                       Q(tradeDate__month=month) & Q(tradeDate__day=day))[start:end]

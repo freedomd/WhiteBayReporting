@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/reportlist.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#report_query_tab").addClass("active");
+		});
+	</script>
+</head>
+
+<body>
+<input id="tab" value="{{ default }}" style="display: none;">
+<input id="order" value="{{ default_order }}" style="display: none;">
+<input id="mode" value="q" style="display: none;">
+
+<div class="container">
+<div id="filter">
+  	<input id="symbol" type="text" class="span3" placeholder="Symbol">
+  	<input id="datefrom" type="text" class="span3" placeholder="Date From: e.g. 2013-02-21">
+  	<input id="dateto" type="text" class="span3" placeholder="Date To: e.g. 2013-02-22">
+  	<button class="btn btn-info" onclick="queryReportList(1);" style="float:right;">Search</button>
+  	<div style="clear:both;"></div> 
+</div> 
+</div>
+
+
+<!-- trades list  -->
+<div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+<div id="reports_container" class="container data_container">
+</div>
+</div>
+
+
+</body>
+</html>
+
+{% endblock %}

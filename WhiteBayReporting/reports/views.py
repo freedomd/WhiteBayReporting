@@ -16,6 +16,12 @@ def reportView(request):
     return HttpResponseRedirect(url)
 
 @login_required
+def reportQueryView(request):
+    default = "symbol" # default order
+    default_order = 0 # ascending, 1 for descending      
+    return render(request,"report_query_view.html", locals())
+
+@login_required
 def monthlyReportView(request, year, month):
     
     # get latest reports
@@ -26,6 +32,8 @@ def monthlyReportView(request, year, month):
     
     year = int(year)
     month = int(month)
+    
+    reportDate = date(int(year), int(month), 1)
     
     if year < today.year: # reports for next year
         nextYear = year + 1
@@ -69,6 +77,7 @@ def monthlyReportView(request, year, month):
 def dailyReportViewAjax(request, year, month, day):
     default = "symbol" # default order
     default_order = 0 # ascending, 1 for descending
+    reportDate = date(int(year), int(month), int(day))
     return render(request,"daily_reports_view_ajax.html", locals())
 
 '''
