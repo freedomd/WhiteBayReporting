@@ -20,6 +20,7 @@ class Trade(models.Model):
     clearanceFees = models.FloatField( default=0.00 )
     commission = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(Trade, self).save(*args, **kwargs)
