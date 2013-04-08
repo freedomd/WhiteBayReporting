@@ -20,12 +20,17 @@
 <div id="filter">
   	<input id="account" type="text" class="span3" placeholder="Account Number">
   	<input id="symbol" type="text" class="span3" placeholder="Symbol">
-  	<input id="datefrom" type="text" class="span3" placeholder="Date From: e.g. 2013-02-21">
-  	<input id="dateto" type="text" class="span3" placeholder="Date To: e.g. 2013-02-22">
+  	<input id="datefrom" type="text" class="span3" placeholder="Date From">
+  	<input id="dateto" type="text" class="span3" placeholder="Date To">
   	<button class="btn btn-info" onclick="getTradeList(1);" style="float:right;">Search</button>
   	<div style="clear:both;"></div> 
 </div> 
 </div>
+
+<script>
+	$( "#datefrom" ).datepicker({ dateFormat: "yy-mm-dd" });
+	$( "#dateto" ).datepicker({ dateFormat: "yy-mm-dd" });
+</script>
 
 
 <div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">

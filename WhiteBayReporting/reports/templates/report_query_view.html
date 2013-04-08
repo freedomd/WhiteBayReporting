@@ -11,6 +11,7 @@
   			$("#tabs").find('li').removeClass("active");
 			$("#report_query_tab").addClass("active");
 		});
+		$("#datafrom").datepick({dateFormat: 'yyyy-mm-dd'});
 	</script>
 </head>
 
@@ -22,12 +23,17 @@
 <div class="container">
 <div id="filter">
   	<input id="symbol" type="text" class="span3" placeholder="Symbol">
-  	<input id="datefrom" type="text" class="span3" placeholder="Date From: e.g. 2013-02-21">
-  	<input id="dateto" type="text" class="span3" placeholder="Date To: e.g. 2013-02-22">
+  	<input id="datefrom" type="text" class="span3" placeholder="Date From">
+  	<input id="dateto" type="text" class="span3" placeholder="Date To">
   	<button class="btn btn-info" onclick="queryReportList(1);" style="float:right;">Search</button>
   	<div style="clear:both;"></div> 
 </div> 
 </div>
+
+<script>
+	$( "#datefrom" ).datepicker({ dateFormat: "yy-mm-dd" });
+	$( "#dateto" ).datepicker({ dateFormat: "yy-mm-dd" });
+</script>
 
 
 <!-- trades list  -->
@@ -35,7 +41,7 @@
 <div id="reports_container" class="container data_container">
 </div>
 </div>
-
+ 
 
 </body>
 </html>
