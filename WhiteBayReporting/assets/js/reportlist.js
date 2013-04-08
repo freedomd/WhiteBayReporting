@@ -81,6 +81,7 @@ function createReportList(data) {
 		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeOrder(this.id)>Commission</button></th>";
 		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeOrder(this.id)>SEC Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='clearanceFees' value=0 onclick=changeOrder(this.id)>Clearance Fees</button></th>";
+		html += "<th><button class='btn btn-link tab' id='ecnFees' value=0 onclick=changeOrder(this.id)>ECN Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='netPNL' value=0 onclick=changeOrder(this.id)>Net PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='LMV' value=0 onclick=changeOrder(this.id)>LMV</button></th>";
 		html += "<th><button class='btn btn-link tab' id='SMV' value=0 onclick=changeOrder(this.id)>SMV</button></th>";
@@ -118,6 +119,7 @@ function createReportList(data) {
 			html += "<td>" + addCommas(report.commission.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.secFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.clearanceFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(report.ecnFees.toFixed(2)) + "</td>";
 
 			if(report.netPNL >=0) {
 				html += "<td><span class='positive_data'>" + addCommas(report.netPNL.toFixed(2)) + "</span></td>";
