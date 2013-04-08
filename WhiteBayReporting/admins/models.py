@@ -78,7 +78,35 @@ class Firm(models.Model):
     def __unicode__(self):
         return str(self.id)
 
+class Route(models.Model):
+    
+    # ECN fee
+    seqNo = models.IntegerField( default=0 )
+    routeId = models.CharField( max_length=10 )
+    effectiveFrom = models.DateTimeField( blank=True, null=True )
+    effectiveTo = models.DateTimeField( blank=True, null=True )
+    flag = models.CharField( max_length=5, blank=True, null=True, default="" )
+    primaryExchange = models.CharField( max_length=10, blank=True, null=True, default="" )
+    isETF = models.CharField( max_length=5, blank=True, null=True, default="" )
+    priceFrom = models.FloatField( default=0.00 )
+    priceTo = models.FloatField( default=0.00 )
+    rebateCharge = models.FloatField( default=0.00 )
+    feeType = models.CharField( max_length=20, blank=True, null=True, default="" )
+    description = models.CharField( max_length=100, blank=True, null=True, default="" )
+    insertedBy = models.CharField( max_length=20, blank=True, null=True, default="" )
+    insertedDate = models.DateTimeField(blank=True, null=True)
+    modifiedBy = models.CharField( max_length=20, blank=True, null=True, default="" )
+    modifiedDate = models.DateTimeField(blank=True, null=True)
+    
+    
+    def save(self, *args, **kwargs): 
+        super(Route, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.seqNo)
+
 admin.site.register(Broker)
 admin.site.register(Trader)
 admin.site.register(System)
 admin.site.register(Firm)
+admin.site.register(Route)

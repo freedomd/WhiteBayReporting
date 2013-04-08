@@ -50,6 +50,22 @@
 	vertical-align: middle;
 }
 
+.route_table {
+	margin-top: 10px;
+	font-size: 12px;
+	text-align: center;
+	margin-bottom: 10px;
+}
+
+.route_table th,
+.route_table td {
+	padding: 2px;
+	text-align: center;
+	vertical-align: top;
+}
+
+
+
 .sub_title {
 	padding-left: 30px;
 	margin-top:10px;

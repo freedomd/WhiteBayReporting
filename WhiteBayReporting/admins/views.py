@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer
+from admins.models import Broker, Trader, System, Firm, Employer, Route
 from settings import ERROR_LOG
 
 @login_required
@@ -37,6 +37,11 @@ def employerView(request):
 def systemView(request):  
     system_list = System.objects.all().order_by("name")
     return render(request,"system_view.html", locals())
+
+@login_required
+def routeView(request):  
+    route_list = Route.objects.all().order_by("seqNo")
+    return render(request,"route_view.html", locals())
 
 @login_required
 def logView(request):  
