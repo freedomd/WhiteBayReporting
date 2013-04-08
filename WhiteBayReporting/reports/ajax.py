@@ -35,18 +35,13 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
     start = (mypage - 1) * PER_PAGE
     end = mypage * PER_PAGE
     
-    error = False
-    error_message = ""
-    
-    # get latest reports
-    report_list = None
     # check tab
     if order == 0:
         method = tab
     else:
         method = "-" + tab
         
-    report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).exclude(Q(SOD=0) & Q(buys=0) & Q(sells=0)).order_by(method)[start:end]
+    report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
     count = report_list.count()
     
     if count != 0:
@@ -72,3 +67,68 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
     
     return simplejson.dumps(data)
 
+@dajaxice_register
+def queryReportList(request, tab, strorder, symbol, datefrom, dateto, strpage):
+
+    # order 0 = ascending, 1 = descending
+    order = int(strorder)
+    if tab == None or strorder == None:
+        tab = "symbol"
+        order = 0
+    if order != 0 and order != 1:
+        order = 0
+    
+    mypage = int(strpage)
+    if strpage == None:
+        mypage = 1
+    
+    start = (mypage - 1) * PER_PAGE
+    end = mypage * PER_PAGE
+    
+    # check tab
+    if order == 0:
+        method = tab
+    else:
+        method = "-" + tab
+    
+    # start filter
+    report_list = None
+    if symbol is not u"" or None:
+        if report_list is None:
+            report_list = Report.objects.filter(Q(symbol=symbol))
+        else:
+            report_list = report_list.filter(Q(symbol=symbol))
+
+    if datefrom is not u"" or None:
+        if report_list is None:
+            report_list = Report.objects.filter(Q(reportDate__gte=datefrom))
+        else:
+            report_list = report_list.filter(Q(reportDate__gte=datefrom))
+    
+    if dateto is not u"" or None:
+        if report_list is None:
+            report_list = Report.objects.filter(Q(reportDate__lte=dateto))
+        else:
+            report_list = report_list.filter(Q(reportDate__lte=dateto))
+    
+    if method != "reportDate" and method != "-reportDate":
+        report_list = report_list.order_by(method, "reportDate")[start:end]
+    else:
+        report_list = report_list.order_by(method, "symbol")[start:end]
+    count = report_list.count()
+    
+    if count == PER_PAGE:
+        np = mypage + 1
+    else:
+        np = 0
+    if mypage == 1:
+        pp = 0
+    else:
+        pp = mypage - 1
+        
+    report_list_serialized = serializers.serialize('json', report_list)
+    data = { 'report_list': simplejson.loads(report_list_serialized), 
+             'pp': pp,
+             'np': np }
+    
+    return simplejson.dumps(data)

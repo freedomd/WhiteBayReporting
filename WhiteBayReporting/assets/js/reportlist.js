@@ -15,7 +15,8 @@ function addCommas(number) {
 }
 
 
-function changeOrder(tab, order) {
+function changeOrder(tab) {
+	var mode = $("#mode").val();
 	if(tab == $("#tab").val()) {
 		new_order = (parseInt($("#order").val())+1)%2;
 	} else {
@@ -24,7 +25,11 @@ function changeOrder(tab, order) {
 
 	$("#tab").val(tab);
 	$("#order").val(new_order);
-	getReportList(1);
+	if(mode == "g") {
+		getReportList(1);
+	} else if(mode == "q") {
+		queryReportList(1);
+	}
 }
 
 function getReportList(strpage) {
@@ -38,14 +43,26 @@ function getReportList(strpage) {
     						            		 {'error_callback': custom_error}); 		       
 }
 
+function queryReportList(strpage) {
+	$("html,body").animate({scrollTop:0},0); // back to top
+    Dajaxice.reports.queryReportList(createReportList, {'tab': $("#tab").val(),
+    											 		'strorder': $("#order").val(),
+    											 		'symbol': $("#symbol").val(),
+    											 		'datefrom': $("#datefrom").val(), 
+    							   				 		'dateto': $("#dateto").val(),
+    							   				 		'strpage': strpage},
+    						            		 		{'error_callback': custom_error}); 		       
+}
+
 
 function createReportList(data) {
+	var mode = $("#mode").val(); // query mode, g for get, q for query
 	var number = data.report_list.length;
 	$("#reports_container").empty(); // delete all the data
 	if(number == 0) {
 		$("#reports_container").removeClass("data_container");
 		var html = "";
-		html += "No trades found.";
+		html += "No reports found.";
 		$("#reports_container").append(html);
 	} else {
 		var html = "";
@@ -69,6 +86,7 @@ function createReportList(data) {
 		html += "<th><button class='btn btn-link tab' id='SMV' value=0 onclick=changeOrder(this.id)>SMV</button></th>";
 		html += "<th><button class='btn btn-link tab' id='EOD' value=0 onclick=changeOrder(this.id)>EOD</button></th>";
 		html += "<th><button class='btn btn-link tab' id='closing' value=0 onclick=changeOrder(this.id)>Closing</button></th>";
+		html += "<th><button class='btn btn-link tab' id='reportDate' value=0 onclick=changeOrder(this.id)>Report Date</button></th>";
 		html += "</tr>";
 		
 		for(i = 0; i < number; i++) { // create a new list of reports
@@ -111,6 +129,7 @@ function createReportList(data) {
 			html += "<td>" + addCommas(report.SMV.toFixed(0)) + "</td>";
 			html += "<td>" + addCommas(report.EOD) + "</td>";
 			html += "<td>" + addCommas(report.closing.toFixed(2)) + "</td>";
+			html += "<td>" + report.reportDate + "</td>";
 			html += "</tr>"
 		}
 		
@@ -118,7 +137,11 @@ function createReportList(data) {
 		
 		html += "<div class='paginator'>";
 		if(data.pp > 0) {
-			html += "<button class='btn btn-link' onclick='getReportList(" + data.pp + ");'>Previous</button>";
+			if(mode == "g") {
+				html += "<button class='btn btn-link' onclick='getReportList(" + data.pp + ");'>Previous</button>";
+			} else if(mode == "q") {
+				html += "<button class='btn btn-link' onclick='queryReportList(" + data.pp + ");'>Previous</button>";
+			}
 		}
 		
 		if(data.pp > 0 && data.np > 0) {
@@ -126,7 +149,11 @@ function createReportList(data) {
 		}
 		
 		if(data.np > 0) {
-			html += "<button class='btn btn-link' onclick='getReportList(" + data.np + ");'>Next</button>";
+			if(mode == "g") {
+				html += "<button class='btn btn-link' onclick='getReportList(" + data.np + ");'>Next</button>";
+			} else if (mode == "q") {
+				html += "<button class='btn btn-link' onclick='queryReportList(" + data.np + ");'>Next</button>";
+			}
 		}
 		html += "</div><div style='clear:both;'></div>";
 		
