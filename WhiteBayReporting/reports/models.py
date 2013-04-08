@@ -37,6 +37,7 @@ class Report(models.Model):
     commission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
     
     reportDate = models.DateField( auto_now_add=False )
     
@@ -62,6 +63,7 @@ class DailyReport(models.Model):
     commission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
                                  
     reportDate = models.DateField( auto_now_add=False )
     
@@ -83,6 +85,7 @@ class MonthlyReport(models.Model):
     commission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
     
     reportDate = models.DateField( auto_now_add=False )
     
