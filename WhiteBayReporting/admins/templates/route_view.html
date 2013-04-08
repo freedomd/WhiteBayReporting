@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#route_stack").addClass("active");
+	});
+</script>
+
+<div id="route_list">
+<table class="table route_table table-bordered">
+    <tr><th>SeqNo</th><th>Route ID</th><th>Liq Flag</th><th>Primary Exchange</th>
+    <th>Price From</th><th>Price To</th><th>Rebate Charge</th><th>Fee Type</th><th>Description</th></tr>
+    {% for route in route_list %}
+    	<!-- 
+    	<form method='post' action='/modSystem/' onsubmit='return validate_system(this)'>
+		{% csrf_token %} 
+		-->
+    	<tr>
+    	<td>{{ route.seqNo }}</td>
+    	<td>{{ route.routeId }}</td>
+    	<td>{{ route.flag }}</td>
+    	<td>{{ route.primaryExchange }}</td>
+    	<td>{{ route.priceFrom|floatformat:0 }}</td>
+    	<td>{{ route.priceTo|floatformat:0 }}</td>
+    	<td>{{ route.rebateCharge }}</td>
+    	<td>{{ route.feeType }}</td>
+    	<td>{{ route.description }}</td>
+    	</tr>
+    	
+    	<!-- 
+    	<td>
+    		<input type='submit' name="save" class='btn btn-info' value='Save'>
+			<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_system()'>
+    	</td> 
+    	
+    	</tr>
+		</form>
+		-->
+    {% endfor %}
+    <!--
+    <form method='post' action='/addSystem/' onsubmit='return validate_system(this)'>
+		{% csrf_token %}
+		<tr>
+		<td><input style="margin-bottom:0px;" name='name' type='text' placeholder='Type'></td>
+		<td><input style="margin-bottom:0px;" name='cost' type='text' placeholder='Cost'></td>
+		<td><input type='submit' class='btn btn-success' value='Add'></td>
+		</tr>
+	</form>
+	-->
+</table>
+<div>
+
+
+{% endblock %}
