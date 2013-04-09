@@ -34,7 +34,8 @@ class Report(models.Model):
     closing = models.FloatField( default=0.00 ) # closing price of today
     EOD = models.IntegerField( default=0 )
     
-    commission = models.FloatField( default=0.00 )
+    commission = models.FloatField( default=0.00 ) # commission = brokerCommission + clearance Fees
+    brokerCommission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
@@ -61,6 +62,7 @@ class DailyReport(models.Model):
     EOD = models.IntegerField( default=0 )
     
     commission = models.FloatField( default=0.00 )
+    brokerCommission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
@@ -83,6 +85,7 @@ class MonthlyReport(models.Model):
     netPNL = models.FloatField( default=0.00 )
     
     commission = models.FloatField( default=0.00 )
+    brokerCommission = models.FloatField( default=0.00 )
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
