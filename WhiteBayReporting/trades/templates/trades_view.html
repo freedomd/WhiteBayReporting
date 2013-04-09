@@ -40,9 +40,9 @@
 		<th>Route</th>
 		<th>Destination</th>
 		<th>Liq Flag</th>
-		<th>Commission</th>
+		<!-- <th>Commission</th> -->
 		<!-- <th>Clearance</th> -->
-		<th>SEC Fees</th>
+		<!-- <th>SEC Fees</th> -->
 		<th>Date</th>
 		<th>Execution ID</th>
 		</tr>
@@ -63,9 +63,9 @@
 		<td>{{ trade.route }}</td>
 		<td>{{ trade.destination }}</td>
 		<td>{{ trade.liqFlag }}</td>
-		<td>{{ trade.commission|floatformat:2|intcomma }}</td>
+		<!-- <td>{{ trade.commission|floatformat:2|intcomma }}</td> -->
 		<!-- <td>{{ trade.clearanceFees|floatformat:2|intcomma }}</td> -->
-		<td>{{ trade.secFees|floatformat:2|intcomma }}</td>
+		<!-- <td>{{ trade.secFees|floatformat:2|intcomma }}</td> -->
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
 		<td>{{ trade.executionId }}</td>
 		</tr>

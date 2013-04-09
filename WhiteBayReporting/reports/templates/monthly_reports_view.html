@@ -51,9 +51,10 @@
 		<th>Month</th>
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
+		<th>BrokerComm</th>
+		<th>Clearance</th>
 		<th>Commission</th>
 		<th>SEC Fees</th>
-		<th>Clearance Fees</th>
 		<th>ECN Fees</th>
 		<th>Net PNL</th>
 		</tr>
@@ -73,9 +74,10 @@
 		<td><span class="positive_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
+		<td>{{ report.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.commission|floatformat:2|intcomma }}</td>
 		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
-		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.ecnFees|floatformat:2|intcomma }}</td>
 		
 		{% if report.netPNL < 0 %}
@@ -100,9 +102,10 @@
 		<th>Sells</th>
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
+		<th>BrokerComm</th>
+		<th>Clearance</th>
 		<th>Commission</th>
 		<th>SEC Fees</th>
-		<th>Clearance Fees</th>
 		<th>ECN Fees</th>
 		<th>Net PNL</th>
 		<th>LMV</th>
@@ -126,9 +129,10 @@
 		<td><span class="positive_data">{{ report.unrealizedPNL|floatformat:2|intcomma }}</span></td>
 		{% endif %}
 		
+		<td>{{ report.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.commission|floatformat:2|intcomma }}</td>
 		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
-		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.ecnFees|floatformat:2|intcomma }}</td>
 		
 		{% if report.netPNL < 0 %}
@@ -158,9 +162,10 @@
 		<th><span class="positive_data">{{ total.unrealizedPNL|floatformat:2|intcomma }}</span></th>
 		{% endif %}
 		
+		<td>{{ total.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ total.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ total.commission|floatformat:2|intcomma }}</td>
 		<td>{{ total.secFees|floatformat:2|intcomma }}</td>
-		<td>{{ total.clearanceFees|floatformat:2|intcomma }}</td>
 		<td>{{ total.ecnFees|floatformat:2|intcomma }}</td>
 		
 		{% if total.netPNL < 0 %}
