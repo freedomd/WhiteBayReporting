@@ -1,4 +1,5 @@
 import csv
+import os
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
 from reports.models import Report
@@ -193,6 +194,7 @@ def getSummaryReport(request, symbol, datefrom, dateto, user_email):
         success, message = es.send_email(filename, content, user_email, filepath)
         if success:
             message = "Summary report will be sent to <i><strong>%s</strong></i>." % user_email 
+        os.remove(filepath)
     else:
         message = "No match reports."
         
