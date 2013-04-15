@@ -19,6 +19,7 @@
 <div class="container">
 	<div style="float:left;">
 		<ul class="breadcrumb" style="background-color: #FFFFFF; padding-left: 0px; margin-bottom:5px;">
+			<li class="active"><strong>{{ account }}</strong> <span class="divider">/</span></li>
   			<li class="active">{{ reportDate|date:"F, Y" }}</li>
 		</ul>
 	</div>
@@ -60,7 +61,7 @@
 		</tr>
 	{% for report in monthly_report_list %}
 		<tr>
-		<td><a href="/monthlyReport/{{ report.reportDate.year }}/{{ report.reportDate.month }}/">{{ report.reportDate|date:'F' }}</a></td>
+		<td><a href="/monthlyReport/{{ account }}/{{ report.reportDate.year }}/{{ report.reportDate.month }}/">{{ report.reportDate|date:'F' }}</a></td>
 		
 		{% if report.grossPNL < 0 %}
 		<td><span class="negative_data">{{ report.grossPNL|floatformat:2|intcomma }}</span></td>
@@ -113,7 +114,7 @@
 		</tr>
 	{% for report in report_list %}
 		<tr>
-		<td><a href="/dailyReport/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/">{{ report.reportDate|date:'m-d' }}</a></td>
+		<td><a href="/dailyReport/{{ account }}/{{ report.reportDate.year }}/{{ report.reportDate.month }}/{{ report.reportDate.day }}/">{{ report.reportDate|date:'m-d' }}</a></td>
 		<td>{{ report.buys|intcomma }}</td>
 		<td>{{ report.sells|intcomma }}</td>
 		

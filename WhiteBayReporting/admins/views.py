@@ -5,6 +5,13 @@ from datetime import date
 from admins.models import Broker, Trader, System, Firm, Employer, Route, Account
 from settings import ERROR_LOG
 
+def navbar_settings(request):
+    account_list = Account.objects.all()
+    additions = {
+        'account_list': account_list,
+    }
+    return additions
+
 @login_required
 def adminView(request):
     if request.GET:

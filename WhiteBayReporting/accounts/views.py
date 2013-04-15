@@ -6,11 +6,13 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from accounts.models import UserProfile
 from datetime import date
+from admins.models import Account
 
 @login_required
 def home(request):
     today=date.today()
-    url="/monthlyReport/%s/%s/"%(str(today.year), str(today.month))
+    account = Account.objects.all()[0]
+    url="/monthlyReport/%s/%s/%s/"%(account.account, str(today.year), str(today.month))
     return HttpResponseRedirect(url)
 
 def register(request):
