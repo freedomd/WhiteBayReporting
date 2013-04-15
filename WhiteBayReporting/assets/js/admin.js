@@ -362,7 +362,7 @@ function validate_firm(thisform) {
 }
 
 /*****************************************************************************************
-/* Trader
+/* Employer
 */
 
 function selectEmployer(value) {
@@ -425,5 +425,72 @@ function validate_mod_employer(thisform) {
 
 function confirm_delete_employer() {
 	var result = confirm("Delete This Employer?")
+  	return result;
+}
+
+/*****************************************************************************************
+/* Account
+*/
+
+function selectAccount(value) {
+	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
+	
+	if(value == "default") {
+		$('#mod_account').hide();
+		$('#add_account').hide();
+		return ;
+	} else if(value == "add") {
+		$('#mod_account').hide();
+		$('#add_account').show();
+	} else { 
+    	Dajaxice.admins.getAccount(showAccount, {'pk': value}, {'error_callback': custom_error}); 		
+    }       
+    
+}
+
+function showAccount(data) {
+	$('#mod_account').hide();
+	$('#add_account').hide();
+	if(data.success == "true") {
+		$('#mod_account').show();
+		$('#mod_pk').val(data.pk);
+		$('#mod_name').val(data.account);
+	} else {
+		html = "";
+		html += data.message;
+		$('#message').append(html);
+	}
+}
+
+function validate_add_account(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_name) == false) {
+			html = "<span class='help-inline message'>You must enter an account name.</span>";
+			$("#add_name").after(html);
+			add_name.focus();
+			return false;
+		} 
+	}
+	return true
+}
+
+function validate_mod_account(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(mod_name) == false) {
+			html = "<span class='help-inline message'>You must enter an account name.</span>";
+			$("#mod_name").after(html);
+			mod_name.focus();
+			return false;
+		} 
+	}
+	return true
+}
+
+function confirm_delete_account() {
+	var result = confirm("Delete This Account?")
   	return result;
 }

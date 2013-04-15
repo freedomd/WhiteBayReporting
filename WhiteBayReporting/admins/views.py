@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer, Route
+from admins.models import Broker, Trader, System, Firm, Employer, Route, Account
 from settings import ERROR_LOG
 
 @login_required
@@ -21,7 +21,6 @@ def firmView(request):
 @login_required
 def traderView(request):
     pk = request.GET.get('pk')
-    print pk
     trader_list = Trader.objects.all().order_by("name")  
     system_list = System.objects.all().order_by("name")
     return render(request,"trader_view.html", locals())
@@ -29,9 +28,14 @@ def traderView(request):
 @login_required
 def employerView(request):
     pk = request.GET.get('pk')
-    print pk
     employer_list = Employer.objects.all().order_by("name")  
     return render(request,"employer_view.html", locals())
+
+@login_required
+def accountView(request):
+    pk = request.GET.get('pk')
+    account_list = Account.objects.all().order_by("account")  
+    return render(request,"account_view.html", locals())
 
 @login_required
 def systemView(request):  
@@ -279,3 +283,40 @@ def modEmployer(request):
 
     return HttpResponseRedirect(url)
 
+
+@login_required
+def addAccount(request):
+    if request.POST:
+        account = request.POST.get('add_name')
+        
+        try:
+            Account.objects.create(account = account)
+
+        except Exception, e:
+            print str(e.message)
+    
+    return HttpResponseRedirect("/accountProfile/")
+
+@login_required
+def modAccount(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('mod_pk')
+        
+        try:
+            account = Account.objects.get(pk = pk)
+            if delete:
+                account.delete()
+                url = "/accountProfile/"
+            elif save:
+                account_name = request.POST.get('mod_name')
+                print account
+                account.account = account_name
+                account.save()
+                url = "/accountProfile/?pk=" + str(pk)
+        except Exception, e:
+            print str(e.message)
+            url = "/accountProfile/"
+
+    return HttpResponseRedirect(url)
