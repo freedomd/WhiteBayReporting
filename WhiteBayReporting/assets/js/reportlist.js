@@ -54,11 +54,32 @@ function queryReportList(strpage) {
     						            		 		{'error_callback': custom_error}); 		       
 }
 
+function getSummaryReport() {
+	html = "<div align='center'><img height='300' width='300' src='/assets/img/loading.gif'/></div>";
+	$("#reports_container").empty();
+	$("#message_container").empty(); 
+	$("#message_container").append(html);
+    Dajaxice.reports.getSummaryReport(getSummaryResponse, { 'symbol': $("#symbol").val(),
+    											 			'datefrom': $("#datefrom").val(), 
+    							   				 			'dateto': $("#dateto").val(),
+    							   				 			'user_email': $("#user_email").val()},
+    						            		 			{'error_callback': custom_error}); 		       
+}
+
+function getSummaryResponse(data) {
+	$("#reports_container").empty(); // delete all the data
+	$("#message_container").empty(); 
+	var html = "";
+	html += data.message;
+	$("#message_container").append(html);
+}
+
 
 function createReportList(data) {
 	var mode = $("#mode").val(); // query mode, g for get, q for query
 	var number = data.report_list.length;
 	$("#reports_container").empty(); // delete all the data
+	$("#message_container").empty(); // delete all the data
 	if(number == 0) {
 		$("#reports_container").removeClass("data_container");
 		var html = "";

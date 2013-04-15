@@ -1,3 +1,4 @@
+import csv
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
 from reports.models import Report
@@ -5,6 +6,8 @@ from django.db.models import Q
 from django.core import serializers
 from datetime import date
 from settings import PER_PAGE
+from reports.logic import getSummary
+from email_sender import EmailSender
 
 @dajaxice_register
 def sayhello(request):
@@ -132,3 +135,68 @@ def queryReportList(request, tab, strorder, symbol, datefrom, dateto, strpage):
              'np': np }
     
     return simplejson.dumps(data)
+
+
+@dajaxice_register
+def getSummaryReport(request, symbol, datefrom, dateto, user_email):
+    
+    # start filter
+    report_list = None
+    filename = ""
+    content = "" #email content
+    if symbol is not u"" or None:
+        filename = symbol + "_"
+        content = symbol + " "
+        if report_list is None:
+            report_list = Report.objects.filter(Q(symbol=symbol))
+        else:
+            report_list = report_list.filter(Q(symbol=symbol))
+    
+    content += "Summary Report:\n"
+
+    if datefrom is not u"" or None:
+        filename = filename + "%s_" % datefrom.replace("-", "")
+        content += "from %s\n" % datefrom
+        if report_list is None:
+            report_list = Report.objects.filter(Q(reportDate__gte=datefrom))
+        else:
+            report_list = report_list.filter(Q(reportDate__gte=datefrom))
+    
+    if dateto is not u"" or None:
+        filename = filename + "%s_" % dateto.replace("-", "")
+        content += "to %s\n" % dateto
+        if report_list is None:
+            report_list = Report.objects.filter(Q(reportDate__lte=dateto))
+        else:
+            report_list = report_list.filter(Q(reportDate__lte=dateto))
+    
+    if report_list != None:
+        filename += "SUMM.csv"
+        filepath = "./temp/" + filename 
+        with open(filepath, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(['Symbol', 'SOD', 'Buys', 'BuyAve', 'Sells', 'SellAve', 'EOD',
+                             'GrossPNL', 'UnrealizedPNL', 'Commission', 'SEC Fees', 'ECN Fees', 'Net PNL'])
+            
+            summary_list = getSummary(report_list.order_by("reportDate"))
+            
+            for summary in summary_list:
+                report = summary_list[summary]
+                writer.writerow([report.symbol, report.SOD,
+                                 report.buys, round(report.buyAve, 2), 
+                                 report.sells, round(report.sellAve, 2), report.EOD,
+                                 round(report.grossPNL, 2), round(report.unrealizedPNL, 2), 
+                                 round(report.commission, 2), round(report.secFees, 2), round(report.ecnFees, 2), 
+                                 round(report.netPNL, 2)])
+        
+        es = EmailSender()
+        es.send_email(filename, content, user_email, filepath)
+            
+        message = "Summary report will be sent to <i><strong>%s</strong></i>." % user_email 
+    else:
+        message = "No match reports."
+        
+    data = { 'message': message }
+    
+    return simplejson.dumps(data)
+
