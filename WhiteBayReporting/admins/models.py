@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib import admin
 
 
+
 class Broker(models.Model):
     
     name = models.CharField( max_length=50 )
@@ -24,7 +25,6 @@ class System(models.Model):
     
     def __unicode__(self):
         return str(self.name)
-
 
 
 class Trader(models.Model):
@@ -55,6 +55,17 @@ class Employer(models.Model):
     
     def __unicode__(self):
         return str(self.name)
+
+
+class Account(models.Model):
+    
+    account = models.CharField( max_length=30 )
+    
+    def save(self, *args, **kwargs): 
+        super(Account, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.account)
     
     
 class Firm(models.Model):
@@ -110,3 +121,4 @@ admin.site.register(Trader)
 admin.site.register(System)
 admin.site.register(Firm)
 admin.site.register(Route)
+admin.site.register(Account)
