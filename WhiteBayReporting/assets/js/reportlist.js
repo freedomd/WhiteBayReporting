@@ -36,6 +36,7 @@ function getReportList(strpage) {
 	$("html,body").animate({scrollTop:0},0); // back to top
     Dajaxice.reports.getReportList(createReportList, {'tab': $("#tab").val(),
     											 'strorder': $("#order").val(),
+    											 'account': $("#account").val(),
     											 'year': $("#year").val(), 
     							   				 'month': $("#month").val(),
     							   				 'day': $("#day").val(), 
@@ -119,8 +120,9 @@ function createReportList(data) {
 			var year = report.reportDate.substr(0, 4);
 			var month = report.reportDate.substr(5, 2);
 			var day = report.reportDate.substr(8, 2);
+			var account = report.account;
 			html += "<tr>";
-			html += "<td><a href='/symbol/" + report.symbol + "/" + year + "/" + month + "/" + day + "/1/'>" + report.symbol + "</a></td>";
+			html += "<td><a href='/symbol/" + report.account + "/" + report.symbol + "/" + year + "/" + month + "/" + day + "/1/'>" + report.symbol + "</a></td>";
 			html += "<td>" + addCommas(report.SOD) + "</td>";
 			html += "<td>" + addCommas(report.mark.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.buys) + "</td>";

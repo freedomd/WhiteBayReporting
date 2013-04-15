@@ -18,8 +18,9 @@
     
 <div class="container">
 <ul class="breadcrumb" style="background-color: #FFFFFF; padding-left: 0px; margin-bottom:5px;">
-  	<li><a href="/monthlyReport/{{ year }}/{{ month }}/">{{ reportDate|date:"F, Y" }}</a> <span class="divider">/</span></li>
-  	<li><a href="/dailyReport/{{ year }}/{{ month }}/{{ day }}/">{{ reportDate|date:"d" }}</a> <span class="divider">/</span></li>
+	<li class="active"><strong>{{ account }}</strong> <span class="divider">/</span></li>
+  	<li><a href="/monthlyReport/{{ account }}/{{ year }}/{{ month }}/">{{ reportDate|date:"F, Y" }}</a> <span class="divider">/</span></li>
+  	<li><a href="/dailyReport/{{ account }}/{{ year }}/{{ month }}/{{ day }}/">{{ reportDate|date:"d" }}</a> <span class="divider">/</span></li>
   	<li class="active">{{ symbol }}</li>
 </ul>
 </div>

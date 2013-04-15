@@ -49,7 +49,7 @@ def tradeView(request, strpage):
     return render(request,"trades_view.html", locals())
 
 @login_required
-def symbolView(request, symbol, year, month, day, strpage):
+def symbolView(request, account, symbol, year, month, day, strpage):
     
     if symbol == None:
         return HttpResponseRedirect("/report/")
@@ -70,7 +70,7 @@ def symbolView(request, symbol, year, month, day, strpage):
     
     reportDate = date(int(year), int(month), int(day))
     today = date.today()
-    trade_list = Trade.objects.filter(Q(symbol=symbol) & Q(tradeDate__year=year) & 
+    trade_list = Trade.objects.filter(Q(account=account) & Q(symbol=symbol) & Q(tradeDate__year=year) & 
                                       Q(tradeDate__month=month) & Q(tradeDate__day=day))[start:end]
     count = trade_list.count()
                                     
@@ -79,7 +79,7 @@ def symbolView(request, symbol, year, month, day, strpage):
             error = True
             error_message = "No trades of symbol %s." % symbol
         else:
-            url="/symbol/year/month/day/%s/"%(str(mypage-1))
+            url="/symbol/%s/%s/%s/%s/%s/"%(account, year, month, day, str(mypage-1))
             return HttpResponseRedirect(url)
     else:
         if count == PER_PAGE:

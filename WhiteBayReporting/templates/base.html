@@ -14,6 +14,7 @@
 	<script src="{{ STATIC_URL }}js/bootstrap.js"></script>
   	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
   	<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+  	<script type="text/javascript" src="http://twitter.github.com/bootstrap/assets/js/bootstrap-dropdown.js"></script>
 
     <!-- Le styles -->
     <style type="text/css">
@@ -29,7 +30,6 @@
 </head>
 
 <body>
-
     <div role="main">
     <!--navigation -->
     <div class="navbar navbar-fixed-top navbar-inverse">
@@ -52,12 +52,16 @@
       </div> 
     </div>
     </div>
-    
     <div class="container">
     	{% if user.is_active %}
       	<ul id="tabs" class="nav nav-tabs">
-      	<li id="report_tab">
-  			<a href="/report/">Reports</a>
+      	<li id="report_tab" class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="/report/">Accounts <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+            	{% for account in account_list %}
+                  <li><a href="/report/{{ account.account }}/">{{ account.account }}</a></li>
+				{% endfor %}
+            </ul>
   		</li>
   		<li id="report_query_tab">
     		<a href="/reportQuery/">Reports Query</a>

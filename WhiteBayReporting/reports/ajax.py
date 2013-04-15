@@ -17,7 +17,7 @@ def sayhello(request):
 
 
 @dajaxice_register
-def getReportList(request, tab, strorder, year, month, day, strpage):
+def getReportList(request, tab, strorder, account, year, month, day, strpage):
     # order 0 = ascending, 1 = descending
     order = int(strorder)
     if tab == None or strorder == None:
@@ -45,7 +45,7 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
     else:
         method = "-" + tab
         
-    report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
+    report_list = Report.objects.filter(Q(account=account) & Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
     count = report_list.count()
     
     if count != 0:
@@ -61,7 +61,7 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
         if mypage != 1:
             start = (mypage - 2) * PER_PAGE
             end = (mypage - 1) * PER_PAGE
-            report_list = Report.objects.filter(Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
+            report_list = Report.objects.filter(Q(account=account) & Q(reportDate__year=year) & Q(reportDate__month=month) & Q(reportDate__day=day)).order_by(method)[start:end]
 
         
     report_list_serialized = serializers.serialize('json', report_list)
