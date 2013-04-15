@@ -1,4 +1,4 @@
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import EmailMessage
 from django.contrib.auth.models import User
 
 class EmailSender(object):
@@ -20,10 +20,11 @@ class EmailSender(object):
                                    from_email=self.sender_addr, to=[addr_to]) # addr_to should be a list
             message.attach_file(attach_path)
             message.send()
-            return True
+            return True, None
             #else:
                 #return False
-        except:
-            return False
+        except Exception, e:
+            print str(e.message)
+            return False, "Send Email Failed: " + str(e.message)
                         
                 
