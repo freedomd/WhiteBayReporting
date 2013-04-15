@@ -19,13 +19,16 @@
 <input id="tab" value="{{ default }}" style="display: none;">
 <input id="order" value="{{ default_order }}" style="display: none;">
 <input id="mode" value="q" style="display: none;">
+<input id="user_email" value="{{ user_email }}" style="display: none;">
 
 <div class="container">
 <div id="filter">
   	<input id="symbol" type="text" class="span3" placeholder="Symbol">
   	<input id="datefrom" type="text" class="span3" placeholder="Date From">
   	<input id="dateto" type="text" class="span3" placeholder="Date To">
-  	<button class="btn btn-info" onclick="queryReportList(1);" style="float:right;">Search</button>
+  	
+  	<button class="btn btn-primary" onclick="getSummaryReport();" style="float:right;" data-toggle="tooltip" data-placement="bottom" title="Get summary report via email">Get Summary</button>
+  	<button class="btn btn-info" onclick="queryReportList(1);" style="float:right;margin-right:8px;">Search</button>
   	<div style="clear:both;"></div> 
 </div> 
 </div>
@@ -38,6 +41,8 @@
 
 <!-- trades list  -->
 <div class="hero-unit" style="background-color: #FFFFFF;padding: 20px;">
+<div id="message_container" class="container">
+</div>
 <div id="reports_container" class="container data_container">
 </div>
 </div>

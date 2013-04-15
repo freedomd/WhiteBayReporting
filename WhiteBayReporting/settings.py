@@ -236,3 +236,12 @@ TRADE_FILE_NAME = "WBPT_LiquidEOD_"
 MARK_PATH = ".\\ML Clear Files\\Decrypted\\"
 MARK_FILE_NAME = "WSB858TJ.CST425PO_"
 TEMP_PATH = os.path.join(PROJECT_PATH, 'temp/')
+
+#---------------------------- email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'di.freedomd@gmail.com'
+EMAIL_HOST_PASSWORD = '03050127dt'
+

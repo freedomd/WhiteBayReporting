@@ -1,7 +1,7 @@
 import os
 from admins.models import Firm, Broker, Route
 from trades.models import Trade, RollTrade
-from reports.models import Symbol, Report, DailyReport, MonthlyReport
+from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
 import time
 from time import strftime
@@ -83,6 +83,26 @@ def getTradeFile(file_date):
     
 #############################################
 # save data into database
+def getSecurities(filepath):
+    header = True
+    file = open(filepath, 'rb')
+    
+    for row in csv.reader(file.read().splitlines(), delimiter='|'):
+        if not header:
+            try:
+            
+                sec = Security()
+                sec.symbol = row[0]
+                sec.name = row[1]
+                sec.market = row[2]
+                sec.save() # save into database
+            except Exception, e:
+                print str(e.message)
+                continue
+        else:
+            header = False
+            
+    file.close()
 
 # this is a test function
 def getTrades(filepath):
@@ -644,7 +664,36 @@ def getFees(today):
         rollTrades.delete()
     log.close()
     
-  
+
+# get summary data with a list of reports
+def getSummary(report_list):
+    summary_list = {}
+    
+    for report in report_list:
+        symbol = report.symbol
+        try:
+            if report.buys == 0:
+                continue
+            if report.sells == 0:
+                continue
+            buy_total = summary_list[symbol].buys * summary_list[symbol].buyAve + report.buys * report.buyAve
+            sell_total = summary_list[symbol].sells * summary_list[symbol].sellAve + report.sells * report.sellAve
+            summary_list[symbol].buys += report.buys
+            summary_list[symbol].buyAve = buy_total / summary_list[symbol].buys
+            summary_list[symbol].sells += report.sells
+            summary_list[symbol].sellAve = sell_total / summary_list[symbol].sells
+            summary_list[symbol].grossPNL += report.grossPNL
+            summary_list[symbol].unrealizedPNL += report.unrealizedPNL
+            summary_list[symbol].secFees += report.secFees
+            summary_list[symbol].commission += report.commission
+            summary_list[symbol].ecnFees += report.ecnFees
+            summary_list[symbol].netPNL += report.netPNL
+            summary_list[symbol].EOD = report.EOD # get the last day's EOD
+        except:
+            summary_list[symbol] = report
+        
+    return summary_list
+
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
     daily_report = DailyReport()

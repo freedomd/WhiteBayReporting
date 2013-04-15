@@ -18,7 +18,8 @@ def reportView(request):
 @login_required
 def reportQueryView(request):
     default = "symbol" # default order
-    default_order = 0 # ascending, 1 for descending      
+    default_order = 0 # ascending, 1 for descending
+    user_email = request.user.email    
     return render(request,"report_query_view.html", locals())
 
 @login_required

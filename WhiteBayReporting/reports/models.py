@@ -16,6 +16,19 @@ class Symbol(models.Model):
     def __unicode__(self):
         return str(self.symbol) + " " + str(self.symbolDate)
 
+# security information
+class Security(models.Model):
+    
+    symbol = models.CharField( max_length=10 )
+    name = models.CharField( max_length=200 ) # description of the symbol
+    market = models.CharField( max_length=10 )
+    
+    def save(self, *args, **kwargs): 
+        super(Security, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.symbol)
+
 # report for each symbol everyday
 class Report(models.Model):
     
@@ -99,6 +112,7 @@ class MonthlyReport(models.Model):
         return str(self.id)
 
 admin.site.register(Symbol)    
+admin.site.register(Security) 
 admin.site.register(Report)
 admin.site.register(DailyReport)
 admin.site.register(MonthlyReport)
