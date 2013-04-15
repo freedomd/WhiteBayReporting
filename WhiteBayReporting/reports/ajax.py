@@ -190,9 +190,9 @@ def getSummaryReport(request, symbol, datefrom, dateto, user_email):
                                  round(report.netPNL, 2)])
         
         es = EmailSender()
-        es.send_email(filename, content, user_email, filepath)
-            
-        message = "Summary report will be sent to <i><strong>%s</strong></i>." % user_email 
+        success, message = es.send_email(filename, content, user_email, filepath)
+        if success:
+            message = "Summary report will be sent to <i><strong>%s</strong></i>." % user_email 
     else:
         message = "No match reports."
         
