@@ -47,6 +47,7 @@ function queryReportList(strpage) {
 	$("html,body").animate({scrollTop:0},0); // back to top
     Dajaxice.reports.queryReportList(createReportList, {'tab': $("#tab").val(),
     											 		'strorder': $("#order").val(),
+    											 		'account': $("#account").val(),
     											 		'symbol': $("#symbol").val(),
     											 		'datefrom': $("#datefrom").val(), 
     							   				 		'dateto': $("#dateto").val(),
@@ -59,7 +60,8 @@ function getSummaryReport() {
 	$("#reports_container").empty();
 	$("#message_container").empty(); 
 	$("#message_container").append(html);
-    Dajaxice.reports.getSummaryReport(getSummaryResponse, { 'symbol': $("#symbol").val(),
+    Dajaxice.reports.getSummaryReport(getSummaryResponse, { 'account': $("#account").val(),
+    														'symbol': $("#symbol").val(),
     											 			'datefrom': $("#datefrom").val(), 
     							   				 			'dateto': $("#dateto").val(),
     							   				 			'user_email': $("#user_email").val()},

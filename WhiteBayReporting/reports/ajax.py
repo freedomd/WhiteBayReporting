@@ -72,7 +72,7 @@ def getReportList(request, tab, strorder, year, month, day, strpage):
     return simplejson.dumps(data)
 
 @dajaxice_register
-def queryReportList(request, tab, strorder, symbol, datefrom, dateto, strpage):
+def queryReportList(request, tab, strorder, account, symbol, datefrom, dateto, strpage):
 
     # order 0 = ascending, 1 = descending
     order = int(strorder)
@@ -97,6 +97,12 @@ def queryReportList(request, tab, strorder, symbol, datefrom, dateto, strpage):
     
     # start filter
     report_list = None
+    if account is not u"" or None:
+        if report_list is None:
+            report_list = Report.objects.filter(Q(account__icontains=account))
+        else:
+            report_list = report_list.filter(Q(account__icontains=account))
+    
     if symbol is not u"" or None:
         if report_list is None:
             report_list = Report.objects.filter(Q(symbol=symbol))
@@ -139,15 +145,24 @@ def queryReportList(request, tab, strorder, symbol, datefrom, dateto, strpage):
 
 
 @dajaxice_register
-def getSummaryReport(request, symbol, datefrom, dateto, user_email):
+def getSummaryReport(request, account, symbol, datefrom, dateto, user_email):
     
     # start filter
     report_list = None
     filename = ""
     content = "" #email content
+    
+    if account is not u"" or None:
+        filename += account + "_"
+        content += "Account: " + account + "\n"
+        if report_list is None:
+            report_list = Report.objects.filter(Q(account__icontains=account))
+        else:
+            report_list = report_list.filter(Q(account__icontains=account))
+    
     if symbol is not u"" or None:
-        filename = symbol + "_"
-        content = symbol + " "
+        filename += symbol + "_"
+        content += symbol + " "
         if report_list is None:
             report_list = Report.objects.filter(Q(symbol=symbol))
         else:
@@ -156,7 +171,7 @@ def getSummaryReport(request, symbol, datefrom, dateto, user_email):
     content += "Summary Report:\n"
 
     if datefrom is not u"" or None:
-        filename = filename + "%s_" % datefrom.replace("-", "")
+        filename += "%s_" % datefrom.replace("-", "")
         content += "from %s\n" % datefrom
         if report_list is None:
             report_list = Report.objects.filter(Q(reportDate__gte=datefrom))
@@ -164,7 +179,7 @@ def getSummaryReport(request, symbol, datefrom, dateto, user_email):
             report_list = report_list.filter(Q(reportDate__gte=datefrom))
     
     if dateto is not u"" or None:
-        filename = filename + "%s_" % dateto.replace("-", "")
+        filename += "%s_" % dateto.replace("-", "")
         content += "to %s\n" % dateto
         if report_list is None:
             report_list = Report.objects.filter(Q(reportDate__lte=dateto))
