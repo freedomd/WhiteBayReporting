@@ -1,0 +1,79 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#account_stack").addClass("active");
+			{% if pk %}
+			selectAccount({{ pk }})
+			{% endif %}
+	});
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectAccount('add')">Add an Account</a></li>
+        {% for account in account_list %}
+			<li id="pill{{ account.pk }}"><a class="btn-link" onclick="selectAccount({{ account.pk }})">{{ account.account }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="mod_account" style="display: none; margin-top:10px;">
+	<form method='post' class='form-horizontal' action='/modAccount/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_name">Account Name</label>
+    		<div class="controls">
+				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Account'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_account(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_account()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_account" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addAccount/' onsubmit='return validate_add_account(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_name">Account Name</label>
+    		<div class="controls">
+				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Account'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}
