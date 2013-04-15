@@ -32,6 +32,7 @@ class Security(models.Model):
 # report for each symbol everyday
 class Report(models.Model):
     
+    account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=10 )
     SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
@@ -64,6 +65,7 @@ class Report(models.Model):
 # report of summary data every day
 class DailyReport(models.Model):
     
+    account = models.CharField( max_length=20 )
     SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
     sells = models.IntegerField( default=0 )
@@ -91,6 +93,7 @@ class DailyReport(models.Model):
 # report of summary data every month
 class MonthlyReport(models.Model):
     
+    account = models.CharField( max_length=20 )
     buys = models.IntegerField( default=0 )
     sells = models.IntegerField( default=0 )
     grossPNL = models.FloatField( default=0.00 )

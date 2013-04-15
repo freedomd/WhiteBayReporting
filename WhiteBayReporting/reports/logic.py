@@ -302,13 +302,14 @@ def refreshReports(today):
     log.close()
 
 
-def newReport(symbol, today):
+def newReport(account, symbol, today):
     
     try:
-        new_report = Report.objects.get(Q(symbol=symbol) & Q(reportDate=today))
+        new_report = Report.objects.get(Q(account=account) & Q(symbol=symbol) & Q(reportDate=today))
             
     except Report.DoesNotExist: # today's new does not exist  
         new_report = Report()
+        new_report.account = account
         new_report.symbol = symbol      
         new_report.reportDate = today
         new_report.save()
@@ -349,7 +350,7 @@ def getReport(today):
                 trade.tradeDate = today
                 trade.executionId = row[11]
                 
-                new_report = newReport(trade.symbol, today) # get report
+                new_report = newReport(trade.account, trade.symbol, today) # get report
                 
                 # update report
                 if trade.side == "BUY":
@@ -696,13 +697,16 @@ def getSummary(report_list):
 
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
-    daily_report = DailyReport()
     report_list = Report.objects.filter( Q(reportDate = report_date) )
     
     if report_list.count() == 0:
         return 
     
     for report in report_list:
+        try:
+            daily_report = DailyReport.objects.get( Q(account = report.account) & Q(reportDate = report_date) )
+        except DailyReport.DoesNotExist:
+            daily_report = DailyReport.objects.create(account = report.account, reportDate = report_date)
         daily_report.SOD += report.SOD
         daily_report.buys += report.buys
         daily_report.sells += report.sells
@@ -717,10 +721,11 @@ def getDailyReport(report_date):
         daily_report.LMV += report.LMV
         daily_report.SMV += report.SMV
         daily_report.EOD += report.EOD
-    daily_report.reportDate = report_date
-    daily_report.save()
+        daily_report.save()
     
-    getMonthlyReport(daily_report)
+    daily_reports = DailyReport.objects.filter(reportDate = report_date)
+    for daily_report in daily_reports:
+        getMonthlyReport(daily_report)
 
 
 # get summary data of reports for a specific month
@@ -730,7 +735,7 @@ def getMonthlyReport(daily_report):
     #today = date.today()
     
     try:
-        monthly_report = MonthlyReport.objects.get(Q(reportDate__year = year) & Q(reportDate__month = month))
+        monthly_report = MonthlyReport.objects.get(Q(account = daily_report.account) & Q(reportDate__year = year) & Q(reportDate__month = month))
         monthly_report.buys += daily_report.buys
         monthly_report.sells += daily_report.sells
         monthly_report.grossPNL += daily_report.grossPNL
@@ -744,8 +749,8 @@ def getMonthlyReport(daily_report):
         monthly_report.save()
         
     except MonthlyReport.DoesNotExist:
-        monthly_report = MonthlyReport(reportDate = daily_report.reportDate) # create a new for this month
-        dreports = DailyReport.objects.filter(Q(reportDate__year = year) & Q(reportDate__month = month))
+        monthly_report = MonthlyReport(account = daily_report.account, reportDate = daily_report.reportDate) # create a new for this month
+        dreports = DailyReport.objects.filter(Q(account = daily_report.account) & Q(reportDate__year = year) & Q(reportDate__month = month))
         for dr in dreports:
             monthly_report.buys += dr.buys
             monthly_report.sells += dr.sells
@@ -768,7 +773,7 @@ def getReportByDate(today):
     trades = Trade.objects.filter( tradeDate = today ) 
     
     for trade in trades:
-        new_report = newReport(trade.symbol, today) # get report
+        new_report = newReport(trade.account, trade.symbol, today) # get report
                 
         # update report
         if trade.side == "BUY":
