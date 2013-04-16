@@ -77,7 +77,6 @@ def login(request):
 
 @login_required
 def settingView(request):
-    print "1"
     if request.POST:
         oldpassword = request.POST.get('oldpassword')
         newpassword = request.POST.get('newpassword')
