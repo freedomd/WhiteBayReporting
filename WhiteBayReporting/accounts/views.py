@@ -75,6 +75,28 @@ def login(request):
         
     return HttpResponseRedirect("/")
 
+@login_required
+def settingView(request):
+    print "1"
+    if request.POST:
+        oldpassword = request.POST.get('oldpassword')
+        newpassword = request.POST.get('newpassword')
+        renewpassword = request.POST.get('renewpassword')
+        username = request.user.username
+        
+        if newpassword != renewpassword:
+            message = "Your password doesn't match."
+        else:
+            loginUser = auth.authenticate(username = username, password = oldpassword)
+            if loginUser:
+                loginUser.set_password(newpassword)
+                loginUser.save()
+                message = "Saved."
+            else:
+                message = "Invalid old password."
+
+    return render(request, 'settings.html', locals()) 
+
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect("/")
