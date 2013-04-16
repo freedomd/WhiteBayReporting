@@ -6,7 +6,7 @@ from admins.models import Broker, Trader, System, Firm, Employer, Route, Account
 from settings import ERROR_LOG
 
 def navbar_settings(request):
-    account_list = Account.objects.all()
+    account_list = Account.objects.all().order_by("account")
     additions = {
         'account_list': account_list,
     }
