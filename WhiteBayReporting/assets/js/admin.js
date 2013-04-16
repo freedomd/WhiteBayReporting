@@ -472,7 +472,19 @@ function validate_add_account(thisform) {
 			$("#add_name").after(html);
 			add_name.focus();
 			return false;
-		} 
+		} else {
+			var account = $("#add_name").val();
+			var ret = true;
+			$("a[class='account']").each(function(){
+				if( $(this).html() == account ) {
+					html = "<span class='help-inline message'>Account existed.</span>";
+					$("#add_name").after(html);
+					add_name.focus();
+					ret = false;
+				}
+			});
+			return ret;
+		}
 	}
 	return true
 }
@@ -485,7 +497,19 @@ function validate_mod_account(thisform) {
 			$("#mod_name").after(html);
 			mod_name.focus();
 			return false;
-		} 
+		} else {
+			var account = $("#mod_name").val();
+			var ret = true;
+			$("a[class='account']").each(function(){
+				if( $(this).html() == account ) {
+					html = "<span class='help-inline message'>Account existed.</span>";
+					$("#mod_name").after(html);
+					mod_name.focus();
+					ret = false;
+				}
+			});
+			return ret;
+		}
 	}
 	return true
 }
