@@ -59,7 +59,7 @@
             <a class="dropdown-toggle" data-toggle="dropdown" href="/report/">Accounts <b class="caret"></b></a>
             <ul class="dropdown-menu">
             	{% for account in account_list %}
-                  <li><a href="/report/{{ account.account }}/">{{ account.account }}</a></li>
+                  <li><a class="account" href="/report/{{ account.account }}/">{{ account.account }}</a></li>
 				{% endfor %}
             </ul>
   		</li>
