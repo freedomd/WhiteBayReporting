@@ -534,19 +534,7 @@ def fe():
         d.save()
         today = d.reportDate
         getFees(today)
-        
-    ''' 
-    ms = MonthlyReport.objects.all()
-    for m in ms:
-        today = m.reportDate
-        m.secFees = 0
-        m.clearanceFees = 0
-        ds = DailyReport.objects.filter(Q(reportDate__year=today.year) & Q(reportDate__month=today.month))
-        for d in ds:
-            m.secFees += d.secFees
-            m.clearanceFees += d.clearanceFees
-            m.save()
-    '''
+
         
 def getFees(today):
     log = open(ERROR_LOG, "a")
@@ -571,7 +559,7 @@ def getFees(today):
         
     # SEC fees and commission for each trade
     for trade in rollTrades:
-        report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
+        report = Report.objects.get( Q(account=trade.account) & Q(symbol=trade.symbol) & Q(reportDate=today) )
 
         # sec fees
         if trade.side != "BUY":
@@ -593,7 +581,7 @@ def getFees(today):
 #            brokerCommission = 0
 #            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
 #            log.write("\tWarnning: Cannot get broker (commission) %s.\n" % trade.broker) 
-#        
+        
 
         ### clearance fees         
         clearance = trade.quantity * 0.0001 # TODO: make this argument as a member of firm
@@ -615,12 +603,22 @@ def getFees(today):
     if today > date(2013, 1, 2):
         trades = Trade.objects.filter(tradeDate = today)
         for trade in trades:
-            report = Report.objects.get( Q(symbol=trade.symbol) & Q(reportDate=today) )
+            report = Report.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & Q(reportDate=today) )
         
             # ecn fees
             ecnFees = 0.0
             try:
-                route = Route.objects.get( Q(routeId = trade.destination) & Q(flag = trade.liqFlag) & Q(primaryExchange = "NYSE") )
+                security = Security.objects.get(symbol = trade.symbol)
+                market = security.market
+                if market == "U":
+                    primary = "ALL"
+                elif market == "AMEX":
+                    primary = "AMEX"
+                elif market == "NASDAQ":
+                    primary = "OTC"
+                else: # NYSE, ARCA
+                    primary = "NYSE"
+                route = Route.objects.get( Q(routeId = trade.destination) & Q(flag = trade.liqFlag) & Q(primaryExchange = primary) )
                 if route.feeType == "FLAT PER SHARE":
                     ecnFees = route.rebateCharge * trade.quantity
                     #print ecnFees
@@ -633,34 +631,29 @@ def getFees(today):
             report.ecnFees += ecnFees
             report.save()
     
-    
+    #######################################
     # TODO: delete this part
-    dreport = DailyReport.objects.get(reportDate=today)
-    dreport.secFees = 0
-    dreport.clearanceFees = 0
-    dreport.brokerCommission = 0
-    dreport.commission = 0
-    dreport.ecnFees = 0
     reports = Report.objects.filter(reportDate=today)
     for report in reports:
+        dreport = DailyReport.objects.get(Q(account=report.account) & Q(reportDate=today))
         dreport.secFees += report.secFees
         dreport.clearanceFees += report.clearanceFees
         dreport.brokerCommission += report.brokerCommission
         dreport.commission += report.commission
         dreport.ecnFees += report.ecnFees
-    dreport.save()
+        dreport.save()
     
+    dreports = DailyReport.objects.filter(reportDate=today) 
+    for dreport in dreports:
+        mreport = MonthlyReport.objects.get(Q(account=dreport.account) & Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
+        mreport.secFees += dreport.secFees
+        mreport.clearanceFees += dreport.clearanceFees
+        mreport.brokerCommission += dreport.brokerCommission
+        mreport.commission += dreport.commission
+        mreport.ecnFees += dreport.ecnFees
+        mreport.save()
+    ##########################################
     
-    mreport = MonthlyReport.objects.get( Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
-    mreport.secFees += dreport.secFees
-    mreport.clearanceFees += dreport.clearanceFees
-    mreport.brokerCommission += dreport.brokerCommission
-    mreport.commission += dreport.commission
-    mreport.ecnFees += dreport.ecnFees
-    mreport.save()
-#    # TODO: delete this part
-    
-    #trades.delete() # delete roll up trades
     if today > date(2012, 11, 20):
         rollTrades.delete()
     log.close()
