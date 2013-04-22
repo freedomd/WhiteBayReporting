@@ -14,7 +14,27 @@ function addCommas(number) {
 	return x1 + x2;
 }
 
-function getTradeList(strpage) {
+function changeOrder(tab) {
+	var mode = $("#mode").val(); // query mode, g for get, q for query
+	
+	if(tab == $("#tab").val()) {
+		new_order = (parseInt($("#order").val())+1)%2;
+	} else {
+		new_order = 0;
+	}
+
+	$("#tab").val(tab);
+	$("#order").val(new_order);
+	
+	if(mode == "g") {
+		getTradeList(1);
+	} else if(mode == "q") {
+		queryTradeList(1);
+	}
+}
+
+
+function queryTradeList(strpage) {
 	$("html,body").animate({scrollTop:0},0); // back to top
 	
 	if($("#account").val() == "" && $("#symbol").val() == "" && $("#datefrom").val() == "" && $("#dateto").val() == "") {
@@ -25,7 +45,9 @@ function getTradeList(strpage) {
 		$("#trades_container").append(html)
 		return ;
 	}
-    Dajaxice.trades.tradeQuery(createTradeList, {'account': $("#account").val(),
+    Dajaxice.trades.queryTradeList(createTradeList, {'tab': $("#tab").val(),
+    											 'strorder': $("#order").val(),
+    											 'account': $("#account").val(),
     											 'symbol': $("#symbol").val(),
     											 'datefrom': $("#datefrom").val(), 
     							   				 'dateto': $("#dateto").val(),
@@ -34,7 +56,21 @@ function getTradeList(strpage) {
 }
 
 
+function getTradeList(strpage) {
+	$("html,body").animate({scrollTop:0},0); // back to top
+    Dajaxice.trades.getTradeList(createTradeList, {'tab': $("#tab").val(),
+    											 'strorder': $("#order").val(),
+    											 'account': $("#account").val(),
+    											 'symbol': $("#symbol").val(),
+    											 'year': $("#year").val(), 
+    							   				 'month': $("#month").val(),
+    							   				 'day': $("#day").val(),
+    							   				 'strpage': strpage},
+    						            		 {'error_callback': custom_error}); 		       
+}
+
 function createTradeList(data) {
+	var mode = $("#mode").val(); // query mode, g for get, q for query
 	var number = data.trade_list.length;
 	$("#trades_container").empty(); // delete all the data
 	if(number == 0) {
@@ -45,9 +81,20 @@ function createTradeList(data) {
 	} else {
 		var html = "";
 		html += "<table class='table table-striped table-bordered data_table'>";
-		html += "<tr><th>Account</th><th>Symbol</th><th>Security Type</th><th>Side</th><th>Quantity</th>";
-		html += "<th>Price</th><th>Route</th><th>Destination</th><th>Liq Flag</th><th>Date</th><th>Execution ID</th></tr>";
-		
+		html += "<tr id='title'>";
+		html += "<th><button class='btn btn-link tab' id='account' value=0 onclick=changeOrder(this.id)>Account</button></th>";
+		html += "<th><button class='btn btn-link tab' id='symbol' value=0 onclick=changeOrder(this.id)>Symbol</button></th>";
+		html += "<th><button class='btn btn-link tab' id='securityType' value=0 onclick=changeOrder(this.id)>Security Type</button></th>";
+		html += "<th><button class='btn btn-link tab' id='side' value=0 onclick=changeOrder(this.id)>Side</button></th>";
+		html += "<th><button class='btn btn-link tab' id='quantity' value=0 onclick=changeOrder(this.id)>Quantity</button></th>";
+		html += "<th><button class='btn btn-link tab' id='price' value=0 onclick=changeOrder(this.id)>Price</button></th>";
+		html += "<th><button class='btn btn-link tab' id='route' value=0 onclick=changeOrder(this.id)>Route</button></th>";
+		html += "<th><button class='btn btn-link tab' id='destination' value=0 onclick=changeOrder(this.id)>Destination</button></th>";
+		html += "<th><button class='btn btn-link tab' id='liqFlag' value=0 onclick=changeOrder(this.id)>Liq Flag</button></th>";
+		html += "<th><button class='btn btn-link tab' id='tradeDate' value=0 onclick=changeOrder(this.id)>Trade Date</button></th>";
+		html += "<th><button class='btn btn-link tab' id='executionId' value=0 onclick=changeOrder(this.id)>Execution ID</button></th>";
+		html += "</tr>";
+				
 		
 		for(i = 0; i < number; i++) { // create a new list of trades
 			var trade = data.trade_list[i].fields;
@@ -79,7 +126,11 @@ function createTradeList(data) {
 		
 		html += "<div class='paginator'>";
 		if(data.pp > 0) {
-			html += "<button class='btn btn-link' onclick='getTradeList(" + data.pp + ");'>Previous</button>";
+			if(mode == "g") {
+				html += "<button class='btn btn-link' onclick='getTradeList(" + data.pp + ");'>Previous</button>";
+			} else if(mode == "q") {
+				html += "<button class='btn btn-link' onclick='queryTradeList(" + data.pp + ");'>Previous</button>";
+			}
 		}
 		
 		if(data.pp > 0 && data.np > 0) {
@@ -87,7 +138,11 @@ function createTradeList(data) {
 		}
 		
 		if(data.np > 0) {
-			html += "<button class='btn btn-link' onclick='getTradeList(" + data.np + ");'>Next</button>";
+			if(mode == "g") {
+				html += "<button class='btn btn-link' onclick='getTradeList(" + data.np + ");'>Next</button>";
+			} else if (mode == "q") {
+				html += "<button class='btn btn-link' onclick='queryTradeList(" + data.np + ");'>Next</button>";
+			}
 		}
 		html += "</div><div style='clear:both;'></div>";
 		

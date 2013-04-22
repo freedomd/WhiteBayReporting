@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="{{ STATIC_URL }}js/tradelist.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+  			$("#tabs").find('li').removeClass("active");
+			$("#trade_tab").addClass("active");
+		});
+	</script>
+</head>
+
+<body onload=getTradeList(1)>
+
+<input id="tab" value="{{ default }}" style="display: none;">
+<input id="order" value="{{ default_order }}" style="display: none;">
+<input id="account" value="{{ account }}" style="display: none;">
+<input id="symbol" value="{{ symbol }}" style="display: none;">
+<input id="year" value="{{ year }}" style="display: none;">
+<input id="month" value="{{ month}}" style="display: none;">
+<input id="day" value="{{ day }}" style="display: none;">
+<input id="mode" value="g" style="display: none;">
+   
+<div class="container">
+<ul class="breadcrumb" style="background-color: #FFFFFF; padding-left: 0px; margin-bottom:5px;">
+	<li class="active"><strong>{{ account }}</strong> <span class="divider">/</span></li>
+  	<li><a href="/monthlyReport/{{ account }}/{{ year }}/{{ month }}/">{{ tradeDate|date:"F, Y" }}</a> <span class="divider">/</span></li>
+  	<li><a href="/dailyReport/{{ account }}/{{ year }}/{{ month }}/{{ day }}/">{{ tradeDate|date:"d" }}</a> <span class="divider">/</span></li>
+  	<li class="active">{{ symbol }}</li>
+</ul>
+</div>
+
+
+<div id="trades_container" class="container data_container">
+</div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}
