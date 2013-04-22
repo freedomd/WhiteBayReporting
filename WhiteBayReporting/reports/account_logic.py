@@ -1,110 +1,20 @@
+'''''
+This logic file contains useful methods for importing data from a new account that does not exist in system.
+'''''
+
+
 import os
-from admins.models import Firm, Broker, Route
+from admins.models import Firm
 from trades.models import Trade, RollTrade
-from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
+from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
 import time
 from time import strftime
 from django.db.models import Q
-import paramiko
 import csv
 from settings import ERROR_LOG
-from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
-from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
-from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 
 
-#############################################
-# get data files
-def getMarkFile(file_date):
-    # create ssh tunnel to read files from ssh server
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.load_system_host_keys()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
-        ftp = ssh.open_sftp() 
-    except Exception, e:
-        print str(e.message)
-        log = open(ERROR_LOG, "a")
-        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-        log.write("\tCannot connect to datasource: %s\n" % str(e.message))
-        log.close()
-        return None
-        
-    try:
-#        filename = MARK_FILE_NAME + file_date.strftime('%Y%m%d') + ".CSV"
-        filename = "WSB858TJ.CST_20130220.CSV"
-        filepath = MARK_PATH + filename
-        temppath = TEMP_PATH + filename
-        ftp.get(filepath, temppath) 
-        return temppath # return file path
-            
-    except Exception, e:
-        print str(e.message)
-        log = open(ERROR_LOG, "a")
-        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-        log.write("\tGet mark file failed: %s\n" % str(e.message))
-        log.close()
-        return None
-
-def getTradeFile(file_date):
-    # create ssh tunnel to read files from ssh server
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.load_system_host_keys()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=DATASOURCE, username=DATASOURCE_USERNAME, password=DATASOURCE_PASSWORD)
-        ftp = ssh.open_sftp() 
-    except Exception, e:
-        print str(e.message)
-        log = open(ERROR_LOG, "a")
-        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-        log.write("\tCannot connect to datasource: %s\n" % str(e.message))
-        log.close()
-        return None
-    
-    try:
-#        today = date.today()
-#        filename = TRADE_FILE_NAME + file_date.strftime('%Y_%m_%d') + ".csv"
-        filename = "WBPT_LiquidEOD_2013_02_19.csv"
-        filepath = TRADE_PATH + filename
-        temppath = TEMP_PATH + filename
-        ftp.get(filepath, temppath) 
-        return temppath # return file path
-            
-    except Exception, e:
-        print str(e.message)
-        log = open(ERROR_LOG, "a")
-        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-        log.write("\tGet trade file failed: %s\n" % str(e.message))
-        log.close()
-        return None
-    
-#############################################
-# save data into database
-def getSecurities(filepath):
-    header = True
-    file = open(filepath, 'rb')
-    
-    for row in csv.reader(file.read().splitlines(), delimiter='|'):
-        if not header:
-            try:
-            
-                sec = Security()
-                sec.symbol = row[0]
-                sec.name = row[1]
-                sec.market = row[2]
-                sec.save() # save into database
-            except Exception, e:
-                print str(e.message)
-                continue
-        else:
-            header = False
-            
-    file.close()
-
-# this is a test function
 def getTrades(filepath):
     header = True
     file = open(filepath, 'rb')
@@ -135,56 +45,9 @@ def getTrades(filepath):
             header = False
             
     file.close()
-            
-
-def getMarks(today):
-    
-#    filepath = getMarkFile(today)
-#    if filepath == None:
-#        return False
-    print "Getting marks..."
-    filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
-    log = open(ERROR_LOG, "a")
-    
-    file = open(filepath, 'rb')
-    for row in csv.reader(file.read().splitlines(), delimiter=','):
-        try:
-            symbol = row[19].strip()
-            if symbol == "" or symbol == None:
-                continue
-                
-            closing = round(float(row[12]), 2)
-            if closing == 0.0: # invalid symbol
-                continue
-                
-            type = row[4].strip()
-            if type == "B" or type == "J":
-                continue
-            
-            date_str = row[2].split("/")
-            mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
-            
-            try:
-                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDatet=mark_date))
-                new_symbol.closing = closing
-                new_symbol.save()
-            except Symbol.DoesNotExist:
-                new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
-
-        except Exception, e:
-            print str(e.message)
-            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-            log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
-            continue
-    
-    #os.remove(filepath) # remove temporary file
-    file.close()
-    log.close()
-    print "Done"
-    return True
 
 
-def getMarksByDir(path):
+def getMarksByDir(path, account):
     
     print "Getting marks and calculating reports..."    
     filelist = os.listdir(path)
@@ -227,13 +90,14 @@ def getMarksByDir(path):
                 continue
             
         file.close()
-        getReportByDate(mark_date)
+        getReportByDate(mark_date, account)
     
     log.close()
     print "Done"
     return True
 
-def getSupplement(filepath, mark_date):
+
+def getSupplement(filepath, mark_date, account):
     
     print "Getting marks and calculating reports..."    
     
@@ -241,13 +105,17 @@ def getSupplement(filepath, mark_date):
     file = open(filepath, 'rb')
     log = open(ERROR_LOG, "a")
         
-    for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+    for row in csv.reader(file.read().splitlines(), delimiter=','): 
         try:
+            # please modify row number here according to the supplement file format
             symbol = row[5].strip()
             if symbol == "" or symbol == None:
                 continue
-                
-            closing = round(float(row[13]), 2)
+            
+            if row[8] != "":
+                continue
+            
+            closing = round(float(row[12]), 2)
             if closing == 0.0: # invalid symbol
                 continue
 
@@ -264,7 +132,7 @@ def getSupplement(filepath, mark_date):
             log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
             continue
             
-    getReportByDate(mark_date)
+    getReportByDate(mark_date, account)
     
     log.close()
     file.close()
@@ -272,12 +140,12 @@ def getSupplement(filepath, mark_date):
     return True
 
 
-def refreshReports(today):
+def refreshReports(today, account):
     log = open(ERROR_LOG, "a")
     
     try: # get latest report date
-        last_date =  Report.objects.filter( Q(reportDate__lt=today) ).order_by("-reportDate")[0].reportDate
-        old_reports = Report.objects.filter( Q(reportDate=last_date) )
+        last_date =  Report.objects.filter( Q(reportDate__lt=today) & Q(account=account) ).order_by("-reportDate")[0].reportDate
+        old_reports = Report.objects.filter( Q(reportDate=last_date) & Q(account=account) )
         for old_report in old_reports:
             old_report.pk = None
             old_report.save() # clone a new one
@@ -318,90 +186,11 @@ def newReport(account, symbol, today):
     return new_report
     
 
-def getReport(today):
-    
-#    filepath = getTradeFile(today)
-#    if filepath == None:
-#        return False
-    print "Getting reports..."
-    filepath = './temp/WBPT_LiquidEOD_2013_01_07.csv'
-    file = open(filepath, 'rb')
-    log = open(ERROR_LOG, "a")
-    
-    refreshReports(today) # create 
-    
-    header = True
-    for row in csv.reader(file.read().splitlines(), delimiter=','):
-        if not header:
-            try:
-                date_str = row[10].split("/")
-                today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
-                
-                trade = Trade()
-                trade.account = row[0]
-                trade.symbol = row[1]
-                trade.securityType = row[2]
-                trade.side = row[3]
-                trade.quantity = row[4]
-                trade.price = row[5]
-                trade.route = row[6]
-                trade.destination = row[7]
-                trade.liqFlag = row[9]
-                trade.tradeDate = today
-                trade.executionId = row[11]
-                
-                new_report = newReport(trade.account, trade.symbol, today) # get report
-                
-                # update report
-                if trade.side == "BUY":
-                    total = new_report.buys * new_report.buyAve
-                    total += trade.quantity * trade.price # new total
-                    new_report.buys += trade.quantity # new buys
-                    new_report.buyAve = total / new_report.buys # new buy ave
-            
-                elif trade.side == "SEL" or trade.side == "SS":
-                    total = new_report.sells * new_report.sellAve
-                    total += trade.quantity * trade.price # new total
-                    new_report.sells += trade.quantity # new sells
-                    new_report.sellAve = total / new_report.sells # new sell ave
-        
-                else:
-                    print "Error: Invalid Side."
-                    continue
-                
-                trade.save() # save into database
-                new_report.save() # save result
-                
-            except Exception, e:
-                print str(e.message)
-                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                log.write("\tGet report Failed: %s\n" % str(e.message))
-                continue
-        else:
-            header = False
-    
-    print "Done"
-    print "Calculating PNLS and summary reports..."
-    
-    getFees(today) # calculate fees
-    getPNLs(today) # calculate PNLS
-    getDailyReport(today) # get daily summary report
-    # now delete marks lt today, we do not need them anymore
-    Symbol.objects.filter( symbolDate__lt=today ).delete() 
-    #os.remove(filepath) # remove temporary file
-    
-    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-    log.write("\tReports calculating done.")
-    file.close()
-    log.close()
-    return True
-
-
 ###########################################################
 # calcluate pnls for each report
-def getPNLs(report_date):
+def getPNLs(report_date, account):
     log = open(ERROR_LOG, "a")
-    report_list = Report.objects.filter( Q(reportDate = report_date) )
+    report_list = Report.objects.filter( Q(reportDate = report_date) & Q(account=account) )
     for report in report_list: 
         symbol = report.symbol
         mark = report.mark # mark to market value
@@ -433,7 +222,7 @@ def getPNLs(report_date):
         # check SOD
         if SOD == 0:
             try:
-                last_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=report_date) ).order_by("-reportDate")[0]
+                last_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=report_date) & Q(account=account) ).order_by("-reportDate")[0]
                 SOD = last_report.EOD
                 report.SOD = SOD
             except:
@@ -441,6 +230,7 @@ def getPNLs(report_date):
         
         # discard useless report
         if SOD == 0 and buys == 0 and sells == 0:
+            print "!!!"
             report.delete()
             continue
         
@@ -472,7 +262,7 @@ def getPNLs(report_date):
         report.unrealizedPNL = unrealizedPNL
 
         # net PNL
-        report.netPNL = grossPNL + unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
+        report.netPNL = grossPNL + unrealizedPNL #- report.secFees - report.clearanceFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -489,8 +279,8 @@ def getPNLs(report_date):
         
 ###########################################################
 # calcluate fees for trades
-def getRollTrades(today):
-    trades = Trade.objects.filter(tradeDate=today)
+def getRollTrades(today, account):
+    trades = Trade.objects.filter(Q(tradeDate=today) & Q(account=account))
     for trade in trades:
         try:
             
@@ -537,12 +327,12 @@ def fe():
         getFees(today)
 
         
-def getFees(today):
+def getFees(today, account):
     log = open(ERROR_LOG, "a")
     firm = Firm.objects.all()[0]
     secRate = firm.secFee
     
-    reports = Report.objects.filter(reportDate=today)
+    reports = Report.objects.filter( Q(reportDate=today) & Q(account=account) )
     for report in reports:
         report.secFees = 0
         report.clearanceFees = 0
@@ -554,9 +344,9 @@ def getFees(today):
     # clearance fees
     # after 2012-11-20, should do roll up
     if today <= date(2012, 11, 20):
-        rollTrades = Trade.objects.filter(tradeDate = today)
+        rollTrades = Trade.objects.filter( Q(tradeDate = today) & Q(account=account) )
     else:
-        rollTrades = getRollTrades(today)
+        rollTrades = getRollTrades(today, account)
         
     # SEC fees and commission for each trade
     for trade in rollTrades:
@@ -633,69 +423,16 @@ def getFees(today):
             report.ecnFees += ecnFees
             report.save()
     '''
-    
-    '''
-    #######################################
-    # TODO: delete this part
-    reports = Report.objects.filter(reportDate=today)
-    for report in reports:
-        dreport = DailyReport.objects.get(Q(account=report.account) & Q(reportDate=today))
-        dreport.secFees += report.secFees
-        dreport.clearanceFees += report.clearanceFees
-        dreport.brokerCommission += report.brokerCommission
-        dreport.commission += report.commission
-        dreport.ecnFees += report.ecnFees
-        dreport.save()
-    
-    dreports = DailyReport.objects.filter(reportDate=today) 
-    for dreport in dreports:
-        mreport = MonthlyReport.objects.get(Q(account=dreport.account) & Q(reportDate__year=today.year) & Q(reportDate__month=today.month) )
-        mreport.secFees += dreport.secFees
-        mreport.clearanceFees += dreport.clearanceFees
-        mreport.brokerCommission += dreport.brokerCommission
-        mreport.commission += dreport.commission
-        mreport.ecnFees += dreport.ecnFees
-        mreport.save()
-    ##########################################
-    '''
+
     
     if today > date(2012, 11, 20):
         rollTrades.delete()
     log.close()
-    
 
-# get summary data with a list of reports
-def getSummary(report_list):
-    summary_list = {}
-    
-    for report in report_list:
-        symbol = report.symbol
-        try:
-            if report.buys == 0:
-                continue
-            if report.sells == 0:
-                continue
-            buy_total = summary_list[symbol].buys * summary_list[symbol].buyAve + report.buys * report.buyAve
-            sell_total = summary_list[symbol].sells * summary_list[symbol].sellAve + report.sells * report.sellAve
-            summary_list[symbol].buys += report.buys
-            summary_list[symbol].buyAve = buy_total / summary_list[symbol].buys
-            summary_list[symbol].sells += report.sells
-            summary_list[symbol].sellAve = sell_total / summary_list[symbol].sells
-            summary_list[symbol].grossPNL += report.grossPNL
-            summary_list[symbol].unrealizedPNL += report.unrealizedPNL
-            summary_list[symbol].secFees += report.secFees
-            summary_list[symbol].commission += report.commission
-            summary_list[symbol].ecnFees += report.ecnFees
-            summary_list[symbol].netPNL += report.netPNL
-            summary_list[symbol].EOD = report.EOD # get the last day's EOD
-        except:
-            summary_list[symbol] = report
-        
-    return summary_list
 
 # get summary data of reports with a specific date
-def getDailyReport(report_date):
-    report_list = Report.objects.filter( Q(reportDate = report_date) )
+def getDailyReport(report_date, account):
+    report_list = Report.objects.filter( Q(reportDate = report_date) & Q(account=account) )
     
     if report_list.count() == 0:
         return 
@@ -721,7 +458,7 @@ def getDailyReport(report_date):
         daily_report.EOD += report.EOD
         daily_report.save()
     
-    daily_reports = DailyReport.objects.filter(reportDate = report_date)
+    daily_reports = DailyReport.objects.filter( Q(reportDate = report_date) & Q(account=account))
     for daily_report in daily_reports:
         getMonthlyReport(daily_report)
 
@@ -763,12 +500,12 @@ def getMonthlyReport(daily_report):
         monthly_report.save()
         
         
-def getReportByDate(today):
+def getReportByDate(today, account):
     log = open(ERROR_LOG, "a")
     
-    refreshReports(today) # create new reports for those symbols have reports last trade date
+    refreshReports(today, account) # create new reports for those symbols have reports last trade date
     
-    trades = Trade.objects.filter( tradeDate = today ) 
+    trades = Trade.objects.filter( Q(tradeDate = today) & Q(account=account) ) 
     
     for trade in trades:
         new_report = newReport(trade.account, trade.symbol, today) # get report
@@ -792,47 +529,15 @@ def getReportByDate(today):
         
         new_report.save() # save result
         
-    getFees(today) # calculate fees
-    getPNLs(today) # calculate PNLS
-    getDailyReport(today) # get daily summary report
+    getFees(today, account) # calculate fees
+    getPNLs(today, account) # calculate PNLS
+    getDailyReport(today, account) # get daily summary report
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
     log.write("\tReports calculating done.")
     log.close()
-    
-
-
-# some help functions
-def clearReports():
-    time_pool = []
-    dreports = DailyReport.objects.all()
-    for dreport in dreports:
-        time_pool.append(dreport.reportDate)
-    
-    for time in time_pool:
-        reports = Report.objects.filter(reportDate=time)
-        for report in reports:
-            report.buys = 0 # update 
-            report.sells = 0
-            report.buyAve = 0.0 
-            report.sellAve = 0.0
-            report.SOD = 0
-            report.grossPNL = 0.0
-            report.unrealizedPNL = 0.0
-            report.commission = 0.0
-            report.secFees = 0.0
-            report.clearanceFees = 0.0
-            report.netPNL = 0.0
-            report.LMV = 0.0
-            report.SMV = 0.0
-            report.EOD = 0
-            report.save()
-    
-    dreports.delete()
-    MonthlyReport.objects.all().delete()
-    
     
             
             
