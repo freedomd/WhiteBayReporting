@@ -11,6 +11,8 @@ from settings import PER_PAGE
 
 @login_required
 def tradeQueryView(request):
+    default = "account" # default order
+    default_order = 0 # ascending, 1 for descending
     message = "Please type in a query."            
     return render(request,"trade_query_view.html", locals())
 
@@ -47,6 +49,13 @@ def tradeView(request, strpage):
             pp = mypage - 1
             
     return render(request,"trades_view.html", locals())
+
+@login_required
+def symbolViewAjax(request, account, symbol, year, month, day):
+    default = "account" # default order
+    default_order = 0 # ascending, 1 for descending
+    tradeDate = date(int(year), int(month), int(day))
+    return render(request,"trades_view_ajax.html", locals())
 
 @login_required
 def symbolView(request, account, symbol, year, month, day, strpage):

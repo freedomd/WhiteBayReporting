@@ -122,7 +122,7 @@ function createReportList(data) {
 			var day = report.reportDate.substr(8, 2);
 			var account = report.account;
 			html += "<tr>";
-			html += "<td><a href='/symbol/" + report.account + "/" + report.symbol + "/" + year + "/" + month + "/" + day + "/1/'>" + report.symbol + "</a></td>";
+			html += "<td><a href='/symbol/" + report.account + "/" + report.symbol + "/" + year + "/" + month + "/" + day + "/' >" + report.symbol + "</a></td>";
 			html += "<td>" + addCommas(report.SOD) + "</td>";
 			html += "<td>" + addCommas(report.mark.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.buys) + "</td>";
