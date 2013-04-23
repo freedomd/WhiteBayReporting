@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker, Trader, System, Employer, Account
+from admins.models import Broker, Trader, System, Employer, Account, Group
 from django.core import serializers
 
 @dajaxice_register
@@ -107,7 +107,22 @@ def getAccount(request, pk):
         success = "false"
         message = "No such account found."
     
-    data = {'pk': account.pk, 'account': account.account,
+    data = {'pk': account.pk, 'group': account.group, 'account': account.account,
+            'success': success, 'message': message }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getGroup(request, pk):
+    try:
+        group = Group.objects.get(pk = pk)
+        success = "true"
+        message = ""
+    except:
+        success = "false"
+        message = "No such group found."
+    
+    data = {'pk': group.pk, 'name': group.name,
             'success': success, 'message': message }
     
     return simplejson.dumps(data)

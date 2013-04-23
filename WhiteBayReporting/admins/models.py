@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib import admin
 
 
-
 class Broker(models.Model):
     
     name = models.CharField( max_length=50 )
@@ -15,6 +14,7 @@ class Broker(models.Model):
         return str(self.name)
 
 
+
 class System(models.Model):
     
     name = models.CharField( max_length=50 )
@@ -25,6 +25,7 @@ class System(models.Model):
     
     def __unicode__(self):
         return str(self.name)
+
 
 
 class Trader(models.Model):
@@ -46,6 +47,8 @@ class Trader(models.Model):
     def __unicode__(self):
         return str(self.name)
     
+
+    
 class Employer(models.Model):
     
     name = models.CharField( max_length=30 )
@@ -57,17 +60,40 @@ class Employer(models.Model):
         return str(self.name)
 
 
+
+class Group(models.Model):
+    
+    name = models.CharField( max_length=30 )
+    
+    def save(self, *args, **kwargs): 
+        super(Group, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.group)
+
+
+
 class Account(models.Model):
     
     account = models.CharField( max_length=30 )
+    grossPNL = models.FloatField( default=0.00 )
+    unrealizedPNL = models.FloatField( default=0.00 )
+    netPNL = models.FloatField( default=0.00 )
+    
+    commission = models.FloatField( default=0.00 )
+    secFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
+    
+    group = models.IntegerField( default=-1 ) # group pk, -1 for no group
     
     def save(self, *args, **kwargs): 
         super(Account, self).save(*args, **kwargs)
     
     def __unicode__(self):
         return str(self.account)
-    
-    
+
+
+# firm profile
 class Firm(models.Model):
     
     # clearance fee
@@ -88,10 +114,11 @@ class Firm(models.Model):
     
     def __unicode__(self):
         return str(self.id)
-
-class Route(models.Model):
     
-    # ECN fee
+    
+# routes, related to ecn fees
+class Route(models.Model):
+
     seqNo = models.IntegerField( default=0 )
     routeId = models.CharField( max_length=10 )
     effectiveFrom = models.DateTimeField( blank=True, null=True )

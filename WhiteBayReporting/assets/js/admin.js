@@ -444,6 +444,7 @@ function selectAccount(value) {
 	} else if(value == "add") {
 		$('#mod_account').hide();
 		$('#add_account').show();
+		$('#add_group').val("-1");
 	} else { 
     	Dajaxice.admins.getAccount(showAccount, {'pk': value}, {'error_callback': custom_error}); 		
     }       
@@ -456,6 +457,7 @@ function showAccount(data) {
 	if(data.success == "true") {
 		$('#mod_account').show();
 		$('#mod_pk').val(data.pk);
+		$('#mod_group').val(data.group);
 		$('#mod_name').val(data.account);
 	} else {
 		html = "";
@@ -477,7 +479,7 @@ function validate_add_account(thisform) {
 			var ret = true;
 			$("a[class='account']").each(function(){
 				if( $(this).html() == account ) {
-					html = "<span class='help-inline message'>Account existed.</span>";
+					html = "<span class='help-inline message'>Account already exists.</span>";
 					$("#add_name").after(html);
 					add_name.focus();
 					ret = false;
@@ -497,24 +499,92 @@ function validate_mod_account(thisform) {
 			$("#mod_name").after(html);
 			mod_name.focus();
 			return false;
-		} else {
+		} /* else {
 			var account = $("#mod_name").val();
 			var ret = true;
 			$("a[class='account']").each(function(){
 				if( $(this).html() == account ) {
-					html = "<span class='help-inline message'>Account existed.</span>";
+					html = "<span class='help-inline message'>Account already exists.</span>";
 					$("#mod_name").after(html);
 					mod_name.focus();
 					ret = false;
 				}
 			});
 			return ret;
-		}
+		} */
 	}
 	return true
 }
 
 function confirm_delete_account() {
 	var result = confirm("Delete This Account?")
+  	return result;
+}
+
+
+/*****************************************************************************************
+/* Group
+*/
+
+function selectGroup(value) {
+	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
+	
+	if(value == "default") {
+		$('#mod_group').hide();
+		$('#add_group').hide();
+		return ;
+	} else if(value == "add") {
+		$('#mod_group').hide();
+		$('#add_group').show();
+	} else { 
+    	Dajaxice.admins.getGroup(showGroup, {'pk': value}, {'error_callback': custom_error}); 		
+    }       
+    
+}
+
+function showGroup(data) {
+	$('#mod_group').hide();
+	$('#add_group').hide();
+	if(data.success == "true") {
+		$('#mod_group').show();
+		$('#mod_pk').val(data.pk);
+		$('#mod_name').val(data.name);
+	} else {
+		html = "";
+		html += data.message;
+		$('#message').append(html);
+	}
+}
+
+function validate_add_group(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_name) == false) {
+			html = "<span class='help-inline message'>You must enter a group name.</span>";
+			$("#add_name").after(html);
+			add_name.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function validate_mod_group(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(mod_name) == false) {
+			html = "<span class='help-inline message'>You must enter a group name.</span>";
+			$("#mod_name").after(html);
+			mod_name.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function confirm_delete_group() {
+	var result = confirm("Delete This Group?")
   	return result;
 }

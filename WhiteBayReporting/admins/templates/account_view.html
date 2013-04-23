@@ -45,6 +45,18 @@
 		</div>
 		
 		<div class="control-group">
+    		<label class="control-label" for="add_group">Groups</label>
+    		<div class="controls">
+				<select name="mod_group" id="mod_group">
+  					<option value="-1">None</option>
+  					{% for group in group_list %}			
+  					<option value={{ group.pk }}>{{ group.name }}</option>
+  					{% endfor %}
+				</select>
+			</div>
+		</div>
+		
+		<div class="control-group">
     		<div class="controls">
 				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_account(this)'>
 				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_account()'>
@@ -60,6 +72,18 @@
     		<label class="control-label" for="add_name">Account Name</label>
     		<div class="controls">
 				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Account'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_group">Groups</label>
+    		<div class="controls">
+				<select name="add_group" id="add_group">
+  					<option value="-1">None</option>
+  					{% for group in group_list %}			
+  					<option value={{ group.pk }}>{{ group.name }}</option>
+  					{% endfor %}
+				</select>
 			</div>
 		</div>
 		

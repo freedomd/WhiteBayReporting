@@ -4,7 +4,7 @@ This logic file contains useful methods for importing data from a new account th
 
 
 import os
-from admins.models import Firm
+from admins.models import Firm, Account
 from trades.models import Trade, RollTrade
 from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -230,7 +230,6 @@ def getPNLs(report_date, account):
         
         # discard useless report
         if SOD == 0 and buys == 0 and sells == 0:
-            print "!!!"
             report.delete()
             continue
         
@@ -461,6 +460,17 @@ def getDailyReport(report_date, account):
     daily_reports = DailyReport.objects.filter( Q(reportDate = report_date) & Q(account=account))
     for daily_report in daily_reports:
         getMonthlyReport(daily_report)
+        getAccountSummary(daily_report)
+        
+# add daily data to account summary
+def getAccountSummary(daily_report):
+    account = Account.objects.get(account=daily_report.account)
+    account.grossPNL += daily_report.grossPNL
+    account.unrealizedPNL += daily_report.unrealizedPNL
+    account.secFees += daily_report.secFees
+    account.commission += daily_report.commission
+    account.ecnFees += daily_report.ecnFees
+    account.save()
 
 
 # get summary data of reports for a specific month
@@ -536,7 +546,7 @@ def getReportByDate(today, account):
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-    log.write("\tReports calculating done.")
+    log.write("\tReports calculating done.\n")
     log.close()
     
             
