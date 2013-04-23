@@ -1,0 +1,79 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#group_stack").addClass("active");
+			{% if pk %}
+			selectGroup({{ pk }})
+			{% endif %}
+	});
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectGroup('add')">Add a Group</a></li>
+        {% for group in group_list %}
+			<li id="pill{{ group.pk }}"><a class="btn-link" onclick="selectGroup({{ group.pk }})">{{ group.name }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="mod_group" style="display: none; margin-top:10px;">
+	<form method='post' class='form-horizontal' action='/modGroup/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_name">Group Name</label>
+    		<div class="controls">
+				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Group Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_group(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_group()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_group" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addGroup/' onsubmit='return validate_add_group(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_name">Group Name</label>
+    		<div class="controls">
+				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Group Name'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

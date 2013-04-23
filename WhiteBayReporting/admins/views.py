@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer, Route, Account
+from admins.models import Broker, Trader, System, Firm, Employer, Route, Account, Group
 from settings import ERROR_LOG
 
 def navbar_settings(request):
@@ -42,7 +42,14 @@ def employerView(request):
 def accountView(request):
     pk = request.GET.get('pk')
     account_list = Account.objects.all().order_by("account")  
+    group_list = Group.objects.all().order_by("name")
     return render(request,"account_view.html", locals())
+
+@login_required
+def groupView(request):
+    pk = request.GET.get('pk')
+    group_list = Group.objects.all().order_by("name")  
+    return render(request,"group_view.html", locals())
 
 @login_required
 def systemView(request):  
@@ -295,13 +302,13 @@ def modEmployer(request):
 def addAccount(request):
     if request.POST:
         account = request.POST.get('add_name')
+        group = int(request.POST.get('add_group'))
         
         try:
-            Account.objects.create(account = account)
-
-        except Exception, e:
-            print str(e.message)
-    
+            Account.objects.get(account = account)
+        except Account.DoesNotExist:
+            Account.objects.create(account = account, group = group)
+            
     return HttpResponseRedirect("/accountProfile/")
 
 @login_required
@@ -317,13 +324,61 @@ def modAccount(request):
                 account.delete()
                 url = "/accountProfile/"
             elif save:
-                account_name = request.POST.get('mod_name')
-                print account
-                account.account = account_name
+                account_name = str(request.POST.get('mod_name'))
+                group = int(request.POST.get('mod_group'))
+
+                if account.account != account_name:
+                    try:
+                        Account.objects.get(account = account_name)
+                        # if exists, forbidden
+                    except Account.DoesNotExist:
+                        account.account = account_name
+                
+                account.group = group
                 account.save()
                 url = "/accountProfile/?pk=" + str(pk)
         except Exception, e:
             print str(e.message)
             url = "/accountProfile/"
+
+    return HttpResponseRedirect(url)
+
+@login_required
+def addGroup(request):
+    if request.POST:
+        name = request.POST.get('add_name')
+        
+        try:
+            Group.objects.get(name = name)
+        except Group.DoesNotExist:
+            Group.objects.create(name = name)
+            
+    return HttpResponseRedirect("/groupProfile/")
+
+@login_required
+def modGroup(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('mod_pk')
+        
+        try:
+            group = Group.objects.get(pk = pk)
+            if delete:
+                group.delete()
+                url = "/groupProfile/"
+            elif save:
+                name = str(request.POST.get('mod_name'))
+                if group.name != name:
+                    try:
+                        Group.objects.get(name = name)
+                        # if exists, forbidden
+                    except Group.DoesNotExist:
+                        group.name = name
+                        group.save()
+                url = "/groupProfile/?pk=" + str(pk)
+        except Exception, e:
+            print str(e.message)
+            url = "/groupProfile/"
 
     return HttpResponseRedirect(url)

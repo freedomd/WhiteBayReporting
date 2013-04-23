@@ -1,5 +1,5 @@
 import os
-from admins.models import Firm, Broker, Route
+from admins.models import Firm, Broker, Route, Account
 from trades.models import Trade, RollTrade
 from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -391,7 +391,7 @@ def getReport(today):
     #os.remove(filepath) # remove temporary file
     
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-    log.write("\tReports calculating done.")
+    log.write("\tReports calculating done.\n")
     file.close()
     log.close()
     return True
@@ -724,6 +724,17 @@ def getDailyReport(report_date):
     daily_reports = DailyReport.objects.filter(reportDate = report_date)
     for daily_report in daily_reports:
         getMonthlyReport(daily_report)
+        getAccountSummary(daily_report)
+
+# add daily data to account summary
+def getAccountSummary(daily_report):
+    account = Account.objects.get(account=daily_report.account)
+    account.grossPNL += daily_report.grossPNL
+    account.unrealizedPNL += daily_report.unrealizedPNL
+    account.secFees += daily_report.secFees
+    account.commission += daily_report.commission
+    account.ecnFees += daily_report.ecnFees
+    account.save()
 
 
 # get summary data of reports for a specific month
@@ -799,7 +810,7 @@ def getReportByDate(today):
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-    log.write("\tReports calculating done.")
+    log.write("\tReports calculating done.\n")
     log.close()
     
 
