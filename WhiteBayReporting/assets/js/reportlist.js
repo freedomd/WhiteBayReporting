@@ -270,6 +270,36 @@ function createAccountList(data) {
 			html += "</tr>"
 		}
 		
+		
+		// total
+		html += "<tr>";
+		html += "<td><strong>Total</strong></td>";
+			
+		if(data.total_grossPNL >=0) {
+			html += "<td><span class='positive_data'>" + addCommas(data.total_grossPNL.toFixed(2)) + "</span></td>";
+		} else {
+			html += "<td><span class='negative_data'>" + addCommas(data.total_grossPNL.toFixed(2)) + "</span></td>";
+		}
+			
+		if(data.total_unrealizedPNL >=0) {
+			html += "<td><span class='positive_data'>" + addCommas(data.total_unrealizedPNL.toFixed(2)) + "</span></td>";
+		} else {
+			html += "<td><span class='negative_data'>" + addCommas(data.total_unrealizedPNL.toFixed(2)) + "</span></td>";
+		}
+
+		html += "<td>" + addCommas(data.total_commission.toFixed(2)) + "</td>";
+		html += "<td>" + addCommas(data.total_secFees.toFixed(2)) + "</td>";
+		html += "<td>" + addCommas(data.total_ecnFees.toFixed(2)) + "</td>";
+
+		if(data.total_netPNL >=0) {
+			html += "<td><span class='positive_data'>" + addCommas(data.total_netPNL.toFixed(2)) + "</span></td>";
+		} else {
+			html += "<td><span class='negative_data'>" + addCommas(data.total_netPNL.toFixed(2)) + "</span></td>";
+		}
+			
+		html += "</tr>";
+		
+		
 		html += "</table>";
 	
 		$("#reports_container").addClass("data_container");
