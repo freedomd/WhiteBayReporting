@@ -242,7 +242,23 @@ def getAccountList(request, group, tab, strorder):
     else:
         account_list = Account.objects.filter(group=group).order_by(method)
     
-    account_list_serialized = serializers.serialize('json', account_list)
-    data = { 'account_list': simplejson.loads(account_list_serialized) }
+    total = Account()
+    for account in account_list:
+        total.grossPNL += account.grossPNL
+        total.unrealizedPNL += account.unrealizedPNL
+        total.netPNL += account.netPNL
     
+        total.commission += account.commission
+        total.secFees += account.secFees
+        total.ecnFees += account.ecnFees
+    
+    account_list_serialized = serializers.serialize('json', account_list)
+    data = { 'account_list': simplejson.loads(account_list_serialized),
+             'total_grossPNL': total.grossPNL,
+             'total_unrealizedPNL': total.unrealizedPNL,
+             'total_commission': total.commission,
+             'total_secFees': total.secFees,
+             'total_ecnFees': total.ecnFees,
+             'total_netPNL': total.netPNL }
+
     return simplejson.dumps(data)
