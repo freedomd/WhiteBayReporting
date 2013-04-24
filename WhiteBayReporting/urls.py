@@ -45,6 +45,9 @@ urlpatterns = patterns('',
     url(r'^addGroup/', addGroup),
     url(r'^modGroup/', modGroup),
     
+    # firm
+    url(r'^firmReport/', firmReportView),
+    
     # reports
     url(r'^report/(?P<account>.+)/', reportView),
     url(r'^reportQuery/', reportQueryView),

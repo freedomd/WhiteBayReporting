@@ -9,6 +9,7 @@ from datetime import date
 from settings import PER_PAGE
 from reports.logic import getSummary
 from email_sender import EmailSender
+from admins.models import Account
 
 @dajaxice_register
 def sayhello(request):
@@ -217,3 +218,31 @@ def getSummaryReport(request, account, symbol, datefrom, dateto, user_email):
     
     return simplejson.dumps(data)
 
+
+@dajaxice_register
+def getAccountList(request, group, tab, strorder):
+
+    # order 0 = ascending, 1 = descending
+    order = int(strorder)
+    if tab == None or strorder == None:
+        tab = "account"
+        order = 0
+    if order != 0 and order != 1:
+        order = 0
+    
+    # check tab
+    if order == 0:
+        method = tab
+    else:
+        method = "-" + tab
+    
+        
+    if int(group) == -1:
+        account_list = Account.objects.all().order_by(method)
+    else:
+        account_list = Account.objects.filter(group=group).order_by(method)
+    
+    account_list_serialized = serializers.serialize('json', account_list)
+    data = { 'account_list': simplejson.loads(account_list_serialized) }
+    
+    return simplejson.dumps(data)

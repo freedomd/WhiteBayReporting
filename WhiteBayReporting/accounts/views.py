@@ -11,8 +11,7 @@ from admins.models import Account
 @login_required
 def home(request):
     today=date.today()
-    account = Account.objects.all().order_by("account")[0]
-    url="/monthlyReport/%s/%s/%s/"%(account.account, str(today.year), str(today.month))
+    url="/firmReport/"
     return HttpResponseRedirect(url)
 
 def register(request):
