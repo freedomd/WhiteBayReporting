@@ -190,3 +190,89 @@ function createReportList(data) {
 		$("#reports_container").append(html);
     }
 }
+
+
+function changeAccountOrder(tab) {
+	var group = $("#groups").val();
+	if(tab == $("#tab").val()) {
+		new_order = (parseInt($("#order").val())+1)%2;
+	} else {
+		new_order = 0;
+	}
+
+	$("#tab").val(tab);
+	$("#order").val(new_order);
+	
+	getAccountList(group);
+}
+
+
+function getAccountList(group_pk) {
+	$("#reports_container").empty();
+	$("#message_container").empty(); 
+    Dajaxice.reports.getAccountList(createAccountList, { 'group': group_pk,
+    												     'tab': $("#tab").val(),
+    											 	     'strorder': $("#order").val() },
+    						            		 	     {'error_callback': custom_error}); 		       
+}
+
+
+function createAccountList(data) {
+	var number = data.account_list.length;
+	$("#reports_container").empty(); // delete all the data
+	$("#message_container").empty(); // delete all the data
+	if(number == 0) {
+		$("#reports_container").removeClass("data_container");
+		var html = "";
+		html += "No accounts found.";
+		$("#reports_container").append(html);
+	} else {
+		var html = "";
+		
+		html += "<table class='table table-striped table-bordered data_table'>";
+		html += "<tr id='title'>";
+		html += "<th><button class='btn btn-link tab' id='account' value=0 onclick=changeAccountOrder(this.id)>Account</button></th>";
+		html += "<th><button class='btn btn-link tab' id='grossPNL' value=0 onclick=changeAccountOrder(this.id)>Gross PNL</button></th>";
+		html += "<th><button class='btn btn-link tab' id='unrealizedPNL' value=0 onclick=changeAccountOrder(this.id)>Unrealized PNL</button></th>";
+		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeAccountOrder(this.id)>Commission</button></th>";
+		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeAccountOrder(this.id)>SEC Fees</button></th>";
+		html += "<th><button class='btn btn-link tab' id='ecnFees' value=0 onclick=changeAccountOrder(this.id)>ECN Fees</button></th>";
+		html += "<th><button class='btn btn-link tab' id='netPNL' value=0 onclick=changeAccountOrder(this.id)>Net PNL</button></th>";
+		html += "</tr>";
+		
+		for(i = 0; i < number; i++) { // create a new list of account summaries
+			var account = data.account_list[i].fields;
+			html += "<tr>";
+			html += "<td><a href='/report/" + account.account + "/' >" + account.account + "</a></td>";
+			
+			if(account.grossPNL >=0) {
+				html += "<td><span class='positive_data'>" + addCommas(account.grossPNL.toFixed(2)) + "</span></td>";
+			} else {
+				html += "<td><span class='negative_data'>" + addCommas(account.grossPNL.toFixed(2)) + "</span></td>";
+			}
+			
+			if(account.unrealizedPNL >=0) {
+				html += "<td><span class='positive_data'>" + addCommas(account.unrealizedPNL.toFixed(2)) + "</span></td>";
+			} else {
+				html += "<td><span class='negative_data'>" + addCommas(account.unrealizedPNL.toFixed(2)) + "</span></td>";
+			}
+
+			html += "<td>" + addCommas(account.commission.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(account.secFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(account.ecnFees.toFixed(2)) + "</td>";
+
+			if(account.netPNL >=0) {
+				html += "<td><span class='positive_data'>" + addCommas(account.netPNL.toFixed(2)) + "</span></td>";
+			} else {
+				html += "<td><span class='negative_data'>" + addCommas(account.netPNL.toFixed(2)) + "</span></td>";
+			}
+			
+			html += "</tr>"
+		}
+		
+		html += "</table>";
+	
+		$("#reports_container").addClass("data_container");
+		$("#reports_container").append(html);
+    }
+}
