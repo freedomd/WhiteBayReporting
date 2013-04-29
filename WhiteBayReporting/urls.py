@@ -20,7 +20,7 @@ urlpatterns = patterns('',
     url(r'^register/', register),
     url(r'^login/', login),
     url(r'^logout/', logout_view),
-    url(r'^settings/changePassword', changePasswordView),
+    url(r'^settings/changePassword/', changePasswordView),
     url(r'^settings/', settingView),
     
     

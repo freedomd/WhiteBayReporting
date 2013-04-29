@@ -115,7 +115,7 @@ def getSupplement(filepath, mark_date, account):
             if row[8] != "":
                 continue
             
-            closing = round(float(row[12]), 2)
+            closing = round(float(row[13]), 2)
             if closing == 0.0: # invalid symbol
                 continue
 
@@ -464,13 +464,26 @@ def getDailyReport(report_date, account):
         
 # add daily data to account summary
 def getAccountSummary(daily_report):
-    account = Account.objects.get(account=daily_report.account)
-    account.grossPNL += daily_report.grossPNL
-    account.unrealizedPNL += daily_report.unrealizedPNL
-    account.secFees += daily_report.secFees
-    account.commission += daily_report.commission
-    account.ecnFees += daily_report.ecnFees
-    account.save()
+    try:
+        account = Account.objects.get(account=daily_report.account)
+        account.grossPNL += daily_report.grossPNL
+        account.unrealizedPNL += daily_report.unrealizedPNL
+        account.secFees += daily_report.secFees
+        account.commission += daily_report.commission
+        account.ecnFees += daily_report.ecnFees
+        account.netPNL += daily_report.netPNL
+        account.save()
+    except Account.DoesNotExist:
+        report_list = DailyReport.objects.filter(account = daily_report.account)
+        account = Account.objects.create(account=daily_report.account)
+        for report in report_list:
+            account.grossPNL += report.grossPNL
+            account.unrealizedPNL += report.unrealizedPNL
+            account.secFees += report.secFees
+            account.commission += report.commission
+            account.ecnFees += report.ecnFees
+            account.netPNL += report.netPNL
+        account.save()
 
 
 # get summary data of reports for a specific month
