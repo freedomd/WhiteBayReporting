@@ -12,6 +12,7 @@
 	  }		
     </style>
     
+    <script src="{{ STATIC_URL }}js/userprofile.js"></script>
     <script type="text/javascript">
 		$(document).ready(function () {
   			$("#tabs").find('li').removeClass("active");
@@ -39,27 +40,6 @@
 			var check = true;
 			$("#message").html("");
 			with (thisform) {
-				if (validate_required(oldpassword) == false) {
-					$("#message").html("Please enter your old password.");
-					oldpassword.focus();
-					return false;
-				} else {
-					$("#message").html("");
-				}
-				if (validate_required(newpassword) == false) {
-					$("#message").html("Please enter your new password.");
-					newpassword.focus();
-					return false;
-				} else {
-					$("#message").html("");
-				}
-				if (validate_required(renewpassword) == false)	{
-					$("#message").html("Please confirm your new password.");
-					renewpassword.focus();
-					return false;
-				} else {
-					$("#message").html("");
-				}
 				return true;
 			}	
 		}	
@@ -67,34 +47,72 @@
 		</script>
 </head>
 
-<body>
+<body onload="selectUserProfile({{ userProfile.pk }})">
 	<div class="container">
       <div class="hero-unit">
-      	<div align="center">
-      	    <div>
+      	    <div align="center">
       		<table>
       			<tr><h2>Settings</h2></tr>
       		</table>		
+      		<p><font color="#FF0000"><span id="message" style="font-size:18px;">{{ message }}</span></font></p>
       		</div>
-      		<p><font color="#FF0000"><span id="message" style="font-size:14px;">{{ message }}</span></font></p>
-        	<form method="post" action="." onsubmit = "return validate_form(this)"> 
-        		{% csrf_token %}
-        		<table>
-				<tr>
-					<td>Old-Password: </td><td><input type="password" name="oldpassword" id="oldpassword" /></td>
-				</tr>
-				<tr>
-					<td>New-Password:</td><td><input type="password" name="newpassword" id="newpassword" /></td>
-				</tr>
-				<tr>
-					<td>Confirm New-Password:</td><td><input type="password" name="renewpassword" id="renewpassword" /></td>
-				</tr>
-				<tr>
-            		<td></td><td align="right"><input type="submit" class="btn btn-success" value="Save"></td>
-         		</tr>
-         		</table>
+      		
+      		<form class='form-horizontal'>
+      			<legend align="left">Security</legend>
+      			<div class="control-group">
+      				<label class="control-label" for="mod_password">Security-Setting</label>
+        			<div class="controls">
+        				<a class="btn btn-info" href="/settings/changePassword">Change Password</a>
+        			</div>
+      			</div>
+      		</form>
+
+			<form method='post' class='form-horizontal' action='.'>
+				<legend align="left">Profile</legend>
+				{% csrf_token %}
+				
+				<div class="control-group">
+		    		<label class="control-label" for="mod_fisrtname">First Name</label>
+		    		<div class="controls">
+						<input name='firstname' id='firstname' type='text' class='span4' placeholder='First Name'>
+					</div>
+				</div>
+				
+				<div class="control-group">
+		    		<label class="control-label" for="mod_lastname">Last Name</label>
+		    		<div class="controls">
+						<input name='lastname' id='lastname' type='text' class='span4' placeholder='Last Name'>
+					</div>
+				</div>
+				
+				<div class="control-group">
+		    		<label class="control-label" for="mod_addr">Address</label>
+		    		<div class="controls">
+						<input name='addr' id='addr' type='text' class='span4' placeholder='Address'>
+					</div>
+				</div>
+				
+				<div class="control-group">
+		    		<label class="control-label" for="mod_phone">Phone Number</label>
+		    		<div class="controls">
+						<input name='phone' id='phone' type='text' class='span4' placeholder='Phone Number'>
+					</div>
+				</div>
+				
+				<div class="control-group">
+		    		<label class="control-label" for="mod_description">Description</label>
+		    		<div class="controls">
+						<textarea rows="3" cols="30" name='description' id='description' type='text' class='span4' placeholder="Description"></textarea>
+					</div>
+				</div>
+				
+				<div class="control-group">
+		    		<div class="controls">
+						<input type='submit' name="save" class='btn btn-success' value='Save' onclick='return validate_form(this)'>
+					</div>
+				</div>
 			</form>
-		</div>
+
       </div>
     </div> <!-- /container -->
 

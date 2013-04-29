@@ -76,6 +76,24 @@ def login(request):
 
 @login_required
 def settingView(request):
+    user = request.user
+    userProfile = UserProfile.objects.get(user=request.user)
+    
+    if request.POST:
+        user.first_name = request.POST.get('firstname')
+        user.last_name = request.POST.get('lastname')
+        user.save()
+        
+        userProfile.user = user
+        userProfile.addr = request.POST.get('addr')
+        userProfile.phone = request.POST.get('phone')
+        userProfile.description = request.POST.get('description')
+        userProfile.save()
+
+    return render(request, 'settings.html', locals()) 
+
+@login_required
+def changePasswordView(request):
     if request.POST:
         oldpassword = request.POST.get('oldpassword')
         newpassword = request.POST.get('newpassword')
@@ -93,7 +111,8 @@ def settingView(request):
             else:
                 message = "Invalid old password."
 
-    return render(request, 'settings.html', locals()) 
+    return render(request, 'changePassword.html', locals()) 
+        
 
 def logout_view(request):
     logout(request)
