@@ -77,7 +77,11 @@ def login(request):
 @login_required
 def settingView(request):
     user = request.user
-    userProfile = UserProfile.objects.get(user=request.user)
+    try:
+        userProfile = UserProfile.objects.get(user=request.user);  
+    except UserProfile.DoesNotExist:
+        userProfile = UserProfile.objects.create(user=user)
+        userProfile.save()
     
     if request.POST:
         user.first_name = request.POST.get('firstname')
