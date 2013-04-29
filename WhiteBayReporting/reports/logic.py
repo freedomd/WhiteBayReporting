@@ -671,16 +671,21 @@ def getSummary(report_list):
     for report in report_list:
         symbol = report.symbol
         try:
-            if report.buys == 0:
-                continue
-            if report.sells == 0:
-                continue
             buy_total = summary_list[symbol].buys * summary_list[symbol].buyAve + report.buys * report.buyAve
             sell_total = summary_list[symbol].sells * summary_list[symbol].sellAve + report.sells * report.sellAve
+            
             summary_list[symbol].buys += report.buys
-            summary_list[symbol].buyAve = buy_total / summary_list[symbol].buys
+            if summary_list[symbol].buys == 0:
+                summary_list[symbol].buyAve = 0
+            else:
+                summary_list[symbol].buyAve = buy_total / summary_list[symbol].buys
+
             summary_list[symbol].sells += report.sells
-            summary_list[symbol].sellAve = sell_total / summary_list[symbol].sells
+            if summary_list[symbol].sells == 0:
+                summary_list[symbol].sellAve = 0
+            else:
+                summary_list[symbol].sellAve = sell_total / summary_list[symbol].sells
+                
             summary_list[symbol].grossPNL += report.grossPNL
             summary_list[symbol].unrealizedPNL += report.unrealizedPNL
             summary_list[symbol].secFees += report.secFees
@@ -690,7 +695,7 @@ def getSummary(report_list):
             summary_list[symbol].EOD = report.EOD # get the last day's EOD
         except:
             summary_list[symbol] = report
-        
+    
     return summary_list
 
 # get summary data of reports with a specific date
@@ -728,13 +733,26 @@ def getDailyReport(report_date):
 
 # add daily data to account summary
 def getAccountSummary(daily_report):
-    account = Account.objects.get(account=daily_report.account)
-    account.grossPNL += daily_report.grossPNL
-    account.unrealizedPNL += daily_report.unrealizedPNL
-    account.secFees += daily_report.secFees
-    account.commission += daily_report.commission
-    account.ecnFees += daily_report.ecnFees
-    account.save()
+    try:
+        account = Account.objects.get(account=daily_report.account)
+        account.grossPNL += daily_report.grossPNL
+        account.unrealizedPNL += daily_report.unrealizedPNL
+        account.secFees += daily_report.secFees
+        account.commission += daily_report.commission
+        account.ecnFees += daily_report.ecnFees
+        account.netPNL += daily_report.netPNL
+        account.save()
+    except Account.DoesNotExist:
+        report_list = DailyReport.objects.filter(account = daily_report.account)
+        account = Account.objects.create(account=daily_report.account)
+        for report in report_list:
+            account.grossPNL += report.grossPNL
+            account.unrealizedPNL += report.unrealizedPNL
+            account.secFees += report.secFees
+            account.commission += report.commission
+            account.ecnFees += report.ecnFees
+            account.netPNL += report.netPNL
+        account.save()
 
 
 # get summary data of reports for a specific month

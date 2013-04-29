@@ -33,7 +33,7 @@ class Security(models.Model):
 class Report(models.Model):
     
     account = models.CharField( max_length=20 )
-    symbol = models.CharField( max_length=10 )
+    symbol = models.CharField( max_length=50 )
     SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
     buyAve = models.FloatField( default=0.00 )
