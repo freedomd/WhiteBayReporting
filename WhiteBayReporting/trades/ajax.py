@@ -30,7 +30,7 @@ def getTradeList(request, tab, strorder, account, symbol, year, month, day, strp
     start = (mypage - 1) * PER_PAGE
     end = mypage * PER_PAGE
     
-    trade_list = Trade.objects.filter(Q(account=account) & Q(symbol=symbol) & Q(tradeDate__year=year) & Q(tradeDate__month=month) & Q(tradeDate__day=day)).order_by(method)[start:end]
+    trade_list = Trade.objects.filter(Q(account__icontains=account) & Q(symbol=symbol) & Q(tradeDate__year=year) & Q(tradeDate__month=month) & Q(tradeDate__day=day)).order_by(method)[start:end]
     count = trade_list.count()
     
     if count == PER_PAGE:
@@ -79,13 +79,13 @@ def queryTradeList(request, tab, strorder, account, symbol, datefrom, dateto, st
     trade_list = None    
     # start filter
     if account is not u"" or None:
-        trade_list = Trade.objects.filter(Q(account=account))
+        trade_list = Trade.objects.filter(Q(account__icontains=account))
     
     if symbol is not u"" or None:
         if trade_list is None:
-            trade_list = Trade.objects.filter(Q(symbol=symbol))
+            trade_list = Trade.objects.filter(Q(symbol__icontains=symbol))
         else:
-            trade_list = trade_list.filter(Q(symbol=symbol))
+            trade_list = trade_list.filter(Q(symbol__icontains=symbol))
 
     if datefrom is not u"" or None:
         if trade_list is None:

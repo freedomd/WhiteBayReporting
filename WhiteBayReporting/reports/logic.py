@@ -12,7 +12,7 @@ from settings import ERROR_LOG
 from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
 from settings import TRADE_FILE_NAME, MARK_FILE_NAME
-
+import string
 
 #############################################
 # get data files
@@ -136,6 +136,50 @@ def getTrades(filepath):
             
     file.close()
             
+def getTradesByDir(path):
+    print "Getting trades record from files..."    
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        if string.find(filename, ".DS_Store"):
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            if not header:
+                try:
+                    date_str = row[10].split("/")
+                    today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                    
+                    trade = Trade()
+                    trade.account = row[0]
+                    trade.symbol = row[1]
+                    trade.securityType = row[2]
+                    trade.side = row[3]
+                    trade.quantity = row[4]
+                    trade.price = row[5]
+                    trade.route = row[6]
+                    trade.destination = row[7]
+                    trade.liqFlag = row[9]
+                    trade.tradeDate = today
+                    trade.executionId = row[11]
+                    trade.save() # save into database
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet trades file from %s failed: %s\n" % (filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+        
 
 def getMarks(today):
     
@@ -143,7 +187,7 @@ def getMarks(today):
 #    if filepath == None:
 #        return False
     print "Getting marks..."
-    filepath = './temp/WSB858TJ.CST425PO_20130217.CSV'
+    filepath = './temp/marks/WSB858TJ.CST425PO_20120831.CSV'
     log = open(ERROR_LOG, "a")
     
     file = open(filepath, 'rb')
@@ -153,19 +197,19 @@ def getMarks(today):
             if symbol == "" or symbol == None:
                 continue
                 
-            closing = round(float(row[12]), 2)
+            closing = float(row[12])
             if closing == 0.0: # invalid symbol
                 continue
                 
-            type = row[4].strip()
-            if type == "B" or type == "J":
-                continue
+#             type = row[4].strip()
+#             if type == "B" or type == "J":
+#                 continue
             
             date_str = row[2].split("/")
             mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
             
             try:
-                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDatet=mark_date))
+                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
                 new_symbol.closing = closing
                 new_symbol.save()
             except Symbol.DoesNotExist:
@@ -192,23 +236,26 @@ def getMarksByDir(path):
     log = open(ERROR_LOG, "a")
     
     for filename in filelist: # each file represent one day
+        if filename == ".DS_Store":
+            continue
         filepath = os.path.join(path, filename)
         print filepath
         file = open(filepath, 'rb')
+        mark_date = None
         
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             try:
                 symbol = row[19].strip()
                 if symbol == "" or symbol == None:
                     continue
-                
-                closing = round(float(row[12]), 2)
+                                
+                closing = float(row[12])
                 if closing == 0.0: # invalid symbol
                     continue
                 
-                type = row[4].strip()
-                if type == "B" or type == "J":
-                    continue
+#                 type = row[4].strip()
+#                 if type == "B" or type == "J":
+#                     continue
                 
                 date_str = row[2].split("/")
                 mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
@@ -223,11 +270,12 @@ def getMarksByDir(path):
             except Exception, e:
                 print str(e.message)
                 log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
+                log.write( "\tGet mark price from %s failed: %s\n" % (filename, str(e.message)) )
                 continue
             
         file.close()
-        getReportByDate(mark_date)
+        if mark_date:
+            getReportByDate(mark_date)
     
     log.close()
     print "Done"
@@ -305,11 +353,12 @@ def refreshReports(today):
 def newReport(account, symbol, today):
     
     try:
-        new_report = Report.objects.get(Q(account=account) & Q(symbol=symbol) & Q(reportDate=today))
+        mainAccount = account[:5]
+        new_report = Report.objects.get(Q(account=mainAccount) & Q(symbol=symbol) & Q(reportDate=today))
             
     except Report.DoesNotExist: # today's new does not exist  
         new_report = Report()
-        new_report.account = account
+        new_report.account = mainAccount
         new_report.symbol = symbol      
         new_report.reportDate = today
         new_report.save()
@@ -433,7 +482,7 @@ def getPNLs(report_date):
         # check SOD
         if SOD == 0:
             try:
-                last_report = Report.objects.filter( Q(symbol=symbol) & Q(reportDate__lt=report_date) ).order_by("-reportDate")[0]
+                last_report = Report.objects.filter(Q(account=report.account) & Q(symbol=symbol) & Q(reportDate__lt=report_date) ).order_by("-reportDate")[0]
                 SOD = last_report.EOD
                 report.SOD = SOD
             except:
@@ -542,14 +591,14 @@ def getFees(today):
     firm = Firm.objects.all()[0]
     secRate = firm.secFee
     
-    reports = Report.objects.filter(reportDate=today)
-    for report in reports:
-        report.secFees = 0
-        report.clearanceFees = 0
-        report.brokerCommission = 0
-        report.commission = 0
-        report.ecnFees = 0
-        report.save()
+#     reports = Report.objects.filter(reportDate=today)
+#     for report in reports:
+#         report.secFees = 0
+#         report.clearanceFees = 0
+#         report.brokerCommission = 0
+#         report.commission = 0
+#         report.ecnFees = 0
+#         report.save()
     
     # clearance fees
     # after 2012-11-20, should do roll up
@@ -560,7 +609,8 @@ def getFees(today):
         
     # SEC fees and commission for each trade
     for trade in rollTrades:
-        report = Report.objects.get( Q(account=trade.account) & Q(symbol=trade.symbol) & Q(reportDate=today) )
+        mainAccount = trade.account[:5]
+        report = Report.objects.get( Q(account=mainAccount) & Q(symbol=trade.symbol) & Q(reportDate=today) )
 
         # sec fees
         if trade.side != "BUY":

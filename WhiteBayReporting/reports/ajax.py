@@ -106,9 +106,9 @@ def queryReportList(request, tab, strorder, account, symbol, datefrom, dateto, s
     
     if symbol is not u"" or None:
         if report_list is None:
-            report_list = Report.objects.filter(Q(symbol=symbol))
+            report_list = Report.objects.filter(Q(symbol__icontains=symbol))
         else:
-            report_list = report_list.filter(Q(symbol=symbol))
+            report_list = report_list.filter(Q(symbol__icontains=symbol))
 
     if datefrom is not u"" or None:
         if report_list is None:

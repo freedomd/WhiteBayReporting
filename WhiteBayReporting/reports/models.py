@@ -6,7 +6,7 @@ import redis
 # symbol 
 class Symbol(models.Model):
     
-    symbol = models.CharField( max_length=10 )
+    symbol = models.CharField( max_length=50 )
     closing = models.FloatField( default=0.00 ) # closing price of day
     symbolDate = models.DateField( auto_now_add=False )
     
@@ -19,7 +19,7 @@ class Symbol(models.Model):
 # security information
 class Security(models.Model):
     
-    symbol = models.CharField( max_length=10 )
+    symbol = models.CharField( max_length=50 )
     name = models.CharField( max_length=200 ) # description of the symbol
     market = models.CharField( max_length=10 )
     
