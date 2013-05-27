@@ -13,6 +13,7 @@ from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
 from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 import string
+import gc
 
 #############################################
 # get data files
@@ -276,6 +277,7 @@ def getMarksByDir(path):
         file.close()
         if mark_date:
             getReportByDate(mark_date)
+        gc.collect()
     
     log.close()
     print "Done"
