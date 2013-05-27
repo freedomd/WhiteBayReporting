@@ -2,10 +2,10 @@
 import os
 import sys
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = '*'
+# ALLOWED_HOSTS = '*'
 
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
