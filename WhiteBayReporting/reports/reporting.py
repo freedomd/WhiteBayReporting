@@ -331,13 +331,13 @@ def getReportByDate(today):
     for rtrade in rollTrades:
         new_report = newReport(rtrade.account, rtrade.symbol, today)
             # buy and sell
-        if rtrade.side == "BUY":
+        if 'BUY' in rtrade.side:
             total = new_report.buys * new_report.buyAve
             total += rtrade.quantity * rtrade.price # new total
             new_report.buys += rtrade.quantity # new buys
             new_report.buyAve = total / new_report.buys # new buy ave
                 
-        elif rtrade.side == "SEL" or rtrade.side == "SS":
+        elif 'SEL' in rtrade.side or rtrade.side == "SS":
             total = new_report.sells * new_report.sellAve
             total += rtrade.quantity * rtrade.price # new total
             new_report.sells += rtrade.quantity # new sells
@@ -350,9 +350,13 @@ def getReportByDate(today):
             
         #Fees
         firm = Firm.objects.all()[0]
-        secRate = firm.secFee            
+        if today < date(2013, 5, 28):
+            secRate = firm.secFee  
+        else:
+            secRate = 0.00001740
+                      
         ## sec fees
-        if rtrade.side != "BUY":
+        if 'BUY' not in rtrade.side:
             secFees = rtrade.price * rtrade.quantity * secRate
             rsecFees = round(secFees, 2)
                 
@@ -658,11 +662,11 @@ def getTransferAsTradesByDir(path):
                         trade.securityType = "SEC"
                     
                     side = row[19]
-                    if side == "BUY" or side == "BUY OPEN":
-                        trade.side = "BUY"
-                    else:
+                    if side == "SELL":
                         trade.side = "SEL"
-                    
+                    else:
+                        trade.side = side
+                        
                     trade.quantity = int(row[20].split('.')[0].replace(',',''))
                     
                     trade.price = float(row[21])

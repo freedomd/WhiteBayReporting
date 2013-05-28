@@ -3,7 +3,8 @@ from django.contrib import admin
 
 class Trade(models.Model):
 
-    SIDE_CHOICES = (('SEL', 'SEL'), ('BUY', 'BUY'), ('SS', 'SS'))
+    SIDE_CHOICES = (('SEL', 'SEL'), ('SELL OPEN', 'SELL OPEN'), ('SELL CLOSE', 'SELL CLOSE'),
+                    ('BUY', 'BUY'), ('BUY OPEN', 'BUY OPEN'), ('BUY CLOSE', 'BUY CLOSE'), ('SS', 'SS'))
 
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=50 )
@@ -33,7 +34,8 @@ class Trade(models.Model):
 
 class RollTrade(models.Model):
 
-    SIDE_CHOICES = (('SEL', 'SEL'), ('BUY', 'BUY'), ('SS', 'SS'))
+    SIDE_CHOICES = (('SEL', 'SEL'), ('SELL OPEN', 'SELL OPEN'), ('SELL CLOSE', 'SELL CLOSE'),
+                    ('BUY', 'BUY'), ('BUY OPEN', 'BUY OPEN'), ('BUY CLOSE', 'BUY CLOSE'), ('SS', 'SS'))
     
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=50 )
