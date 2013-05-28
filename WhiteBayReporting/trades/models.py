@@ -9,7 +9,7 @@ class Trade(models.Model):
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=50 )
     securityType = models.CharField( max_length=10, blank=True, null=True, default="")
-    side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
+    side = models.CharField( choices=SIDE_CHOICES, max_length=10, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
     broker = models.CharField( max_length=20, blank=True, null=True, default="")
@@ -39,7 +39,7 @@ class RollTrade(models.Model):
     
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=50 )
-    side = models.CharField( choices=SIDE_CHOICES, max_length=5, default="SEL")
+    side = models.CharField( choices=SIDE_CHOICES, max_length=10, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
     route = models.CharField( max_length=10, blank=True, null=True, default="")

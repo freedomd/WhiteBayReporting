@@ -591,7 +591,7 @@ def getTradesByDir(path):
     log = open(ERROR_LOG, "a")
     
     for filename in filelist: # each file represent one day
-        if string.find(filename, ".DS_Store"):
+        if filename == ".DS_Store":
             continue
         filepath = os.path.join(path, filename)
         print filepath
