@@ -17,7 +17,8 @@ class Trade(models.Model):
     destination = models.CharField( max_length=10, blank=True, null=True, default="")
     liqFlag = models.CharField( max_length=5, blank=True, null=True, default="")
     tradeDate = models.DateField( auto_now_add=False )
-    executionId = models.CharField( max_length=50, default="0" )
+    executionId = models.CharField( max_length=100, default="0" )
+    baseMoney = models.FloatField( default=0.00 )
 #    clearanceFees = models.FloatField( default=0.00 )
 #    brokerCommission = models.FloatField( default=0.00 )
 #    commission = models.FloatField( default=0.00 )
@@ -46,6 +47,7 @@ class RollTrade(models.Model):
     destination = models.CharField( max_length=10, blank=True, null=True, default="")
     liqFlag = models.CharField( max_length=5, blank=True, null=True, default="")
     tradeDate = models.DateField( auto_now_add=False )
+    baseMoney = models.FloatField( default=0.00 )
 #    clearanceFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 

@@ -242,11 +242,29 @@ def getRollTrades(today):
             #           + bo.service + "," + bo.execBrkr + "," + bo.delBrkr + "," + bo.delBrkrNum 
             #           + "," + bo.blotter + "," + bo.exchange;
             
-            #exercised option
+            # exercised option
             if trade.executionId == "ASSIGNED OPTION" or trade.executionId == "EXERCISED OPTION":
                 new_report = newReport(trade.account, trade.symbol, today)
                 trade.price = new_report.mark
                 trade.save()
+            
+            # transferred from exercised option pnl, calculate the base money, clear the quantity
+            if "PNL" in trade.executionId:
+                symb = trade.executionId.split(":")[1]
+                new_report = newReport(trade.account, symb, today)
+                price = new_report.mark
+                quantity = trade.quantity
+                trade.baseMoney = price * quantity
+                trade.quantity = 0
+                trade.save()
+                # do not roll the option transferred trade
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
+                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                     #route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                     tradeDate=trade.tradeDate)
+                continue
+                
+                
             
             rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
@@ -264,78 +282,7 @@ def getRollTrades(today):
     
     return RollTrade.objects.filter(tradeDate=today)
 
-###########################################################
-# calcluate pnls for each report
-def getPNLs(report_date):
-    log = open(ERROR_LOG, "a")
-    report_list = Report.objects.filter( Q(reportDate = report_date) )
-    for report in report_list: 
-        symbol = report.symbol
-        mark = report.mark # mark to market value
-        closing = report.closing # closing price today
-        SOD = report.SOD # start of day
-        buys = report.buys
-        buyAve = report.buyAve
-        sells = report.sells
-        sellAve = report.sellAve
-        
-        # check closing 
-        try:
-            symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
-            closing = symbol_mark.closing
-            report.closing = closing
-        except: 
-            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-            log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
-        
-        # discard useless report
-        if SOD == 0 and buys == 0 and sells == 0:
-            report.delete()
-            continue
-        
-        # calculate EOD
-        EOD = SOD + buys - sells
-
-        if SOD > 0:
-            total = buys * buyAve + mark * SOD
-            buys += SOD
-            buyAve = total / buys
-        elif SOD < 0:
-            total = sells * sellAve + mark * (-SOD)
-            sells -= SOD
-            sellAve = total / sells
-            
-        if buys >= sells:
-            common = sells
-        else:
-            common = buys
-        
-        # gross PNL    
-        grossPNL = common * (sellAve - buyAve)
-        report.grossPNL = grossPNL
-        
-        # left shares
-        buys -= common
-        sells -= common
-        unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
-        report.unrealizedPNL = unrealizedPNL
-
-        # net PNL
-        report.netPNL = grossPNL + unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
-        
-        # LMV and SMV
-        if EOD >=0:
-            report.LMV = EOD * closing
-            report.SMV = 0
-        else:
-            report.LMV = 0
-            report.SMV = EOD * closing
-        
-        report.EOD = EOD   
-        report.save()
-    
-    log.close()
-
+# get the report of each symbol in an account of each day
 def getReportByDate(today):
     log = open(ERROR_LOG, "a")
     
@@ -357,8 +304,27 @@ def getReportByDate(today):
             if rtrade.executionId == "ASSIGNED OPTION" or rtrade.executionId == "EXERCISED OPTION":
                 rtrade.price = new_report.mark
                 rtrade.save()
-            
-            # buy and sell
+                        # transferred from exercised option pnl, calculate the base money, clear the quantity
+            if "PNL" in rtrade.executionId:
+                symb = rtrade.executionId.split(":")[1]
+                new_report = newReport(rtrade.account, symb, today)
+                price = new_report.mark
+                quantity = rtrade.quantity
+                rtrade.baseMoney = price * quantity
+                rtrade.quantity = 0
+                rtrade.save()
+                
+        # if the trade is an option transferred pnl, just record the base money
+        if "PNL" in rtrade.executionId:
+            if 'BUY' in rtrade.side:
+                new_report.baseMoney -= rtrade.baseMoney
+            else:
+                new_report.baseMoney += rtrade.baseMoney
+            new_report.save()
+            continue
+        
+        # normal trades 
+        # buy and sell
         if 'BUY' in rtrade.side:
             total = new_report.buys * new_report.buyAve
             total += rtrade.quantity * rtrade.price # new total
@@ -486,7 +452,7 @@ def getDailyReport(report_date):
         grossPNL = common * (sellAve - buyAve)
         if len(symbol.split(' ')) > 1:
             grossPNL = grossPNL * 100 #option
-        report.grossPNL = grossPNL
+        report.grossPNL = grossPNL 
         
         # left shares
         buys -= common
@@ -494,7 +460,7 @@ def getDailyReport(report_date):
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
         if len(symbol.split(' ')) > 1:
             unrealizedPNL = unrealizedPNL * 100 #option
-        report.unrealizedPNL = unrealizedPNL
+        report.unrealizedPNL = unrealizedPNL + report.baseMoney
 
         # net PNL
         report.netPNL = grossPNL + unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
@@ -772,14 +738,18 @@ def getOptionsAsTradesByDir(path):
             if not header:
                 try:
                     date_str = row[6].split('/')
-                    today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
                     #print today
                     
                     trade = Trade()
                     trade.account = row[3] + row[4]
                     trade.symbol = row[9]
                     
-                    
+                    #print trade.account + ", " + trade.symbol
                     sec = row[8]
                     if sec == "SSU":
                         trade.securityType = "SEC"                       
@@ -787,7 +757,7 @@ def getOptionsAsTradesByDir(path):
                         trade.securityType = "OPT"
                     
                     side = row[12]
-                    if side == "S":
+                    if side.strip() == "S":
                         trade.side = "SEL"
                     else:
                         trade.side = "BUY"
@@ -804,9 +774,33 @@ def getOptionsAsTradesByDir(path):
                         if action == "Expired":
                             trade.executionId = "EXPIRED OPTION"
                         elif action == "Exercise":
-                            trade.executionId = "EXERCISED OPTION"                 
+                            trade.executionId = "EXERCISED OPTION"
+                            
+                            # add the option's pnl into the underlying equity
+                            underlyingTrade = Trade()
+                            underlyingTrade.account = trade.account
+                            underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                            underlyingTrade.securityType = "SEC"
+                            underlyingTrade.side = "BUY"
+                            underlyingTrade.quantity = trade.quantity # Temporarily stored, will be cleared in getRollTrade
+                            underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
+                            underlyingTrade.tradeDate = today
+                            underlyingTrade.executionId = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
+                            underlyingTrade.save()
                         else: #assign
                             trade.executionId = "ASSIGNED OPTION"
+                            
+                            # add the option's pnl into the underlying equity
+                            underlyingTrade = Trade()
+                            underlyingTrade.account = trade.account
+                            underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                            underlyingTrade.securityType = "SEC"
+                            underlyingTrade.side = "SEL"
+                            underlyingTrade.quantity = trade.quantity # Temporarily stored, will be cleared in getRollTrade
+                            underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
+                            underlyingTrade.tradeDate = today
+                            underlyingTrade.executionId = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
+                            underlyingTrade.save()
                             
                     trade.save() # save into database
                         
