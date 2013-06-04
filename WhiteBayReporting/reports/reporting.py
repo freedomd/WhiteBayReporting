@@ -54,6 +54,8 @@ def getSupplementByDate(path, mark_date):
                         else:
                             day = exp_date[1]
                         year = exp_date[2]
+                        if len(year) == 4:
+                            year = year[2:]
                         date_str = year + month + day
                         
                         #strike
@@ -62,7 +64,11 @@ def getSupplementByDate(path, mark_date):
                         while (len(strike_str) < 8):
                             strike_str = "0" + strike_str
                         
-                        symbol = row[5].strip() + "   " + date_str + "C" + strike_str
+                        
+                        symbol = row[5].strip() 
+                        while len(symbol) < 6:
+                            symbol += " "
+                        symbol += date_str + "C" + strike_str
                         #print symbol
                     elif type == "SPO":
                         #expiration date
@@ -76,6 +82,8 @@ def getSupplementByDate(path, mark_date):
                         else:
                             day = exp_date[1]
                         year = exp_date[2]
+                        if len(year) == 4:
+                            year = year[2:]
                         date_str = year + month + day
                         
                         #strike
@@ -84,7 +92,10 @@ def getSupplementByDate(path, mark_date):
                         while (len(strike_str) < 8):
                             strike_str = "0" + strike_str
                         
-                        symbol = row[5].strip() + "   " + date_str + "P" + strike_str
+                        symbol = row[5].strip() 
+                        while len(symbol) < 6:
+                            symbol += " "
+                        symbol += date_str + "P" + strike_str
                         #print symbol
                     else:     
                         symbol = row[5].strip()
@@ -92,7 +103,7 @@ def getSupplementByDate(path, mark_date):
                     if symbol == "" or symbol == None:
                         continue
                         
-                    closing = round(float(row[17]), 2)
+                    closing = float(row[17])
                     #print closing
                     if closing == 0.0: # invalid symbol
                         continue
@@ -231,11 +242,19 @@ def getRollTrades(today):
             #           + bo.service + "," + bo.execBrkr + "," + bo.delBrkr + "," + bo.delBrkrNum 
             #           + "," + bo.blotter + "," + bo.exchange;
             
+            #exercised option
+            if trade.executionId == "ASSIGNED OPTION" or trade.executionId == "EXERCISED OPTION":
+                new_report = newReport(trade.account, trade.symbol, today)
+                trade.price = new_report.mark
+                trade.save()
+            
             rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
                                            #Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
                                            Q(tradeDate=trade.tradeDate) )
             rtrade.quantity += trade.quantity
+            
+            
             rtrade.save()
         except RollTrade.DoesNotExist:
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
@@ -328,8 +347,17 @@ def getReportByDate(today):
     else:
         rollTrades = getRollTrades(today)
     
+    print "finish rolling trades, trades: " + str(len(Trade.objects.filter(tradeDate=today))) + ", rolltrades: " + str(len(RollTrade.objects.filter(tradeDate=today)))
     for rtrade in rollTrades:
         new_report = newReport(rtrade.account, rtrade.symbol, today)
+        #print new_report.account + ", " + new_report.symbol
+        
+        if today <= date(2012, 11, 20): # for rollTrades, did this in getRollTrades() method
+            #exercised option
+            if rtrade.executionId == "ASSIGNED OPTION" or rtrade.executionId == "EXERCISED OPTION":
+                rtrade.price = new_report.mark
+                rtrade.save()
+            
             # buy and sell
         if 'BUY' in rtrade.side:
             total = new_report.buys * new_report.buyAve
@@ -354,39 +382,53 @@ def getReportByDate(today):
             secRate = firm.secFee  
         else:
             secRate = 0.00001740
-                      
-        ## sec fees
-        if 'BUY' not in rtrade.side:
-            secFees = rtrade.price * rtrade.quantity * secRate
-            rsecFees = round(secFees, 2)
-                
-            if secFees > rsecFees:
-                secFees = rsecFees + 0.01
-            else:
-                secFees = rsecFees
-        else:
+        
+        #no fees for transfer
+        if today <= date(2012,11,20) and rtrade.executionId == "TRANSFER":
             secFees = 0
-        ## broker commission, not implemented yet
-        ## clearance fee
-        clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
-        clearance = round(clearance, 2)            
-        if clearance > 3.00:
-            clearance = 3.00
-        elif clearance < 0.01:
-            clearance = 0.01
+            clearance = 0.0
+            #brockerCommission = 0.0
+        else:   
+            ## sec fees
+            if "BUY" not in rtrade.side :
+                secFees = rtrade.price * rtrade.quantity * secRate
+                rsecFees = round(secFees, 2)
+                    
+                if secFees > rsecFees:
+                    secFees = rsecFees + 0.01
+                else:
+                    secFees = rsecFees
+            else:
+                secFees = 0
+            ## broker commission, not implemented yet
+            ## clearance fee
+            clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+            clearance = round(clearance, 2)            
+            if clearance > 3.00:
+                clearance = 3.00
+            elif clearance < 0.01:
+                clearance = 0.01
+                
+            ## ecn fees, not implemented yet
+                
         ## update report
         new_report.clearanceFees += clearance
-        # new_report.brokerCommission += brokerCommission
+        #new_report.brokerCommission += brokerCommission
         new_report.commission += clearance #+ brokerCommission
         new_report.secFees += secFees
+        #new_report.ecnFees += ecnFees
         new_report.save()            
+    
+    #delete the rolltrades
+    if today > date(2012, 11, 20):
+        rollTrades.delete()
     
     #getPNLs(today)
     getDailyReport(today)
     
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
-    
+        
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
     log.write("\tReports calculating done.\n")
     log.close()
@@ -396,7 +438,7 @@ def getReportByDate(today):
 def getDailyReport(report_date):
     log = open(ERROR_LOG, "a")
     report_list = Report.objects.filter( Q(reportDate = report_date) )
-    
+    print "in daily report"
     for report in report_list: 
         # calculate the PNL first
         symbol = report.symbol
@@ -413,6 +455,7 @@ def getDailyReport(report_date):
             symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
             closing = symbol_mark.closing
             report.closing = closing
+            #print report.symbol + ", " + report.closing
         except: 
             log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
             log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
@@ -439,14 +482,18 @@ def getDailyReport(report_date):
         else:
             common = buys
         
-        # gross PNL    
+        # gross PNL  
         grossPNL = common * (sellAve - buyAve)
+        if len(symbol.split(' ')) > 1:
+            grossPNL = grossPNL * 100 #option
         report.grossPNL = grossPNL
         
         # left shares
         buys -= common
         sells -= common
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
+        if len(symbol.split(' ')) > 1:
+            unrealizedPNL = unrealizedPNL * 100 #option
         report.unrealizedPNL = unrealizedPNL
 
         # net PNL
@@ -454,11 +501,17 @@ def getDailyReport(report_date):
         
         # LMV and SMV
         if EOD >=0:
-            report.LMV = EOD * closing
+            if len(symbol.split(' ')) > 1:
+                report.LMV = EOD * closing * 100 #option
+            else:
+                report.LMV = EOD * closing
             report.SMV = 0
         else:
             report.LMV = 0
-            report.SMV = EOD * closing
+            if len(symbol.split(' ')) > 1:
+                report.SMV = EOD * closing * 100 #option
+            else:
+                report.SMV = EOD * closing
         
         report.EOD = EOD   
         report.save() 
@@ -605,7 +658,20 @@ def getTradesByDir(path):
                     
                     trade = Trade()
                     trade.account = row[0]
-                    trade.symbol = row[1]
+                    #symbol
+                    if row[2] == "OPT" and row[6] == "BAML":
+                        symbol_str = row[1].split(" ")
+                        symb = symbol_str[0]
+                        while len(symb) < 6:
+                            symb += " "
+                        info = symbol_str[1]
+                        front = info[0:7]
+                        end = info[7:]
+                        while len(end) < 8:
+                            end = "0" + end
+                        trade.symbol = symb + front + end
+                    else:
+                        trade.symbol = row[1]
                     trade.securityType = row[2]
                     trade.side = row[3]
                     trade.quantity = row[4]
@@ -634,7 +700,6 @@ def getTransferAsTradesByDir(path):
     filelist = os.listdir(path)
     filelist.sort()
     log = open(ERROR_LOG, "a")
-    print str(len(filelist)) + ' files'
     
     for filename in filelist: # each file represent one day
         #print filename
@@ -648,6 +713,9 @@ def getTransferAsTradesByDir(path):
             #print header
             if not header:
                 try:
+                    if row[16] == "#": #cancel order
+                        continue
+                    
                     date_str = row[5]
                     today = date(int(date_str[0:4]), int(date_str[4:6]), int(date_str[6:]))
                     #print today
@@ -668,9 +736,9 @@ def getTransferAsTradesByDir(path):
                         trade.side = side
                         
                     trade.quantity = int(row[20].split('.')[0].replace(',',''))
-                    
                     trade.price = float(row[21])
                     trade.tradeDate = today
+                    trade.executionId = "TRANSFER"
                     trade.save() # save into database
                 except Exception, e:
                     print str(e.message)
@@ -682,4 +750,190 @@ def getTransferAsTradesByDir(path):
         file.close()    
     log.close()
     print "Done"
-    return True    
+    return True 
+
+# import the option exercise and expire records as trades
+def getOptionsAsTradesByDir(path):
+    print "Getting option exercise record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            #print header
+            if not header:
+                try:
+                    date_str = row[6].split('/')
+                    today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                    #print today
+                    
+                    trade = Trade()
+                    trade.account = row[3] + row[4]
+                    trade.symbol = row[9]
+                    
+                    
+                    sec = row[8]
+                    if sec == "SSU":
+                        trade.securityType = "SEC"                       
+                    else:
+                        trade.securityType = "OPT"
+                    
+                    side = row[12]
+                    if side == "S":
+                        trade.side = "SEL"
+                    else:
+                        trade.side = "BUY"
+                    
+                    trade.quantity = int(row[17])
+                    trade.tradeDate = today
+                    
+                    if sec == "SSU": #stock
+                        trade.price = float(row[18])
+                        trade.executionId = "EXERCISE"
+                    else: #option
+                        action = row[11]
+                        trade.price = 0.00
+                        if action == "Expired":
+                            trade.executionId = "EXPIRED OPTION"
+                        elif action == "Exercise":
+                            trade.executionId = "EXERCISED OPTION"                 
+                        else: #assign
+                            trade.executionId = "ASSIGNED OPTION"
+                            
+                    trade.save() # save into database
+                        
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet trade %s from option file %s failed: %s\n" % (trade.symbol, filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+
+#import the mark file before the first day, set up the positions
+def setupReport(path):  
+    print "Getting mark record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            #print header
+            if not header:
+                try:
+                    #date_str = row[6].split('/')
+                    ## for trading data start from 5/20, we import the mark file on 5/17 to setup
+                    today = date(2013, 5, 17)
+                    #print today
+                    
+                    new_report = Report()
+                    new_report.account = row[2]
+                    
+                    #symbol
+                    type = row[6].strip()
+                    if type == "SCO":
+                        #expiration date
+                        exp_date = row[8].split("/")
+                        if len(exp_date[0]) == 1:
+                            month = "0" + exp_date[0]
+                        else:
+                            month = exp_date[0]
+                        if len(exp_date[1]) == 1:
+                            day = "0" + exp_date[1]
+                        else:
+                            day = exp_date[1]
+                        year = exp_date[2]
+                        if len(year) == 4:
+                            year = year[2:]
+                        date_str = year + month + day
+                        
+                        #strike
+                        strike = float(row[9])
+                        strike_str = str(int(strike * 1000))
+                        while (len(strike_str) < 8):
+                            strike_str = "0" + strike_str
+                        
+                        
+                        symbol = row[5].strip() 
+                        while len(symbol) < 6:
+                            symbol += " "
+                        symbol += date_str + "C" + strike_str
+                        #print symbol
+                    elif type == "SPO":
+                        #expiration date
+                        exp_date = row[8].split("/")
+                        if len(exp_date[0]) == 1:
+                            month = "0" + exp_date[0]
+                        else:
+                            month = exp_date[0]
+                        if len(exp_date[1]) == 1:
+                            day = "0" + exp_date[1]
+                        else:
+                            day = exp_date[1]
+                        year = exp_date[2]
+                        if len(year) == 4:
+                            year = year[2:]
+                        date_str = year + month + day
+                        
+                        #strike
+                        strike = float(row[9])
+                        strike_str = str(int(strike * 1000))
+                        while (len(strike_str) < 8):
+                            strike_str = "0" + strike_str
+                        
+                        symbol = row[5].strip() 
+                        while len(symbol) < 6:
+                            symbol += " "
+                        symbol += date_str + "P" + strike_str
+                        #print symbol
+                    elif type == "SSU":     
+                        symbol = row[5].strip()
+                    else:
+                        continue
+                    
+                    #print symbol
+                    if symbol == "" or symbol == None:
+                        continue
+                        
+                    position = int(row[16])
+                    closing = float(row[17])
+                    
+                    new_report.symbol = symbol
+                    new_report.closing = closing
+                    new_report.EOD = position
+                    new_report.reportDate = today
+                    
+                    new_report.save()
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet symbol %s from mark file %s failed: %s\n" % (new_report.symbol, filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True   
