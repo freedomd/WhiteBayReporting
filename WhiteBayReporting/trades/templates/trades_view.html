@@ -38,6 +38,7 @@
 		<th>Side</th>
 		<th>Quantity</th>
 		<th>Price</th>
+		<th>Base Money</th>
 		<th>Route</th>
 		<th>Destination</th>
 		<th>Liq Flag</th>
@@ -61,6 +62,7 @@
 		{% endif %}
 		<td>{{ trade.quantity|intcomma }}</td>
 		<td>{{ trade.price|floatformat:2|intcomma }}</td>
+		<td>{{ trade.baseMoney|floatformat:2|intcomma }}</td>
 		<td>{{ trade.route }}</td>
 		<td>{{ trade.destination }}</td>
 		<td>{{ trade.liqFlag }}</td>

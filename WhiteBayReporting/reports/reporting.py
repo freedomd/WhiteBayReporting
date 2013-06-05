@@ -164,7 +164,11 @@ def getMarksByDir(path):
 #                     continue
                 
                 date_str = row[2].split("/")
-                mark_date = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                if len(date_str[2]) == 2:
+                    year = "20" + date_str[2]
+                else:
+                    year = date_str[2]
+                mark_date = date(int(year), int(date_str[0]), int(date_str[1]))
                 
                 try:
                     new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
@@ -255,6 +259,7 @@ def getRollTrades(today):
                 price = new_report.mark
                 quantity = trade.quantity
                 trade.baseMoney = price * quantity
+                print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
                 trade.quantity = 0
                 trade.save()
                 # do not roll the option transferred trade
@@ -315,11 +320,15 @@ def getReportByDate(today):
                 rtrade.save()
                 
         # if the trade is an option transferred pnl, just record the base money
-        if "PNL" in rtrade.executionId:
+        if rtrade.price == 0.00 and rtrade.quantity == 0:
             if 'BUY' in rtrade.side:
+                print "in buy: " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
                 new_report.baseMoney -= rtrade.baseMoney
+                print str(new_report.baseMoney)
             else:
+                print "in sell: " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
                 new_report.baseMoney += rtrade.baseMoney
+                print str(new_report.baseMoney)
             new_report.save()
             continue
         
@@ -463,7 +472,7 @@ def getDailyReport(report_date):
         report.unrealizedPNL = unrealizedPNL + report.baseMoney
 
         # net PNL
-        report.netPNL = grossPNL + unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
+        report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -620,7 +629,11 @@ def getTradesByDir(path):
             if not header:
                 try:
                     date_str = row[10].split("/")
-                    today = date(int(date_str[2]), int(date_str[0]), int(date_str[1]))
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
                     
                     trade = Trade()
                     trade.account = row[0]
@@ -782,7 +795,7 @@ def getOptionsAsTradesByDir(path):
                             underlyingTrade.symbol = trade.symbol.split(" ")[0]
                             underlyingTrade.securityType = "SEC"
                             underlyingTrade.side = "BUY"
-                            underlyingTrade.quantity = trade.quantity # Temporarily stored, will be cleared in getRollTrade
+                            underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
                             underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
                             underlyingTrade.tradeDate = today
                             underlyingTrade.executionId = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
@@ -796,7 +809,7 @@ def getOptionsAsTradesByDir(path):
                             underlyingTrade.symbol = trade.symbol.split(" ")[0]
                             underlyingTrade.securityType = "SEC"
                             underlyingTrade.side = "SEL"
-                            underlyingTrade.quantity = trade.quantity # Temporarily stored, will be cleared in getRollTrade
+                            underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
                             underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
                             underlyingTrade.tradeDate = today
                             underlyingTrade.executionId = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol

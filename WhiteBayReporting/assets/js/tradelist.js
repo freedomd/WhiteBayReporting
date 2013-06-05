@@ -88,6 +88,7 @@ function createTradeList(data) {
 		html += "<th><button class='btn btn-link tab' id='side' value=0 onclick=changeOrder(this.id)>Side</button></th>";
 		html += "<th><button class='btn btn-link tab' id='quantity' value=0 onclick=changeOrder(this.id)>Quantity</button></th>";
 		html += "<th><button class='btn btn-link tab' id='price' value=0 onclick=changeOrder(this.id)>Price</button></th>";
+		html += "<th><button class='btn btn-link tab' id='baseMoney' value=0 onclick=changeOrder(this.id)>Base Money</button></th>";
 		html += "<th><button class='btn btn-link tab' id='route' value=0 onclick=changeOrder(this.id)>Route</button></th>";
 		html += "<th><button class='btn btn-link tab' id='destination' value=0 onclick=changeOrder(this.id)>Destination</button></th>";
 		html += "<th><button class='btn btn-link tab' id='liqFlag' value=0 onclick=changeOrder(this.id)>Liq Flag</button></th>";
@@ -111,6 +112,7 @@ function createTradeList(data) {
 			}
 			html += "<td>" + addCommas(trade.quantity) + "</td>";
 			html += "<td>" + addCommas(trade.price.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(trade.baseMoney.toFixed(2)) + "</td>";
 			html += "<td>" + trade.route + "</td>";
 			html += "<td>" + trade.destination + "</td>";
 			html += "<td>" + trade.liqFlag + "</td>";
