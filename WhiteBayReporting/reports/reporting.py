@@ -236,6 +236,34 @@ def newReport(account, symbol, today):
         
     return new_report    
 
+# For exercised or assigned option, the execution price is the average
+def getExecutionPrice(account, symbol, tradeDate):
+    
+    new_report = newReport(account, symbol, tradeDate)
+    # check if SOD is zero
+    quantity = new_report.SOD
+    total = new_report.SOD * new_report.mark
+    
+    if quantity == 0:
+        ## not correct implemented yet
+        # check if there is trade on tradeDate
+        trade_list = Trade.objects.filter(Q(account = account) & Q(tradeDate = tradeDate)
+                                          & Q(symbol = symbol) & ~Q(executionId__icontains = "OPTION"))
+        #print new_report.account + ", " + new_report.symbol
+        # calculate the average price
+        for t in trade_list:
+            #print "in list " + t.side + ", " + str(t.price) + ", " + str(t.quantity) + t.executionId
+            
+            # to be modified
+            if "BUY" in t.side:
+                quantity += t.quantity
+                total += t.quantity * t.price
+     
+    price = total / quantity
+    
+    return price
+            
+
 def getRollTrades(today):
     trades = Trade.objects.filter(tradeDate=today)
     for trade in trades:
@@ -248,18 +276,16 @@ def getRollTrades(today):
             
             # exercised option
             if trade.executionId == "ASSIGNED OPTION" or trade.executionId == "EXERCISED OPTION":
-                new_report = newReport(trade.account, trade.symbol, today)
-                trade.price = new_report.mark
+                trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
                 trade.save()
             
             # transferred from exercised option pnl, calculate the base money, clear the quantity
             if "PNL" in trade.executionId:
                 symb = trade.executionId.split(":")[1]
-                new_report = newReport(trade.account, symb, today)
-                price = new_report.mark
+                price = getExecutionPrice(trade.account, symb, trade.tradeDate)
                 quantity = trade.quantity
                 trade.baseMoney = price * quantity
-                print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
+                #print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
                 trade.quantity = 0
                 trade.save()
                 # do not roll the option transferred trade
@@ -319,16 +345,26 @@ def getReportByDate(today):
                 rtrade.quantity = 0
                 rtrade.save()
                 
-        # if the trade is an option transferred pnl, just record the base money
+        # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
+            # if no buy or sell on that day, then we cannot add the pnl into average
+            # calculate it separately
             if 'BUY' in rtrade.side:
-                print "in buy: " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                #print "in buy: " + rtrade.account + " " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                total = new_report.buys * new_report.buyAve
+                total += rtrade.baseMoney # add the base money into the total
+                if new_report.buys != 0 and new_report.sells != 0:
+                    new_report.buyAve = total / new_report.buys
                 new_report.baseMoney -= rtrade.baseMoney
-                print str(new_report.baseMoney)
+                #print str(new_report.baseMoney)
             else:
-                print "in sell: " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                #print "in sell: " + rtrade.account + " "  + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                total = new_report.sells * new_report.sellAve
+                total += rtrade.baseMoney
+                if new_report.buys != 0 and new_report.sells != 0:
+                    new_report.sellAve = total / new_report.sells
                 new_report.baseMoney += rtrade.baseMoney
-                print str(new_report.baseMoney)
+                #print str(new_report.baseMoney)
             new_report.save()
             continue
         
@@ -459,7 +495,7 @@ def getDailyReport(report_date):
         
         # gross PNL  
         grossPNL = common * (sellAve - buyAve)
-        if len(symbol.split(' ')) > 1:
+        if len(symbol.split(' ')) > 1 and "00" in symbol:
             grossPNL = grossPNL * 100 #option
         report.grossPNL = grossPNL 
         
@@ -467,23 +503,27 @@ def getDailyReport(report_date):
         buys -= common
         sells -= common
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
-        if len(symbol.split(' ')) > 1:
+        if len(symbol.split(' ')) > 1 and "00" in symbol:
             unrealizedPNL = unrealizedPNL * 100 #option
-        report.unrealizedPNL = unrealizedPNL + report.baseMoney
+        # if no buys or sells on that day, calculate the base money separately
+        # else, the base money is already applied in average price
+        if report.buys == 0 or report.sells == 0:
+            unrealizedPNL += report.baseMoney
+        report.unrealizedPNL = unrealizedPNL
 
         # net PNL
         report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
-            if len(symbol.split(' ')) > 1:
+            if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.LMV = EOD * closing * 100 #option
             else:
                 report.LMV = EOD * closing
             report.SMV = 0
         else:
             report.LMV = 0
-            if len(symbol.split(' ')) > 1:
+            if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.SMV = EOD * closing * 100 #option
             else:
                 report.SMV = EOD * closing
@@ -650,7 +690,7 @@ def getTradesByDir(path):
                             end = "0" + end
                         trade.symbol = symb + front + end
                     else:
-                        trade.symbol = row[1]
+                        trade.symbol = row[1].strip()
                     trade.securityType = row[2]
                     trade.side = row[3]
                     trade.quantity = row[4]
@@ -701,7 +741,7 @@ def getTransferAsTradesByDir(path):
                     
                     trade = Trade()
                     trade.account = row[2]
-                    trade.symbol = row[8]
+                    trade.symbol = row[8].strip()
                     sec = row[4]
                     if sec == "OPTION":
                         trade.securityType = "OPT"
@@ -760,7 +800,7 @@ def getOptionsAsTradesByDir(path):
                     
                     trade = Trade()
                     trade.account = row[3] + row[4]
-                    trade.symbol = row[9]
+                    trade.symbol = row[9].strip()
                     
                     #print trade.account + ", " + trade.symbol
                     sec = row[8]
