@@ -11,8 +11,8 @@
 
 <div id="route_list">
 <table class="table route_table table-bordered">
-    <tr><th>SeqNo</th><th>Route ID</th><th>Liq Flag</th><th>Primary Exchange</th>
-    <th>Price From</th><th>Price To</th><th>Rebate Charge</th><th>Fee Type</th><th>Description</th></tr>
+    <tr><th>SeqNo</th><th>Route ID</th><th>Liq Flag</th><th>Primary Exchange</th><th>Tape</th>
+    <th>Price From</th><th>Price To</th><th>Rebate Charge</th><th>Fee Type</th></tr>
     {% for route in route_list %}
     	<!-- 
     	<form method='post' action='/modSystem/' onsubmit='return validate_system(this)'>
@@ -23,11 +23,11 @@
     	<td>{{ route.routeId }}</td>
     	<td>{{ route.flag }}</td>
     	<td>{{ route.primaryExchange }}</td>
+    	<td>{{ route.tape }}</td>
     	<td>{{ route.priceFrom|floatformat:0 }}</td>
     	<td>{{ route.priceTo|floatformat:0 }}</td>
     	<td>{{ route.rebateCharge }}</td>
     	<td>{{ route.feeType }}</td>
-    	<td>{{ route.description }}</td>
     	</tr>
     	
     	<!-- 
