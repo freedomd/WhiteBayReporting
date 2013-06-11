@@ -18,7 +18,29 @@ from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
 from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 import string
+
+
+# save data into database
+def getSecurities(filepath):
+    header = True
+    file = open(filepath, 'rb')
     
+    for row in csv.reader(file.read().splitlines(), delimiter=','):
+        if not header:
+            try:           
+                sec = Security()
+                sec.symbol = row[0].strip()
+                #sec.name = row[1].strip()
+                sec.market = row[2].strip()
+                sec.save() # save into database
+            except Exception, e:
+                print sec.symbol
+                print str(e.message)
+                continue
+        else:
+            header = False
+            
+    file.close()    
     
 def getSupplementByDate(path, mark_date):
     print "Getting supplement marks and calculating reports..."
@@ -395,10 +417,11 @@ def getReportByDate(today):
             secRate = 0.00001740
         
         #no fees for transfer
-        if today <= date(2012,11,20) and rtrade.executionId == "TRANSFER":
-            secFees = 0
+        if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
+            secFees = 0.0
             clearance = 0.0
             #brockerCommission = 0.0
+            ecnFees = 0.0
         else:   
             ## sec fees
             if "BUY" not in rtrade.side :
@@ -420,14 +443,31 @@ def getReportByDate(today):
             elif clearance < 0.01:
                 clearance = 0.01
                 
-            ## ecn fees, not implemented yet
-                
+            ## ecn fees
+            ecnFees = 0.0
+            try:
+                security = Security.objects.get(symbol = rtrade.symbol)
+                market = security.market
+                if market == "NYSE":
+                    t_tape = "A"
+                elif market == "AMEX" or market == "ARCA":
+                    t_tape = "B"
+                else: 
+                    t_tape = "C"
+                route = Route.objects.get( Q(routeId = rtrade.destination) 
+                                           & Q(flag = rtrade.liqFlag) 
+                                           & Q(tape = t_tape) )
+                ecnFees = route.rebateCharge * rtrade.quantity
+            except Exception, e:
+                print str(e.message)
+                ecnFees = 0.0
+            #print ecnFees
         ## update report
         new_report.clearanceFees += clearance
         #new_report.brokerCommission += brokerCommission
         new_report.commission += clearance #+ brokerCommission
         new_report.secFees += secFees
-        #new_report.ecnFees += ecnFees
+        new_report.ecnFees += ecnFees
         new_report.save()            
     
     #delete the rolltrades

@@ -125,6 +125,7 @@ class Route(models.Model):
     effectiveTo = models.DateTimeField( blank=True, null=True )
     flag = models.CharField( max_length=5, blank=True, null=True, default="" )
     primaryExchange = models.CharField( max_length=10, blank=True, null=True, default="" )
+    tape = models.CharField( max_length=5, blank=True, null=True, default="" )
     isETF = models.CharField( max_length=5, blank=True, null=True, default="" )
     priceFrom = models.FloatField( default=0.00 )
     priceTo = models.FloatField( default=0.00 )
