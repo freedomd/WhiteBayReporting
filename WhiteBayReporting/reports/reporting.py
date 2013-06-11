@@ -313,7 +313,7 @@ def getRollTrades(today):
                 # do not roll the option transferred trade
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
-                                     #route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
                                      tradeDate=trade.tradeDate)
                 continue
                 
@@ -321,7 +321,7 @@ def getRollTrades(today):
             
             rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
-                                           #Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
+                                           Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
                                            Q(tradeDate=trade.tradeDate) )
             rtrade.quantity += trade.quantity
             
@@ -330,7 +330,7 @@ def getRollTrades(today):
         except RollTrade.DoesNotExist:
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, 
-                                     #route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
                                      tradeDate=trade.tradeDate)
     
     return RollTrade.objects.filter(tradeDate=today)
@@ -416,37 +416,20 @@ def getReportByDate(today):
         else:
             secRate = 0.00001740
         
-        #no fees for transfer
+        #no ecn fees for transfer
         if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
-            secFees = 0.0
-            clearance = 0.0
             #brockerCommission = 0.0
             ecnFees = 0.0
-        else:   
-            ## sec fees
-            if "BUY" not in rtrade.side :
-                secFees = rtrade.price * rtrade.quantity * secRate
-                rsecFees = round(secFees, 2)
-                    
-                if secFees > rsecFees:
-                    secFees = rsecFees + 0.01
-                else:
-                    secFees = rsecFees
-            else:
-                secFees = 0
-            ## broker commission, not implemented yet
-            ## clearance fee
-            clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
-            clearance = round(clearance, 2)            
-            if clearance > 3.00:
-                clearance = 3.00
-            elif clearance < 0.01:
-                clearance = 0.01
-                
+        else:
             ## ecn fees
             ecnFees = 0.0
             try:
-                security = Security.objects.get(symbol = rtrade.symbol)
+                # use the underlying symbol for options
+                if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol:
+                    underlyingSymbol = rtrade.symbol.split(" ")[0]
+                else:
+                    underlyingSymbol = rtrade.symbol
+                security = Security.objects.get(symbol = underlyingSymbol)
                 market = security.market
                 if market == "NYSE":
                     t_tape = "A"
@@ -454,14 +437,48 @@ def getReportByDate(today):
                     t_tape = "B"
                 else: 
                     t_tape = "C"
-                route = Route.objects.get( Q(routeId = rtrade.destination) 
+                routes = Route.objects.filter( Q(routeId = rtrade.destination) 
                                            & Q(flag = rtrade.liqFlag) 
                                            & Q(tape = t_tape) )
-                ecnFees = route.rebateCharge * rtrade.quantity
-            except Exception, e:
-                print str(e.message)
-                ecnFees = 0.0
-            #print ecnFees
+                
+                # check each route's price period, feeType
+                for route in routes:
+                    lowPrice = route.priceFrom
+                    highPrice = route.priceTo
+                    if rtrade.price > lowPrice and rtrade.price <= highPrice:
+                        if route.feeType == "FLAT PER SHARE":
+                            ecnFees = route.rebateCharge * rtrade.quantity
+                        elif route.feeType == "BASIS POINTS":
+                            ecnFees = route.rebateCharge * 0.0001 * rtrade.quantity * rtrade.price
+                        else:
+                            ecnFees = 0.0
+                    else:
+                        continue
+            except Security.DoesNotExist, Route.DoesNotExist:
+                ecnFees = 0.0   
+           
+        ## sec fees
+        if "BUY" not in rtrade.side :
+            secFees = rtrade.price * rtrade.quantity * secRate
+            rsecFees = round(secFees, 2)
+                    
+            if secFees > rsecFees:
+                secFees = rsecFees + 0.01
+            else:
+                secFees = rsecFees
+        else:
+            secFees = 0
+        
+        ## broker commission, not implemented yet
+        
+        ## clearance fee
+        clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+        clearance = round(clearance, 2)            
+        if clearance > 3.00:
+            clearance = 3.00
+        elif clearance < 0.01:
+            clearance = 0.01
+                
         ## update report
         new_report.clearanceFees += clearance
         #new_report.brokerCommission += brokerCommission

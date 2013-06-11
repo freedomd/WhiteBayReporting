@@ -16,6 +16,8 @@ def loadRoutes(filepath):
                 #route.effectiveTo = row[3]
                 route.flag = row[4]
                 primary = row[5]
+                if primary == "ALL":
+                    continue
                 route.primaryExchange = primary
                 if primary == "NYSE":
                     route.tape = "A"
