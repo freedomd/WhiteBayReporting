@@ -21,7 +21,7 @@ import string
 
 
 # save data into database
-def getSecurities(filepath):
+def getSecurities(filepath, today):
     header = True
     file = open(filepath, 'rb')
     
@@ -32,6 +32,7 @@ def getSecurities(filepath):
                 sec.symbol = row[0].strip()
                 #sec.name = row[1].strip()
                 sec.market = row[2].strip()
+                sec.secDate = today
                 sec.save() # save into database
             except Exception, e:
                 print sec.symbol
@@ -429,7 +430,7 @@ def getReportByDate(today):
                     underlyingSymbol = rtrade.symbol.split(" ")[0]
                 else:
                     underlyingSymbol = rtrade.symbol
-                security = Security.objects.get(symbol = underlyingSymbol)
+                security = Security.objects.get(Q(symbol = underlyingSymbol) & Q(secDate = today))
                 market = security.market
                 if market == "NYSE":
                     t_tape = "A"
@@ -439,14 +440,14 @@ def getReportByDate(today):
                     t_tape = "C"
                 routes = Route.objects.filter( Q(routeId = rtrade.destination) 
                                            & Q(flag = rtrade.liqFlag) 
-                                           & Q(tape = t_tape) )
+                                           & (Q(tape = t_tape) | Q(tape = "ALL")) )
                 
                 # check each route's price period, feeType
                 for route in routes:
                     lowPrice = route.priceFrom
                     highPrice = route.priceTo
                     if rtrade.price > lowPrice and rtrade.price <= highPrice:
-                        if route.feeType == "FLAT PER SHARE":
+                        if route.feeType == "FLAT PER SHARE" or route.feeType == "FLAT PER CONTRACT":
                             ecnFees = route.rebateCharge * rtrade.quantity
                         elif route.feeType == "BASIS POINTS":
                             ecnFees = route.rebateCharge * 0.0001 * rtrade.quantity * rtrade.price
@@ -496,6 +497,9 @@ def getReportByDate(today):
     
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
+    
+    # we may want to delete the security primary exchange info after calculation
+    #Security.objects.filter( secDate__lt = today ).delete()
         
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
     log.write("\tReports calculating done.\n")
