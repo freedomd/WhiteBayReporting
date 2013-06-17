@@ -299,18 +299,26 @@ def getRollTrades(today):
             
             # exercised option
             if trade.description == "ASSIGNED OPTION" or trade.description == "EXERCISED OPTION":
-                trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
-                trade.save()
+                if trade.price == 0.0:
+                    trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
+                    trade.save()
+                # do not roll the option exercised and assigned trade
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
+                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                     tradeDate=trade.tradeDate, description = trade.description)
+                continue
             
             # transferred from exercised option pnl, calculate the base money, clear the quantity
-            if "PNL" in trade.description:
-                symb = trade.description.split(":")[1]
-                price = getExecutionPrice(trade.account, symb, trade.tradeDate)
-                quantity = trade.quantity
-                trade.baseMoney = price * quantity
-                #print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
-                trade.quantity = 0
-                trade.save()
+            elif "PNL" in trade.description:
+                if trade.quantity != 0:
+                    symb = trade.description.split(":")[1]
+                    price = getExecutionPrice(trade.account, symb, trade.tradeDate)
+                    quantity = trade.quantity
+                    trade.baseMoney = price * quantity
+                    #print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
+                    trade.quantity = 0
+                    trade.save()
                 # do not roll the option transferred trade
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
@@ -318,16 +326,33 @@ def getRollTrades(today):
                                      tradeDate=trade.tradeDate, description = trade.description)
                 continue
                 
+            # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
+            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
+                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                     tradeDate=trade.tradeDate, description = trade.description)
                 
+                continue
             
-            rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+            # for Route "RAVEN", roll the trades with same account, symbol, and side
+            elif trade.route == "RAVEN":
+                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & Q(side=trade.side))
+                
+                total = (rtrade.quantity * rtrade.price) + (trade.quantity * trade.price)
+                rtrade.quantity += trade.quantity
+                rtrade.price = total / rtrade.quantity
+                rtrade.save()
+            
+            
+            # for Route "WBPT"                
+            else:
+                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
                                            Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
                                            Q(tradeDate=trade.tradeDate) & Q(description = trade.description) )
-            rtrade.quantity += trade.quantity
-            
-            
-            rtrade.save()
+                rtrade.quantity += trade.quantity            
+                rtrade.save()
         except RollTrade.DoesNotExist:
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, 
@@ -460,16 +485,19 @@ def getReportByDate(today):
            
         ## sec fees
         if "BUY" not in rtrade.side and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+            #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)
             if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
                 secFees = rtrade.price * rtrade.quantity * 100 * secRate
             else:
                 secFees = rtrade.price * rtrade.quantity * secRate
             rsecFees = round(secFees, 2)
                     
+            #print "sec: " + str(secFees) + ", rsec: " + str(rsecFees)
             if secFees > rsecFees:
                 secFees = rsecFees + 0.01
             else:
                 secFees = rsecFees
+            #print "after sec: " + str(secFees)
         else:
             secFees = 0
         
@@ -815,8 +843,10 @@ def getTransferAsTradesByDir(path):
                     side = row[19]
                     if side == "SELL":
                         trade.side = "SEL"
+                    elif side == "SELL OPEN":
+                        trade.side = "SS"
                     else:
-                        trade.side = side
+                        trade.side = "BUY"
                         
                     trade.quantity = int(row[20].split('.')[0].replace(',',''))
                     trade.price = float(row[21])
