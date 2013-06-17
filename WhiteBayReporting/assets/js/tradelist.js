@@ -94,6 +94,7 @@ function createTradeList(data) {
 		html += "<th><button class='btn btn-link tab' id='liqFlag' value=0 onclick=changeOrder(this.id)>Liq Flag</button></th>";
 		html += "<th><button class='btn btn-link tab' id='tradeDate' value=0 onclick=changeOrder(this.id)>Trade Date</button></th>";
 		html += "<th><button class='btn btn-link tab' id='executionId' value=0 onclick=changeOrder(this.id)>Execution ID</button></th>";
+		html += "<th><button class='btn btn-link tab' id='description' value=0 onclick=changeOrder(this.id)>Description</button></th>";
 		html += "</tr>";
 				
 		
@@ -121,6 +122,7 @@ function createTradeList(data) {
 			//html += "<td>" + addCommas(trade.secFees.toFixed(2)) + "</td>";
 			html += "<td>" + trade.tradeDate.substring(0, 10) + "</td>";
 			html += "<td>" + trade.executionId + "</td>";
+			html += "<td>" + trade.description + "</td>";
 			html += "</tr>"
 		}
 		

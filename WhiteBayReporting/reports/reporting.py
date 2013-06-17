@@ -271,7 +271,7 @@ def getExecutionPrice(account, symbol, tradeDate):
         ## not correct implemented yet
         # check if there is trade on tradeDate
         trade_list = Trade.objects.filter(Q(account = account) & Q(tradeDate = tradeDate)
-                                          & Q(symbol = symbol) & ~Q(executionId__icontains = "OPTION"))
+                                          & Q(symbol = symbol) & ~Q(description__icontains = "OPTION"))
         #print new_report.account + ", " + new_report.symbol
         # calculate the average price
         for t in trade_list:
@@ -298,13 +298,13 @@ def getRollTrades(today):
             #           + "," + bo.blotter + "," + bo.exchange;
             
             # exercised option
-            if trade.executionId == "ASSIGNED OPTION" or trade.executionId == "EXERCISED OPTION":
+            if trade.description == "ASSIGNED OPTION" or trade.description == "EXERCISED OPTION":
                 trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
                 trade.save()
             
             # transferred from exercised option pnl, calculate the base money, clear the quantity
-            if "PNL" in trade.executionId:
-                symb = trade.executionId.split(":")[1]
+            if "PNL" in trade.description:
+                symb = trade.description.split(":")[1]
                 price = getExecutionPrice(trade.account, symb, trade.tradeDate)
                 quantity = trade.quantity
                 trade.baseMoney = price * quantity
@@ -315,7 +315,7 @@ def getRollTrades(today):
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
                                      route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate)
+                                     tradeDate=trade.tradeDate, description = trade.description)
                 continue
                 
                 
@@ -323,7 +323,7 @@ def getRollTrades(today):
             rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
                                            Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
-                                           Q(tradeDate=trade.tradeDate) )
+                                           Q(tradeDate=trade.tradeDate) & Q(description = trade.description) )
             rtrade.quantity += trade.quantity
             
             
@@ -332,7 +332,7 @@ def getRollTrades(today):
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, 
                                      route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate)
+                                     tradeDate=trade.tradeDate, description = trade.description)
     
     return RollTrade.objects.filter(tradeDate=today)
 
@@ -355,12 +355,12 @@ def getReportByDate(today):
         
         if today <= date(2012, 11, 20): # for rollTrades, did this in getRollTrades() method
             #exercised option
-            if rtrade.executionId == "ASSIGNED OPTION" or rtrade.executionId == "EXERCISED OPTION":
+            if rtrade.description == "ASSIGNED OPTION" or rtrade.description == "EXERCISED OPTION":
                 rtrade.price = new_report.mark
                 rtrade.save()
                         # transferred from exercised option pnl, calculate the base money, clear the quantity
-            if "PNL" in rtrade.executionId:
-                symb = rtrade.executionId.split(":")[1]
+            if "PNL" in rtrade.description:
+                symb = rtrade.description.split(":")[1]
                 new_report = newReport(rtrade.account, symb, today)
                 price = new_report.mark
                 quantity = rtrade.quantity
@@ -459,8 +459,11 @@ def getReportByDate(today):
                 ecnFees = 0.0   
            
         ## sec fees
-        if "BUY" not in rtrade.side :
-            secFees = rtrade.price * rtrade.quantity * secRate
+        if "BUY" not in rtrade.side and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+            if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
+                secFees = rtrade.price * rtrade.quantity * 100 * secRate
+            else:
+                secFees = rtrade.price * rtrade.quantity * secRate
             rsecFees = round(secFees, 2)
                     
             if secFees > rsecFees:
@@ -818,7 +821,7 @@ def getTransferAsTradesByDir(path):
                     trade.quantity = int(row[20].split('.')[0].replace(',',''))
                     trade.price = float(row[21])
                     trade.tradeDate = today
-                    trade.executionId = "TRANSFER"
+                    trade.description = "TRANSFER"
                     trade.save() # save into database
                 except Exception, e:
                     print str(e.message)
@@ -881,14 +884,14 @@ def getOptionsAsTradesByDir(path):
                     
                     if sec == "SSU": #stock
                         trade.price = float(row[18])
-                        trade.executionId = "EXERCISE"
+                        trade.description = "EXERCISE"
                     else: #option
                         action = row[11]
                         trade.price = 0.00
                         if action == "Expired":
-                            trade.executionId = "EXPIRED OPTION"
+                            trade.description = "EXPIRED OPTION"
                         elif action == "Exercise":
-                            trade.executionId = "EXERCISED OPTION"
+                            trade.description = "EXERCISED OPTION"
                             
                             # add the option's pnl into the underlying equity
                             underlyingTrade = Trade()
@@ -899,10 +902,10 @@ def getOptionsAsTradesByDir(path):
                             underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
                             underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
                             underlyingTrade.tradeDate = today
-                            underlyingTrade.executionId = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
+                            underlyingTrade.description = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
                             underlyingTrade.save()
                         else: #assign
-                            trade.executionId = "ASSIGNED OPTION"
+                            trade.description = "ASSIGNED OPTION"
                             
                             # add the option's pnl into the underlying equity
                             underlyingTrade = Trade()
@@ -913,7 +916,7 @@ def getOptionsAsTradesByDir(path):
                             underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
                             underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
                             underlyingTrade.tradeDate = today
-                            underlyingTrade.executionId = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
+                            underlyingTrade.description = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
                             underlyingTrade.save()
                             
                     trade.save() # save into database

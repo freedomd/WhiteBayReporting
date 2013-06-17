@@ -47,6 +47,7 @@
 		<!-- <th>SEC Fees</th> -->
 		<th>Date</th>
 		<th>Execution ID</th>
+		<th>Description</th>
 		</tr>
 	{% for trade in trade_list %}
 		<tr>
@@ -71,6 +72,7 @@
 		<!-- <td>{{ trade.secFees|floatformat:2|intcomma }}</td> -->
 		<td>{{ trade.tradeDate|date:"Y-m-d" }}</td>
 		<td>{{ trade.executionId }}</td>
+		<td>{{ trade.description }}</td>
 		</tr>
 	{% endfor %}
 	</table>
