@@ -330,18 +330,20 @@ def getRollTrades(today):
             if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
                                      price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
-                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate, description = trade.description)
+                                     ecnFees=trade.ecnFees, route=trade.route, destination=trade.destination, 
+                                     liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
                 
                 continue
             
             # for Route "RAVEN", roll the trades with same account, symbol, and side
             elif trade.route == "RAVEN":
-                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & Q(side=trade.side))
+                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & Q(side=trade.side) &
+                                               Q(tradeDate=trade.tradeDate))
                 
                 total = (rtrade.quantity * rtrade.price) + (trade.quantity * trade.price)
                 rtrade.quantity += trade.quantity
                 rtrade.price = total / rtrade.quantity
+                rtrade.ecnFees += trade.ecnFees
                 rtrade.save()
             
             
@@ -349,15 +351,16 @@ def getRollTrades(today):
             else:
                 rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
-                                           Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
-                                           Q(tradeDate=trade.tradeDate) & Q(description = trade.description) )
-                rtrade.quantity += trade.quantity            
+                                           Q(route=trade.route) & Q(destination=trade.destination) &    
+                                           Q(tradeDate=trade.tradeDate))
+                rtrade.quantity += trade.quantity 
+                rtrade.ecnFees += trade.ecnFees           
                 rtrade.save()
         except RollTrade.DoesNotExist:
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, 
-                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate, description = trade.description)
+                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                     ecnFees=trade.ecnFees, route=trade.route, destination=trade.destination,
+                                     liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
     
     return RollTrade.objects.filter(tradeDate=today)
 
@@ -383,8 +386,8 @@ def getReportByDate(today):
             if rtrade.description == "ASSIGNED OPTION" or rtrade.description == "EXERCISED OPTION":
                 rtrade.price = new_report.mark
                 rtrade.save()
-                        # transferred from exercised option pnl, calculate the base money, clear the quantity
-            if "PNL" in rtrade.description:
+            # transferred from exercised option pnl, calculate the base money, clear the quantity
+            elif "PNL" in rtrade.description:
                 symb = rtrade.description.split(":")[1]
                 new_report = newReport(rtrade.account, symb, today)
                 price = new_report.mark
@@ -447,45 +450,12 @@ def getReportByDate(today):
             #brockerCommission = 0.0
             ecnFees = 0.0
         else:
-            ## ecn fees
-            ecnFees = 0.0
-            try:
-                # use the underlying symbol for options
-                if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol:
-                    underlyingSymbol = rtrade.symbol.split(" ")[0]
-                else:
-                    underlyingSymbol = rtrade.symbol
-                security = Security.objects.get(Q(symbol = underlyingSymbol) & Q(secDate = today))
-                market = security.market
-                if market == "NYSE":
-                    t_tape = "A"
-                elif market == "AMEX" or market == "ARCA":
-                    t_tape = "B"
-                else: 
-                    t_tape = "C"
-                routes = Route.objects.filter( Q(routeId = rtrade.destination) 
-                                           & Q(flag = rtrade.liqFlag) 
-                                           & (Q(tape = t_tape) | Q(tape = "ALL")) )
-                
-                # check each route's price period, feeType
-                for route in routes:
-                    lowPrice = route.priceFrom
-                    highPrice = route.priceTo
-                    if rtrade.price > lowPrice and rtrade.price <= highPrice:
-                        if route.feeType == "FLAT PER SHARE" or route.feeType == "FLAT PER CONTRACT":
-                            ecnFees = route.rebateCharge * rtrade.quantity
-                        elif route.feeType == "BASIS POINTS":
-                            ecnFees = route.rebateCharge * 0.0001 * rtrade.quantity * rtrade.price
-                        else:
-                            ecnFees = 0.0
-                    else:
-                        continue
-            except Security.DoesNotExist, Route.DoesNotExist:
-                ecnFees = 0.0   
+            # already calculated
+            ecnFees = rtrade.ecnFees
            
         ## sec fees
         if "BUY" not in rtrade.side and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
-            #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)
+            #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
             if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
                 secFees = rtrade.price * rtrade.quantity * 100 * secRate
             else:
@@ -515,13 +485,17 @@ def getReportByDate(today):
         new_report.clearanceFees += clearance
         #new_report.brokerCommission += brokerCommission
         new_report.commission += clearance #+ brokerCommission
-        new_report.secFees += secFees
+        # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
+        if rtrade.route == "WBPT" and (rtrade.destination == "BARCAP" or rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+            new_report.accruedSecFees += secFees
+        else:
+            new_report.secFees += secFees
         new_report.ecnFees += ecnFees
         new_report.save()            
     
     #delete the rolltrades
-    if today > date(2012, 11, 20):
-        rollTrades.delete()
+#     if today > date(2012, 11, 20):
+#         rollTrades.delete()
     
     #getPNLs(today)
     getDailyReport(today)
@@ -535,7 +509,46 @@ def getReportByDate(today):
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
     log.write("\tReports calculating done.\n")
     log.close()
-    
+
+# get Ecn fees for one trade
+def getECNFees(symbol, tradeDate, destination, liqFlag, price, quantity):
+    ## ecn fees
+    ecnFees = 0.0
+    try:
+        # use the underlying symbol for options
+        if len(symbol.split(' ')) > 1 and "00" in symbol:
+            underlyingSymbol = symbol.split(" ")[0]
+        else:
+            underlyingSymbol = symbol
+        security = Security.objects.get(Q(symbol=underlyingSymbol) & Q(secDate=tradeDate))
+        market = security.market
+        if market == "NYSE":
+            t_tape = "A"
+        elif market == "AMEX" or market == "ARCA":
+            t_tape = "B"
+        else: 
+            t_tape = "C"
+        routes = Route.objects.filter(Q(routeId=destination) 
+                                   & Q(flag=liqFlag) 
+                                   & (Q(tape=t_tape) | Q(tape="ALL")))
+        
+        # check each route's price period, feeType
+        for route in routes:
+            lowPrice = route.priceFrom
+            highPrice = route.priceTo
+            if price > lowPrice and price <= highPrice:
+                if route.feeType == "FLAT PER SHARE" or route.feeType == "FLAT PER CONTRACT":
+                    ecnFees = route.rebateCharge * quantity
+                elif route.feeType == "BASIS POINTS":
+                    ecnFees = route.rebateCharge * 0.0001 * quantity * price
+                else:
+                    ecnFees = 0.0
+            else:
+                continue
+    except Security.DoesNotExist, Route.DoesNotExist:
+        ecnFees = 0.0
+        
+    return ecnFees  
 
 # get summary data of reports with a specific date
 def getDailyReport(report_date):
@@ -634,6 +647,7 @@ def getDailyReport(report_date):
         daily_report.grossPNL += report.grossPNL
         daily_report.unrealizedPNL += report.unrealizedPNL
         daily_report.secFees += report.secFees
+        daily_report.accruedSecFees += report.accruedSecFees
         daily_report.clearanceFees += report.clearanceFees
         daily_report.brokerCommission += report.brokerCommission
         daily_report.commission += report.commission
@@ -656,6 +670,7 @@ def getAccountSummary(daily_report):
         account.grossPNL += daily_report.grossPNL
         account.unrealizedPNL += daily_report.unrealizedPNL
         account.secFees += daily_report.secFees
+        account.accruedSecFees += daily_report.accruedSecFees
         account.commission += daily_report.commission
         account.ecnFees += daily_report.ecnFees
         account.netPNL += daily_report.netPNL
@@ -686,6 +701,7 @@ def getMonthlyReport(daily_report):
         monthly_report.grossPNL += daily_report.grossPNL
         monthly_report.unrealizedPNL += daily_report.unrealizedPNL
         monthly_report.secFees += daily_report.secFees
+        monthly_report.accruedSecFees += daily_report.accruedSecFees
         monthly_report.clearanceFees += daily_report.clearanceFees
         monthly_report.brokerCommission += daily_report.brokerCommission
         monthly_report.commission += daily_report.commission
@@ -702,6 +718,7 @@ def getMonthlyReport(daily_report):
             monthly_report.grossPNL += dr.grossPNL
             monthly_report.unrealizedPNL += dr.unrealizedPNL
             monthly_report.secFees += dr.secFees
+            monthly_report.accruedSecFees += daily_report.accruedSecFees
             monthly_report.clearanceFees += dr.clearanceFees
             monthly_report.brokerCommission += dr.brokerCommission
             monthly_report.commission += dr.commission
@@ -728,13 +745,16 @@ def getTrades(filepath):
                 trade.symbol = row[1]
                 trade.securityType = row[2]
                 trade.side = row[3]
-                trade.quantity = row[4]
-                trade.price = row[5]
+                trade.quantity = int(row[4])
+                trade.price = float(row[5])
                 trade.route = row[6]
                 trade.destination = row[7]
                 trade.liqFlag = row[9]
                 trade.tradeDate = today
                 trade.executionId = row[11]
+                trade.ecnFees = getECNFees(trade.symbol, trade.tradeDate, 
+                                           trade.destination, trade.liqFlag, 
+                                           trade.price, trade.quantity)
                 trade.save() # save into database
             except Exception, e:
                 print str(e.message)
@@ -749,7 +769,7 @@ def getTradesByDir(path):
     filelist = os.listdir(path)
     filelist.sort()
     log = open(ERROR_LOG, "a")
-    
+    #i = 0
     for filename in filelist: # each file represent one day
         if filename == ".DS_Store":
             continue
@@ -760,6 +780,10 @@ def getTradesByDir(path):
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             if not header:
                 try:
+#                     i += 1
+#                     if i % 1000 == 0:
+#                         print i
+                    
                     date_str = row[10].split("/")
                     if len(date_str[2]) == 2:
                         year = "20" + date_str[2]
@@ -785,13 +809,16 @@ def getTradesByDir(path):
                         trade.symbol = row[1].strip()
                     trade.securityType = row[2]
                     trade.side = row[3]
-                    trade.quantity = row[4]
-                    trade.price = row[5]
+                    trade.quantity = int(row[4])
+                    trade.price = float(row[5])
                     trade.route = row[6]
                     trade.destination = row[7]
                     trade.liqFlag = row[9]
                     trade.tradeDate = today
                     trade.executionId = row[11]
+                    trade.ecnFees = getECNFees(trade.symbol, trade.tradeDate, 
+                                               trade.destination, trade.liqFlag, 
+                                               trade.price, trade.quantity)
                     trade.save() # save into database
                 except Exception, e:
                     print str(e.message)

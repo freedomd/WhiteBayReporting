@@ -251,13 +251,15 @@ def getAccountList(request, group, tab, strorder):
         total.commission += account.commission
         total.secFees += account.secFees
         total.ecnFees += account.ecnFees
-    
+        total.accruedSecFees += account.accruedSecFees
+        
     account_list_serialized = serializers.serialize('json', account_list)
     data = { 'account_list': simplejson.loads(account_list_serialized),
              'total_grossPNL': total.grossPNL,
              'total_unrealizedPNL': total.unrealizedPNL,
              'total_commission': total.commission,
              'total_secFees': total.secFees,
+             'total_accruedSecFees': total.accruedSecFees,
              'total_ecnFees': total.ecnFees,
              'total_netPNL': total.netPNL }
 

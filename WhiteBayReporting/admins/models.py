@@ -83,6 +83,9 @@ class Account(models.Model):
     commission = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
+    # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
+    accruedSecFees = models.FloatField(default=0.00 )
+
     
     group = models.IntegerField( default=-1 ) # group pk, -1 for no group
     

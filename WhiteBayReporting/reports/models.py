@@ -54,6 +54,8 @@ class Report(models.Model):
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
+    # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
+    accruedSecFees = models.FloatField(default=0.00 )
     
     # for storing the option exercised/assigned pnl, will be added to unrealized pnl
     baseMoney = models.FloatField( default=0.00 ) 
@@ -85,6 +87,8 @@ class DailyReport(models.Model):
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
+    # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
+    accruedSecFees = models.FloatField(default=0.00 )
                                  
     reportDate = models.DateField( auto_now_add=False )
     
@@ -109,7 +113,9 @@ class MonthlyReport(models.Model):
     clearanceFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
-    
+    # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
+    accruedSecFees = models.FloatField(default=0.00 )
+   
     reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 

@@ -24,7 +24,7 @@ class Trade(models.Model):
 #    brokerCommission = models.FloatField( default=0.00 )
 #    commission = models.FloatField( default=0.00 )
 #    secFees = models.FloatField( default=0.00 )
-#    ecnFees = models.FloatField( default=0.00 )
+    ecnFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(Trade, self).save(*args, **kwargs)
@@ -51,6 +51,9 @@ class RollTrade(models.Model):
     baseMoney = models.FloatField( default=0.00 )
     description = models.CharField( max_length=100, default="NORMAL TRADE")
 #    clearanceFees = models.FloatField( default=0.00 )
+    
+    # after rolling, this ecnFees is the sum of ecnFees of the rolled trades
+    ecnFees = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(RollTrade, self).save(*args, **kwargs)

@@ -106,6 +106,7 @@ function createReportList(data) {
 		html += "<th><button class='btn btn-link tab' id='clearanceFees' value=0 onclick=changeOrder(this.id)>Clearance</button></th>";
 		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeOrder(this.id)>Commission</button></th>";
 		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeOrder(this.id)>SEC Fees</button></th>";
+		html += "<th><button class='btn btn-link tab' id='accruedSecFees' value=0 onclick=changeOrder(this.id)>Accrued SEC Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='ecnFees' value=0 onclick=changeOrder(this.id)>ECN Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='netPNL' value=0 onclick=changeOrder(this.id)>Net PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='LMV' value=0 onclick=changeOrder(this.id)>LMV</button></th>";
@@ -146,6 +147,7 @@ function createReportList(data) {
 			html += "<td>" + addCommas(report.clearanceFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.commission.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.secFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(report.accruedSecFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.ecnFees.toFixed(2)) + "</td>";
 
 			if(report.netPNL >=0) {
@@ -236,6 +238,7 @@ function createAccountList(data) {
 		html += "<th><button class='btn btn-link tab' id='unrealizedPNL' value=0 onclick=changeAccountOrder(this.id)>Unrealized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeAccountOrder(this.id)>Commission</button></th>";
 		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeAccountOrder(this.id)>SEC Fees</button></th>";
+		html += "<th><button class='btn btn-link tab' id='accruedSecFees' value=0 onclick=changeAccountOrder(this.id)>Accrued SEC Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='ecnFees' value=0 onclick=changeAccountOrder(this.id)>ECN Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='netPNL' value=0 onclick=changeAccountOrder(this.id)>Net PNL</button></th>";
 		html += "</tr>";
@@ -259,6 +262,7 @@ function createAccountList(data) {
 
 			html += "<td>" + addCommas(account.commission.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(account.secFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(account.accruedSecFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(account.ecnFees.toFixed(2)) + "</td>";
 
 			if(account.netPNL >=0) {
@@ -289,6 +293,7 @@ function createAccountList(data) {
 
 		html += "<td>" + addCommas(data.total_commission.toFixed(2)) + "</td>";
 		html += "<td>" + addCommas(data.total_secFees.toFixed(2)) + "</td>";
+		html += "<td>" + addCommas(data.total_accruedSecFees.toFixed(2)) + "</td>";
 		html += "<td>" + addCommas(data.total_ecnFees.toFixed(2)) + "</td>";
 
 		if(data.total_netPNL >=0) {
