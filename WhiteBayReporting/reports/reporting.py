@@ -486,14 +486,14 @@ def getReportByDate(today):
         #new_report.brokerCommission += brokerCommission
         new_report.commission += clearance #+ brokerCommission
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
-        if rtrade.route == "WBPT" and (rtrade.destination == "BARCAP" or rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+        if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
         else:
             new_report.secFees += secFees
         new_report.ecnFees += ecnFees
         new_report.save()            
     
-    #delete the rolltrades
+    # delete the rolltrades
 #     if today > date(2012, 11, 20):
 #         rollTrades.delete()
     
@@ -682,6 +682,7 @@ def getAccountSummary(daily_report):
             account.grossPNL += report.grossPNL
             account.unrealizedPNL += report.unrealizedPNL
             account.secFees += report.secFees
+            account.accruedSecFees += report.accruedSecFees
             account.commission += report.commission
             account.ecnFees += report.ecnFees
             account.netPNL += report.netPNL
@@ -718,7 +719,7 @@ def getMonthlyReport(daily_report):
             monthly_report.grossPNL += dr.grossPNL
             monthly_report.unrealizedPNL += dr.unrealizedPNL
             monthly_report.secFees += dr.secFees
-            monthly_report.accruedSecFees += daily_report.accruedSecFees
+            monthly_report.accruedSecFees += dr.accruedSecFees
             monthly_report.clearanceFees += dr.clearanceFees
             monthly_report.brokerCommission += dr.brokerCommission
             monthly_report.commission += dr.commission
