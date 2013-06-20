@@ -4,8 +4,9 @@ from django.contrib import admin
 
 class Broker(models.Model):
     
-    name = models.CharField( max_length=50 )
-    commission = models.FloatField( default=0.00 )
+    brokerNumber = models.CharField( max_length=50 )
+    securityType = models.CharField( max_length=10 )
+    commissionRate = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(Broker, self).save(*args, **kwargs)

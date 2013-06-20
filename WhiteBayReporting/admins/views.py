@@ -22,7 +22,7 @@ def firmView(request):
     if request.GET:
         message = request.GET.get('message')
     firm = Firm.objects.all()[0]
-    broker_list = Broker.objects.all().order_by("name")          
+    broker_list = Broker.objects.all().order_by("brokerNumber")          
     return render(request,"firm_view.html", locals())
 
 @login_required
@@ -79,11 +79,13 @@ def logView(request):
 @login_required
 def addBroker(request):
     if request.POST:
-        name = request.POST.get('add_name')
-        commission = request.POST.get('add_commission')
+        brokerNumber = request.POST.get('add_name')
+        securityType = request.POST.get('add_type')
+        commissionRate = request.POST.get('add_commission')
 
         try:
-            broker = Broker.objects.create(name = name, commission = commission)
+            broker = Broker.objects.create(brokerNumber = brokerNumber, securityType = securityType, 
+                                           commissionRate = commissionRate)
             firm = Firm.objects.all()[0]
             firm.brokers.add(broker)
             firm.save()
@@ -104,10 +106,12 @@ def modBroker(request):
             if delete:
                 broker.delete()
             elif save:
-                name = request.POST.get('mod_name')
-                commission = request.POST.get('mod_commission')
-                broker.name = name
-                broker.commission = commission
+                brokerNumber = request.POST.get('mod_name')
+                securityType = request.POST.get('mod_type')
+                commissionRate = request.POST.get('mod_commission')
+                broker.brokerNumber = brokerNumber
+                broker.securityType = securityType
+                broker.commissionRate = commissionRate
                 broker.save()
         except Exception, e:
             print str(e.message)

@@ -13,7 +13,8 @@ def getBroker(request, pk):
         success = "false"
         message = "No such broker found."
     
-    data = {'pk': broker.pk, 'name': broker.name, 'commission': broker.commission, 
+    data = {'pk': broker.pk, 'brokerNumber': broker.brokerNumber, 'securityType': broker.securityType, 
+            'commissionRate': broker.commissionRate, 
             'success': success, 'message': message }
     #print data
     
@@ -21,11 +22,12 @@ def getBroker(request, pk):
 
 
 @dajaxice_register
-def modifyBroker(request, pk, name, commission):
+def modifyBroker(request, pk, brokerNumber, securityType, commissionRate):
     try:
         broker = Broker.objects.get(pk = pk)
-        broker.name = name
-        broker.commission = commission
+        broker.brokerNumber = brokerNumber
+        broker.securityType = securityType
+        broker.commissionRate = commissionRate
         broker.save()
         success = "true"
         message = ""
@@ -33,7 +35,8 @@ def modifyBroker(request, pk, name, commission):
         success = "false"
         message = "No such broker found."
     
-    data = {'pk': broker.pk, 'name': broker.name, 'commission': broker.commission, 
+    data = {'pk': broker.pk, 'brokerNumber': broker.brokerNumber, 'securityType': broker.securityType, 
+            'commissionRate': broker.commissionRate, 
             'success': success, 'message': message }
 
     return simplejson.dumps(data)

@@ -67,7 +67,7 @@
   		<option value="default">--- Select Broker ---</option>
   		<option value="add">Add a Broker</option>
         {% for broker in broker_list %}
-			<option value="{{ broker.pk }}">{{ broker.name }}</option>
+			<option value="{{ broker.pk }}">{{ broker.brokerNumber }}</option>
 		{% endfor %}
     </select>
 </div> 
@@ -80,16 +80,23 @@
 		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
 		
 		<div class="control-group">
-    		<label class="control-label" for="mod_name">Broker Name</label>
+    		<label class="control-label" for="mod_name">Broker Number</label>
     		<div class="controls">
-				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Broker Name'>
+				<input name='mod_name' id='mod_name' type='text' class='span4' placeholder='Broker Number'>
 			</div>
 		</div>
 		
 		<div class="control-group">
-    		<label class="control-label" for="mod_commission">Commission</label>
+    		<label class="control-label" for="mod_type">Security Type</label>
     		<div class="controls">
-				<input name='mod_commission' id='mod_commission' type='text' class='span4' placeholder='Commission'>
+				<input name='mod_type' id='mod_type' type='text' class='span4' placeholder='Security Type'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_commission">Commission Rate</label>
+    		<div class="controls">
+				<input name='mod_commission' id='mod_commission' type='text' class='span4' placeholder='Commission Rate'>
 			</div>
 		</div>
 		
@@ -106,14 +113,21 @@
 	<form method='post' action='/addBroker/' onsubmit='return validate_add_broker(this)'>
 		{% csrf_token %}
 		<div class="control-group">
-    		<label class="control-label" for="add_name">Broker Name</label>
+    		<label class="control-label" for="add_name">Broker Number</label>
     		<div class="controls">
 				<input name='add_name' id='add_name' type='text' class='span4' placeholder='Broker Name'>
 			</div>
 		</div>
 		
 		<div class="control-group">
-    		<label class="control-label" for="add_commission">Comission</label>
+    		<label class="control-label" for="add_type">Security Type</label>
+    		<div class="controls">
+				<input name='add_type' id='add_type' type='text' class='span4' placeholder='Security Type'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_commission">Commission Rate</label>
     		<div class="controls">
 				<input name='add_commission' id='add_commission' type='text' class='span4' placeholder='Commission'>
 			</div>

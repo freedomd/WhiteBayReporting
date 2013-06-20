@@ -92,6 +92,7 @@ function createTradeList(data) {
 		html += "<th><button class='btn btn-link tab' id='ecnFees' value=0 onclick=changeOrder(this.id)>ECN Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='route' value=0 onclick=changeOrder(this.id)>Route</button></th>";
 		html += "<th><button class='btn btn-link tab' id='destination' value=0 onclick=changeOrder(this.id)>Destination</button></th>";
+		html += "<th><button class='btn btn-link tab' id='broker' value=0 onclick=changeOrder(this.id)>Broker</button></th>";
 		html += "<th><button class='btn btn-link tab' id='liqFlag' value=0 onclick=changeOrder(this.id)>Liq Flag</button></th>";
 		html += "<th><button class='btn btn-link tab' id='tradeDate' value=0 onclick=changeOrder(this.id)>Trade Date</button></th>";
 		html += "<th><button class='btn btn-link tab' id='executionId' value=0 onclick=changeOrder(this.id)>Execution ID</button></th>";
@@ -118,6 +119,7 @@ function createTradeList(data) {
 			html += "<td>" + addCommas(trade.ecnFees.toFixed(2)) + "</td>";
 			html += "<td>" + trade.route + "</td>";
 			html += "<td>" + trade.destination + "</td>";
+			html += "<td>" + trade.broker + "</td>";
 			html += "<td>" + trade.liqFlag + "</td>";
 			//html += "<td>" + addCommas(trade.commission.toFixed(2)) + "</td>";
 			//html += "<td>" + addCommas(trade.clearanceFees.toFixed(2)) + "</td>";

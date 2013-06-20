@@ -303,10 +303,10 @@ def getRollTrades(today):
                     trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
                     trade.save()
                 # do not roll the option exercised and assigned trade
-                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
-                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate, description = trade.description)
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, route=trade.route, destination=trade.destination,
+                                         liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
                 continue
             
             # transferred from exercised option pnl, calculate the base money, clear the quantity
@@ -320,18 +320,19 @@ def getRollTrades(today):
                     trade.quantity = 0
                     trade.save()
                 # do not roll the option transferred trade
-                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
-                                     route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate, description = trade.description)
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                         route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)
                 continue
                 
             # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
             if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
-                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
-                                     ecnFees=trade.ecnFees, route=trade.route, destination=trade.destination, 
-                                     liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
+                                         destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)
                 
                 continue
             
@@ -357,10 +358,11 @@ def getRollTrades(today):
                 rtrade.ecnFees += trade.ecnFees           
                 rtrade.save()
         except RollTrade.DoesNotExist:
-            RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+            RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                     side=trade.side, price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
                                      ecnFees=trade.ecnFees, route=trade.route, destination=trade.destination,
-                                     liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
+                                     broker = trade.broker, liqFlag=trade.liqFlag, tradeDate=trade.tradeDate,
+                                     description = trade.description)
     
     return RollTrade.objects.filter(tradeDate=today)
 
@@ -471,8 +473,13 @@ def getReportByDate(today):
         else:
             secFees = 0
         
-        ## broker commission, not implemented yet
-        
+        ## broker commission
+        try:
+            broker = Broker.objects.get(Q(brokerNumber=rtrade.broker) & Q(securityType=rtrade.securityType))
+            brokerCommission = rtrade.quantity * broker.commissionRate
+        except Broker.DoesNotExist:
+            brokerCommission = 0.0
+            
         ## clearance fee
         clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
         clearance = round(clearance, 2)            
@@ -483,8 +490,8 @@ def getReportByDate(today):
                 
         ## update report
         new_report.clearanceFees += clearance
-        #new_report.brokerCommission += brokerCommission
-        new_report.commission += clearance #+ brokerCommission
+        new_report.brokerCommission += brokerCommission
+        new_report.commission += clearance + brokerCommission
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
@@ -617,7 +624,7 @@ def getDailyReport(report_date):
         report.unrealizedPNL = unrealizedPNL
 
         # net PNL
-        report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.clearanceFees - report.commission
+        report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -820,6 +827,20 @@ def getTradesByDir(path):
                     trade.ecnFees = getECNFees(trade.symbol, trade.tradeDate, 
                                                trade.destination, trade.liqFlag, 
                                                trade.price, trade.quantity)
+                    
+                    # broker
+                    if trade.route == "INSTINET":
+                        trade.broker = "INCA"
+                    elif trade.route == "WBPT":
+                        if trade.destination == "BARCAP":
+                            trade.broker = "BARC"
+                        elif trade.destination == "FBCO":
+                            trade.broker = "FBCO"
+                        elif trade.destination == "UBS":
+                            trade.broker = "UBSS"
+                    elif trade.route == "ITGI" and trade.securityType == "SEC":
+                        trade.broker = "ITGI"
+                    
                     trade.save() # save into database
                 except Exception, e:
                     print str(e.message)
@@ -992,7 +1013,44 @@ def getOptionsAsTradesByDir(path):
     print "Done"
     return True
 
-#import the mark file before the first day, set up the positions
+# import the broker commission rate
+def getBrokerCommission(path):
+    print "Getting Broker Commission from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            #print header
+            if not header:
+                try:                    
+                    new_broker = Broker()
+                    new_broker.brokerNumber = row[0].strip()
+                    new_broker.securityType = row[1].strip()
+                    new_broker.commissionRate = float(row[2])
+                    new_broker.save()
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet broker commission %s from mark file %s failed: %s\n" % (new_broker.brokerNumber, filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True       
+
+# import the mark file before the first day, set up the positions
 def setupReport(path):  
     print "Getting mark record from files..."
     filelist = os.listdir(path)

@@ -67,8 +67,9 @@ function showBroker(data) {
 	if(data.success == "true") {
 		$('#mod_broker').show();
 		$('#mod_pk').val(data.pk);
-		$('#mod_name').val(data.name);
-		$('#mod_commission').val(data.commission.toFixed(2));
+		$('#mod_name').val(data.brokerNumber);
+		$('#mod_type').val(data.securityType);
+		$('#mod_commission').val(data.commissionRate);
 	} else {
 		html = "";
 		html += data.message;
@@ -84,11 +85,17 @@ function validate_add_broker(thisform) {
 	$(".message").html("");
 	with (thisform) {
 		if (validate_required(add_name) == false) {
-			html = "<span class='help-inline message'>You must enter a name.</span>";
+			html = "<span class='help-inline message'>You must enter a number.</span>";
 			$("#add_name").after(html);
 			add_name.focus();
 			return false;
 		} 
+		if (validate_required(add_type) == false) {
+			html = "<span class='help-inline message'>You must enter a type.</span>";
+			$("#add_type").after(html);
+			add_type.focus();
+			return false;
+		}
 		if (validate_number(add_commission) == false || validate_required(add_commission) == false) {
 			html = "<span class='help-inline message'>You must enter a valid commission.</span>";
 			$("#add_commission").after(html);
@@ -103,11 +110,18 @@ function validate_mod_broker(thisform) {
 	$(".message").html("");
 	with (thisform) {
 		if (validate_required(mod_name) == false) {
-			html = "<span class='help-inline message'>You must enter a name.</span>";
+			html = "<span class='help-inline message'>You must enter a number.</span>";
 			$("#mod_name").after(html);
 			mod_name.focus();
 			return false;
 		} 
+		
+		if (validate_required(mod_type) == false) {
+			html = "<span class='help-inline message'>You must enter a type.</span>";
+			$("#mod_type").after(html);
+			mod_type.focus();
+			return false;
+		}
 		
 		if (validate_number(mod_commission) == false || validate_required(mod_commission) == false) {
 			html = "<span class='help-inline message'>You must enter a valid commission.</span>";

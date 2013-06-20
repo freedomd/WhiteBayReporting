@@ -41,9 +41,11 @@ class RollTrade(models.Model):
     
     account = models.CharField( max_length=20 )
     symbol = models.CharField( max_length=50 )
+    securityType = models.CharField( max_length=10, blank=True, null=True, default="")
     side = models.CharField( choices=SIDE_CHOICES, max_length=10, default="SEL")
     quantity = models.IntegerField( default=0 )
     price = models.FloatField( default=0.00 )
+    broker = models.CharField( max_length=20, blank=True, null=True, default="")
     route = models.CharField( max_length=10, blank=True, null=True, default="")
     destination = models.CharField( max_length=10, blank=True, null=True, default="")
     liqFlag = models.CharField( max_length=5, blank=True, null=True, default="")
