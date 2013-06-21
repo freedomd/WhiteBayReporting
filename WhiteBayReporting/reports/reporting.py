@@ -230,6 +230,7 @@ def refreshReports(today):
             new_report.commission = 0.0
             new_report.clearanceFees = 0.0
             new_report.secFees = 0.0
+            new_report.baseMoney = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
             new_report.reportDate = today
@@ -292,10 +293,20 @@ def getRollTrades(today):
     for trade in trades:
         try:
             
-            # TODO: add more fields here to roll
-            # TempKey = bo.account + "," + bo.bs + "," + bo.shortSign + "," + bo.symbol + "," + bo.extPrice + "," 
-            #           + bo.service + "," + bo.execBrkr + "," + bo.delBrkr + "," + bo.delBrkrNum 
-            #           + "," + bo.blotter + "," + bo.exchange;
+            # dividend
+            if "DIVIDEND" in trade.description:
+                new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
+                if (new_report.pendingShare != 0 and "DSTP" in trade.description ) or \
+                    (new_report.pendingCash != 0.0 and "DIVP" in trade.description):
+                    trade.description = "PENDING ALEART: " + trade.description
+                if (trade.quantity != 0 and "DSTP" not in trade.description) or \
+                    (trade.baseMoney != 0.0 and "DIVP" not in trade.description):
+                    trade.description = "SETTLED: " + trade.description
+                trade.save()
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
+                                         tradeDate=trade.tradeDate, description = trade.description)
+                continue
             
             # exercised option
             if trade.description == "ASSIGNED OPTION" or trade.description == "EXERCISED OPTION":
@@ -398,6 +409,21 @@ def getReportByDate(today):
                 rtrade.quantity = 0
                 rtrade.save()
                 
+        # if the trade is dividend
+        if "DIVIDEND" in rtrade.description:
+            # cash dividend
+            if "CASH" in rtrade.description:
+                new_report.todayCash -= rtrade.baseMoney
+                if "DIVP" not in rtrade.description:
+                    new_report.cashClearFlag = True
+            # stock dividend
+            elif "STOCK" in rtrade.description:
+                new_report.todayShare += rtrade.quantity
+                if "DSTP" not in rtrade.description:
+                    new_report.shareClearFlag = True
+            new_report.save()
+            continue
+            
         # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
             # if no buy or sell on that day, then we cannot add the pnl into average
@@ -620,9 +646,34 @@ def getDailyReport(report_date):
         # if no buys or sells on that day, calculate the base money separately
         # else, the base money is already applied in average price
         if report.buys == 0 or report.sells == 0:
-            unrealizedPNL += report.baseMoney
+            unrealizedPNL += report.baseMoney   
+        
+        # dividend
+        # stock dividend
+        if report.pendingShare != report.todayShare:
+            shareDiffer = report.todayShare - report.pendingShare
+            report.pendingShare = report.todayShare
+            report.todayShare = 0
+            unrealizedPNL += shareDiffer * report.closing
+            EOD += shareDiffer
+        # cash dividend
+        if report.pendingCash != report.todayCash:
+            cashDiffer = report.todayCash - report.pendingCash
+            report.pendingCash = report.todayCash
+            report.todayCash = 0.0
+            report.netPNL += cashDiffer
+        # check if clear the dividend
+        if report.shareClearFlag == True:
+            report.pendingShare = 0
+            report.todayShare = 0
+            report.shareClearFlag = False
+        if report.cashClearFlag == True:
+            report.pendingCash = 0.0
+            report.todayCash = 0.0
+            report.cashClearFlag = False
+            
+        # unrealizedPNL
         report.unrealizedPNL = unrealizedPNL
-
         # net PNL
         report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
         
@@ -1049,6 +1100,84 @@ def getBrokerCommission(path):
     log.close()
     print "Done"
     return True       
+
+def getDividendByDir(path):
+    print "Getting dividend record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            #print header
+            if not header:
+                try:
+                    date_str = row[2].split('/')
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+                    #print today
+                    
+                    trade = Trade()
+                    trade.symbol = row[18].strip()
+                    if trade.symbol == None or trade.symbol == "":
+                        continue
+                    
+                    entryType = row[16].strip()
+                    if entryType != "DV":
+                        continue
+                    
+                    # currently, we only handle DV
+                    trade.account = row[4]
+                    
+                    #print trade.account + ", " + trade.symbol
+                    sec = row[5]
+                    if sec == "1":
+                        trade.securityType = "SEC"
+                    elif sec == "2":
+                        trade.securityType = "OPT"
+                    elif sec == "3":
+                        trade.securityType = "BOND"
+                    
+                    side = row[11]
+                    if side == "B":
+                        trade.side = "BUY"
+                    else:
+                        trade.side = "SEL"
+                    
+                    trade.description = row[15].strip()
+                    if trade.description == "DIVP" or trade.description == "DIV" or \
+                        trade.description == "MDIV" or trade.description == "RCP" or \
+                        trade.description == "FDV" or trade.description == "FTD":
+                        trade.description = "CASH DIVIDEND, " + trade.description
+                        trade.baseMoney = float(row[14])
+                    elif trade.description == "DSTP" or trade.description == "DST":
+                        trade.description = "STOCK DIVIDEND, " + trade.description
+                        trade.quantity = int(row[12])
+                        
+                    trade.tradeDate = today    
+                    trade.save() # save into database
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet dividend %s from mark file %s failed: %s\n" % (trade.symbol, filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
 
 # import the mark file before the first day, set up the positions
 def setupReport(path):  

@@ -60,6 +60,14 @@ class Report(models.Model):
     # for storing the option exercised/assigned pnl, will be added to unrealized pnl
     baseMoney = models.FloatField( default=0.00 ) 
     
+    # for dividend dispatch use
+    pendingShare = models.IntegerField( default=0 )
+    todayShare = models.IntegerField( default=0 ) # if differ is not 0, then affect the unrealizedPNL
+    shareClearFlag = models.BooleanField( default=False ) 
+    pendingCash = models.FloatField( default=0.00 )
+    todayCash = models.FloatField( default=0.00 ) # if differ is not 0, then affect the netPNL
+    cashClearFlag = models.BooleanField( default=False ) 
+    
     reportDate = models.DateField( auto_now_add=False )
     
     def save(self, *args, **kwargs): 
