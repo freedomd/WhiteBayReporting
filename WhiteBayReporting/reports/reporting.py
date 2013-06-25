@@ -298,10 +298,12 @@ def getRollTrades(today):
                 new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
                 if (new_report.pendingShare != 0 and "DSTP" in trade.description ) or \
                     (new_report.pendingCash != 0.0 and "DIVP" in trade.description):
-                    trade.description = "PENDING ALEART: " + trade.description
+                    if "PENDING ALERT" not in trade.description:
+                        trade.description = "PENDING ALERT: " + trade.description
                 if (trade.quantity != 0 and "DSTP" not in trade.description) or \
                     (trade.baseMoney != 0.0 and "DIVP" not in trade.description):
-                    trade.description = "SETTLED: " + trade.description
+                    if "SETTLED" not in trade.description:
+                        trade.description = "SETTLED: " + trade.description
                 trade.save()
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
                                          side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
@@ -610,7 +612,7 @@ def getDailyReport(report_date):
             log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
         
         # discard useless report
-        if SOD == 0 and buys == 0 and sells == 0:
+        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
             report.delete()
             continue
         
@@ -656,12 +658,16 @@ def getDailyReport(report_date):
             report.todayShare = 0
             unrealizedPNL += shareDiffer * report.closing
             EOD += shareDiffer
+            print "Share:"
+            print report.account, report.symbol, shareDiffer
         # cash dividend
         if report.pendingCash != report.todayCash:
             cashDiffer = report.todayCash - report.pendingCash
             report.pendingCash = report.todayCash
             report.todayCash = 0.0
             report.netPNL += cashDiffer
+            print "Cash:"
+            print report.account, report.symbol, cashDiffer
         # check if clear the dividend
         if report.shareClearFlag == True:
             report.pendingShare = 0
@@ -675,7 +681,7 @@ def getDailyReport(report_date):
         # unrealizedPNL
         report.unrealizedPNL = unrealizedPNL
         # net PNL
-        report.netPNL = report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
+        report.netPNL = report.netPNL + report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -1114,66 +1120,63 @@ def getDividendByDir(path):
         filepath = os.path.join(path, filename)
         print filepath
         file = open(filepath, 'rb')
-        header = True
+
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
-            #print header
-            if not header:
-                try:
-                    date_str = row[2].split('/')
-                    if len(date_str[2]) == 2:
-                        year = "20" + date_str[2]
-                    else:
-                        year = date_str[2]
-                    today = date(int(year), int(date_str[0]), int(date_str[1]))
-                    #print today
-                    
-                    trade = Trade()
-                    trade.symbol = row[18].strip()
-                    if trade.symbol == None or trade.symbol == "":
-                        continue
-                    
-                    entryType = row[16].strip()
-                    if entryType != "DV":
-                        continue
-                    
-                    # currently, we only handle DV
-                    trade.account = row[4]
-                    
-                    #print trade.account + ", " + trade.symbol
-                    sec = row[5]
-                    if sec == "1":
-                        trade.securityType = "SEC"
-                    elif sec == "2":
-                        trade.securityType = "OPT"
-                    elif sec == "3":
-                        trade.securityType = "BOND"
-                    
-                    side = row[11]
-                    if side == "B":
-                        trade.side = "BUY"
-                    else:
-                        trade.side = "SEL"
-                    
-                    trade.description = row[15].strip()
-                    if trade.description == "DIVP" or trade.description == "DIV" or \
-                        trade.description == "MDIV" or trade.description == "RCP" or \
-                        trade.description == "FDV" or trade.description == "FTD":
-                        trade.description = "CASH DIVIDEND, " + trade.description
-                        trade.baseMoney = float(row[14])
-                    elif trade.description == "DSTP" or trade.description == "DST":
-                        trade.description = "STOCK DIVIDEND, " + trade.description
-                        trade.quantity = int(row[12])
-                        
-                    trade.tradeDate = today    
-                    trade.save() # save into database
-                        
-                except Exception, e:
-                    print str(e.message)
-                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                    log.write( "\tGet dividend %s from mark file %s failed: %s\n" % (trade.symbol, filename, str(e.message)) )
+            try:
+                date_str = row[2].split('/')
+                if len(date_str[2]) == 2:
+                    year = "20" + date_str[2]
+                else:
+                    year = date_str[2]
+                today = date(int(year), int(date_str[0]), int(date_str[1]))
+                #print today
+                
+                trade = Trade()
+                trade.symbol = row[18].strip()
+                if trade.symbol == None or trade.symbol == "":
                     continue
-            else:
-                header = False
+                
+                entryType = row[16].strip()
+                if entryType != "DV":
+                    continue
+                
+                # currently, we only handle DV
+                trade.account = row[4]
+                
+                #print trade.account + ", " + trade.symbol
+                sec = row[5]
+                if sec == "1":
+                    trade.securityType = "SEC"
+                elif sec == "2":
+                    trade.securityType = "OPT"
+                elif sec == "3":
+                    trade.securityType = "BOND"
+                
+                side = row[11]
+                if side == "B":
+                    trade.side = "BUY"
+                else:
+                    trade.side = "SEL"
+                
+                trade.description = row[15].strip()
+                if trade.description == "DIVP" or trade.description == "DIV" or \
+                    trade.description == "MDIV" or trade.description == "RCP" or \
+                    trade.description == "FDV" or trade.description == "FTD":
+                    trade.description = "CASH DIVIDEND, " + trade.description
+                    trade.baseMoney = float(row[14])
+                elif trade.description == "DSTP" or trade.description == "DST":
+                    trade.description = "STOCK DIVIDEND, " + trade.description
+                    trade.quantity = int(row[12])
+                    
+                trade.tradeDate = today    
+                trade.save() # save into database
+                    
+            except Exception, e:
+                print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet dividend %s from mark file %s failed: %s\n" % (trade.symbol, filename, str(e.message)) )
+                continue
+
         file.close()    
     log.close()
     print "Done"
@@ -1292,4 +1295,4 @@ def setupReport(path):
         file.close()    
     log.close()
     print "Done"
-    return True   
+    return True

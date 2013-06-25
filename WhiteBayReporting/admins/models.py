@@ -12,7 +12,7 @@ class Broker(models.Model):
         super(Broker, self).save(*args, **kwargs)
     
     def __unicode__(self):
-        return str(self.name)
+        return str(self.brokerNumber)
 
 
 

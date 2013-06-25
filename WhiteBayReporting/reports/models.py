@@ -74,7 +74,7 @@ class Report(models.Model):
         super(Report, self).save(*args, **kwargs)
     
     def __unicode__(self):
-        return str(self.id)
+        return str(self.account + " " + self.symbol + " " + str(self.reportDate))
 
 # report of summary data every day
 class DailyReport(models.Model):
@@ -104,7 +104,7 @@ class DailyReport(models.Model):
         super(DailyReport, self).save(*args, **kwargs)
     
     def __unicode__(self):
-        return str(self.id)
+        return str(self.account + " " + str(self.reportDate))
 
 # report of summary data every month
 class MonthlyReport(models.Model):
@@ -130,7 +130,7 @@ class MonthlyReport(models.Model):
         super(MonthlyReport, self).save(*args, **kwargs)
     
     def __unicode__(self):
-        return str(self.id)
+        return str(self.account + " " + str(self.reportDate))
 
 admin.site.register(Symbol)    
 admin.site.register(Security) 
