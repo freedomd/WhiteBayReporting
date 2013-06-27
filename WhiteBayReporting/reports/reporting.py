@@ -44,47 +44,55 @@ def getSecurities(filepath, today):
     file.close()    
 
 # get multiplier for future and future option
-def getMultiplierByDate(filepath, today):
+def getMultiplierByDate(path, today):
     print "Getting multipliers..."
-    file = open(filepath, 'rb')
-    log = open(ERROR_LOG,'a')   
-    header = True
-        
-    #read the multiplier file
-    for row in csv.reader(file.read().splitlines(), delimiter=','): 
-        if not header:               
-            try:      
-                symbol = row[38].strip()
-                expDate = str(row[36])
-        
-                if expDate != "" and expDate != "0": # future option
-                    date_str = expDate[2:]
-                    #strike
-                    strike = float(row[19])
-                    strike_str = str(int(strike * 1000))
-                    while (len(strike_str) < 8):
-                        strike_str = "0" + strike_str
-                    
-                    while len(symbol) < 6:
-                        symbol += " "
-
-                    symbol += date_str + row[18] + strike_str
-                    #print symbol
-
-                multiplier = int(row[9])
-                try:
-                    new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=today))
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG,"a") 
+    
+    for filename in filelist:
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb') 
+        header = True
+            
+        #read the multiplier file
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            if not header:               
+                try:      
+                    symbol = row[38].strip()
+                    expDate = str(row[36]).strip()
+            
+                    if expDate != "" and expDate != "0": # future option
+                        date_str = expDate[2:]
+                        #strike
+                        strike = float(row[19])
+                        strike_str = str(int(strike * 1000))
+                        while (len(strike_str) < 8):
+                            strike_str = "0" + strike_str
+                        
+                        while len(symbol) < 6:
+                            symbol += " "
+    
+                        symbol += date_str + row[18] + strike_str
+                        #print symbol
+    
+                    multiplier = int(float(str(row[10]).strip()))
+                    try:
+                        new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=today))
+                        continue
+                    except Symbol.DoesNotExist:
+                        new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=today, multiplier=multiplier)
+                except Exception, e:
+                    print str(e.message)
+                    #log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet multiplier of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
                     continue
-                except Symbol.DoesNotExist:
-                    new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=today, multiplier=multiplier)
-            except Exception, e:
-                print str(e.message)
-                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                log.write( "\tGet multiplier of %s from %s failed: %s\n" % (new_symbol.symbol, filepath, str(e.message)) )
-                continue
-        else:
-            header = False
-    file.close()
+            else:
+                header = False
+        file.close()
     log.close()
     
     print "Multipliers acquire finished"
@@ -101,12 +109,11 @@ def getSupplementByDate(path, mark_date):
             continue
         print filename
         
-        if os.path.isdir(filename):
-            filepath = os.path.join(path, filename)
+        filepath = os.path.join(path, filename)
+        if os.path.isdir(filepath) == True:
             getMultiplierByDate(filepath, mark_date)
             continue
         
-        filepath = os.path.join(path, filename)
         #print filepath
         file = open(filepath, 'rb')
         log = open(ERROR_LOG, "a")
@@ -231,7 +238,7 @@ def getSupplementByDate(path, mark_date):
                         
                 except Exception, e:
                     print str(e.message)
-                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    #log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
                     log.write( "\tGet mark price of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
                     continue
             else:
@@ -745,7 +752,7 @@ def getDailyReport(report_date):
         grossPNL = common * (sellAve - buyAve)
         if len(symbol.split(' ')) > 1 and "00" in symbol:
             grossPNL = grossPNL * 100 #option
-        elif report.futureComission != 0.0:
+        elif report.futureCommission != 0.0:
             grossPNL = grossPNL * multiplier # future
         report.grossPNL = grossPNL 
         
@@ -755,7 +762,7 @@ def getDailyReport(report_date):
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
         if len(symbol.split(' ')) > 1 and "00" in symbol:
             unrealizedPNL = unrealizedPNL * 100 #option
-        elif report.futureComission != 0.0:
+        elif report.futureCommission != 0.0:
             unrealizedPNL = unrealizedPNL * multiplier
         # if no buys or sells on that day, calculate the base money separately
         # else, the base money is already applied in average price
@@ -799,7 +806,7 @@ def getDailyReport(report_date):
         if EOD >=0:
             if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.LMV = EOD * closing * 100 #option
-            elif report.futureComission != 0.0:
+            elif report.futureCommission != 0.0:
                 report.LMV = EOD * closing * multiplier # future
             else:
                 report.LMV = EOD * closing
@@ -808,7 +815,7 @@ def getDailyReport(report_date):
             report.LMV = 0
             if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.SMV = EOD * closing * 100 #option
-            elif report.futureComission != 0.0:
+            elif report.futureCommission != 0.0:
                 report.SMV = EOD * closing * multiplier # future
             else:
                 report.SMV = EOD * closing
@@ -830,7 +837,7 @@ def getDailyReport(report_date):
         daily_report.accruedSecFees += report.accruedSecFees
         daily_report.clearanceFees += report.clearanceFees
         daily_report.brokerCommission += report.brokerCommission
-        daily_report.futureCommission += report.futureComission
+        daily_report.futureCommission += report.futureCommission
         daily_report.exchangeFees += report.exchangeFees
         daily_report.commission += report.commission
         daily_report.ecnFees += report.ecnFees
@@ -1319,53 +1326,56 @@ def getProFuturesByDir(path):
         filepath = os.path.join(path, filename)
         print filepath
         file = open(filepath, 'rb')
+        header = True
 
-        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
-            try:
-                date_str = row[1].split('/')
-                if len(date_str[2]) == 2:
-                    year = "20" + date_str[2]
-                else:
-                    year = date_str[2]
-                today = date(int(year), int(date_str[0]), int(date_str[1]))
-                #print today
-                
-                trade = Trade()
-                
-                message = row[16].strip()
-                if message != "EXECUTION":
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            if not header:
+                try:
+                    date_str = row[1].split('/')
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+                    #print today
+                    
+                    trade = Trade()
+                    
+                    message = row[16].strip()
+                    if message != "EXECUTION":
+                        continue
+    
+                    trade.symbol = row[20].strip()
+                    if trade.symbol == None or trade.symbol == "":
+                        continue                
+      
+                    trade.account = row[10]
+                    trade.securityType = "FUTURE"               
+                    
+                    side = row[17]
+                    if side == "B":
+                        trade.side = "BUY"
+                    else:
+                        trade.side = "SEL"
+                    
+                    trade.destination = row[5].upper()
+                    
+                    trade.quantity = int(row[18])
+                    
+                    price = row[28] + row[29]
+                    trade.price = float(price) / 100
+                        
+                    trade.executionId = row[12] + "-" + row[13]
+                    trade.tradeDate = today    
+                    trade.save() # save into database
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
                     continue
-
-                trade.symbol = row[20].strip()
-                if trade.symbol == None or trade.symbol == "":
-                    continue                
-  
-                trade.account = row[10]
-                trade.securityType = "FUTURE"               
-                
-                side = row[17]
-                if side == "B":
-                    trade.side = "BUY"
-                else:
-                    trade.side = "SEL"
-                
-                trade.destination = row[5].upper()
-                
-                trade.quantity = int(row[18])
-                
-                price = row[28] + row[29]
-                trade.price = float(price) / 100
-                    
-                trade.executionId = row[12] + "-" + row[13]
-                trade.tradeDate = today    
-                trade.save() # save into database
-                    
-            except Exception, e:
-                print str(e.message)
-                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
-                continue
-
+            else:
+                header = False
         file.close()    
     log.close()
     print "Done"
