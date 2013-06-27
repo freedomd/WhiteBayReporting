@@ -9,6 +9,7 @@ class Symbol(models.Model):
     symbol = models.CharField( max_length=50 )
     closing = models.FloatField( default=0.00 ) # closing price of day
     symbolDate = models.DateField( auto_now_add=False )
+    multiplier = models.IntegerField( default=1 )
     
     def save(self, *args, **kwargs): 
         super(Symbol, self).save(*args, **kwargs)
@@ -51,7 +52,9 @@ class Report(models.Model):
     
     commission = models.FloatField( default=0.00 ) # commission = brokerCommission + clearance Fees
     brokerCommission = models.FloatField( default=0.00 )
+    futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
+    exchangeFees = models.FloatField( default=0.00)
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
@@ -92,7 +95,9 @@ class DailyReport(models.Model):
     
     commission = models.FloatField( default=0.00 )
     brokerCommission = models.FloatField( default=0.00 )
+    futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
+    exchangeFees = models.FloatField( default=0.00)   
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
@@ -118,7 +123,9 @@ class MonthlyReport(models.Model):
     
     commission = models.FloatField( default=0.00 )
     brokerCommission = models.FloatField( default=0.00 )
+    futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
+    exchangeFees = models.FloatField( default=0.00)
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"

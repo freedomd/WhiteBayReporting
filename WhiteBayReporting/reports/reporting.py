@@ -42,6 +42,53 @@ def getSecurities(filepath, today):
             header = False
             
     file.close()    
+
+# get multiplier for future and future option
+def getMultiplierByDate(filepath, today):
+    print "Getting multipliers..."
+    file = open(filepath, 'rb')
+    log = open(ERROR_LOG,'a')   
+    header = True
+        
+    #read the multiplier file
+    for row in csv.reader(file.read().splitlines(), delimiter=','): 
+        if not header:               
+            try:      
+                symbol = row[38].strip()
+                expDate = str(row[36])
+        
+                if expDate != "" and expDate != "0": # future option
+                    date_str = expDate[2:]
+                    #strike
+                    strike = float(row[19])
+                    strike_str = str(int(strike * 1000))
+                    while (len(strike_str) < 8):
+                        strike_str = "0" + strike_str
+                    
+                    while len(symbol) < 6:
+                        symbol += " "
+
+                    symbol += date_str + row[18] + strike_str
+                    #print symbol
+
+                multiplier = int(row[9])
+                try:
+                    new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=today))
+                    continue
+                except Symbol.DoesNotExist:
+                    new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=today, multiplier=multiplier)
+            except Exception, e:
+                print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet multiplier of %s from %s failed: %s\n" % (new_symbol.symbol, filepath, str(e.message)) )
+                continue
+        else:
+            header = False
+    file.close()
+    log.close()
+    
+    print "Multipliers acquire finished"
+    return
     
 def getSupplementByDate(path, mark_date):
     print "Getting supplement marks and calculating reports..."
@@ -53,6 +100,12 @@ def getSupplementByDate(path, mark_date):
         if filename == ".DS_Store":
             continue
         print filename
+        
+        if os.path.isdir(filename):
+            filepath = os.path.join(path, filename)
+            getMultiplierByDate(filepath, mark_date)
+            continue
+        
         filepath = os.path.join(path, filename)
         #print filepath
         file = open(filepath, 'rb')
@@ -65,7 +118,7 @@ def getSupplementByDate(path, mark_date):
                 try:      
                     #symbol
                     type = row[6].strip()
-                    if type == "SCO":
+                    if type == "SCO" or type == "SPO": # stock option
                         #expiration date
                         exp_date = row[8].split("/")
                         if len(exp_date[0]) == 1:
@@ -86,42 +139,80 @@ def getSupplementByDate(path, mark_date):
                         strike_str = str(int(strike * 1000))
                         while (len(strike_str) < 8):
                             strike_str = "0" + strike_str
-                        
-                        
+                                                
                         symbol = row[5].strip() 
                         while len(symbol) < 6:
                             symbol += " "
-                        symbol += date_str + "C" + strike_str
-                        #print symbol
-                    elif type == "SPO":
-                        #expiration date
-                        exp_date = row[8].split("/")
-                        if len(exp_date[0]) == 1:
-                            month = "0" + exp_date[0]
-                        else:
-                            month = exp_date[0]
-                        if len(exp_date[1]) == 1:
-                            day = "0" + exp_date[1]
-                        else:
-                            day = exp_date[1]
-                        year = exp_date[2]
-                        if len(year) == 4:
-                            year = year[2:]
-                        date_str = year + month + day
+                        if type == "SCO":
+                            symbol += date_str + "C" + strike_str
+                            #print symbol
+                        elif type == "SPO":
+                            symbol += date_str + "P" + strike_str
+                            #print symbol
+                    elif type == "FUTURE" or type == "FPO" or type == "FCO": # future
+                        stock = row[5].split('.')[0]
+                        time = row[5].split('.')[1]
+                        year_symbol = time[1]
+                        month_symbol = time[2:]
+                        if month_symbol == "01":
+                            m_symbol = "F"
+                        elif month_symbol == "02":
+                            m_symbol = "G"
+                        elif month_symbol == "03":
+                            m_symbol = "H"
+                        elif month_symbol == "04":
+                            m_symbol = "J"
+                        elif month_symbol == "05":
+                            m_symbol = "K"
+                        elif month_symbol == "06":
+                            m_symbol = "M"
+                        elif month_symbol == "07":
+                            m_symbol = "N"
+                        elif month_symbol == "08":
+                            m_symbol = "Q"
+                        elif month_symbol == "09":
+                            m_symbol = "U"
+                        elif month_symbol == "10":
+                            m_symbol = "V"
+                        elif month_symbol == "11":
+                            m_symbol = "X"
+                        elif month_symbol == "12":
+                            m_symbol = "Z"
                         
-                        #strike
-                        strike = float(row[9])
-                        strike_str = str(int(strike * 1000))
-                        while (len(strike_str) < 8):
-                            strike_str = "0" + strike_str
-                        
+                        underlying = stock + m_symbol + year_symbol
+                        if type == "FUTURE":
+                            symbol = underlying
+                        else: # future option
+                            #expiration date
+                            exp_date = row[8].split("/")
+                            if len(exp_date[0]) == 1:
+                                month = "0" + exp_date[0]
+                            else:
+                                month = exp_date[0]
+                            if len(exp_date[1]) == 1:
+                                day = "0" + exp_date[1]
+                            else:
+                                day = exp_date[1]
+                            year = exp_date[2]
+                            if len(year) == 4:
+                                year = year[2:]
+                            date_str = year + month + day
+                            
+                            #strike
+                            strike = float(row[9])
+                            strike_str = str(int(strike * 1000))
+                            while (len(strike_str) < 8):
+                                strike_str = "0" + strike_str
+                                                       
+                            while len(underlying) < 6:
+                                underlying += " "
+                            
+                            if type == "FCO":
+                                symbol = underlying + date_str + "C" + strike_str
+                            elif type == "FPO":
+                                symbol = underlying + date_str + "P" + strike_str
+                    else: # stock
                         symbol = row[5].strip() 
-                        while len(symbol) < 6:
-                            symbol += " "
-                        symbol += date_str + "P" + strike_str
-                        #print symbol
-                    else:     
-                        symbol = row[5].strip()
                         #print symbol
                     if symbol == "" or symbol == None:
                         continue
@@ -484,7 +575,8 @@ def getReportByDate(today):
             ecnFees = rtrade.ecnFees
            
         ## sec fees
-        if "BUY" not in rtrade.side and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+        if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" \
+            and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
             #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
             if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
                 secFees = rtrade.price * rtrade.quantity * 100 * secRate
@@ -508,18 +600,32 @@ def getReportByDate(today):
         except Broker.DoesNotExist:
             brokerCommission = 0.0
             
-        ## clearance fee
-        clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
-        clearance = round(clearance, 2)            
-        if clearance > 3.00:
-            clearance = 3.00
-        elif clearance < 0.01:
-            clearance = 0.01
+            
+        if rtrade.securityType != "FUTURE":
+            ## clearance fee
+            clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+            clearance = round(clearance, 2)            
+            if clearance > 3.00:
+                clearance = 3.00
+            elif clearance < 0.01:
+                clearance = 0.01
+
+            futureCommission = 0.0
+            exchangeFees = 0.0
+        else: ## future fees
+            # future commission
+            futureCommission = 0.05 * rtrade.quantity
+            # future clearing fee, not implemented yet
+            clearance = 0.0
+            # future exchange fee, not implemented yet
+            exchangeFees = 0.0
                 
         ## update report
         new_report.clearanceFees += clearance
         new_report.brokerCommission += brokerCommission
-        new_report.commission += clearance + brokerCommission
+        new_report.futureCommission += futureCommission
+        new_report.exchangeFees += exchangeFees
+        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
@@ -606,8 +712,10 @@ def getDailyReport(report_date):
             symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
             closing = symbol_mark.closing
             report.closing = closing
+            multiplier = symbol_mark.multiplier
             #print report.symbol + ", " + report.closing
         except: 
+            multiplier = 1
             log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
             log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
         
@@ -637,6 +745,8 @@ def getDailyReport(report_date):
         grossPNL = common * (sellAve - buyAve)
         if len(symbol.split(' ')) > 1 and "00" in symbol:
             grossPNL = grossPNL * 100 #option
+        elif report.futureComission != 0.0:
+            grossPNL = grossPNL * multiplier # future
         report.grossPNL = grossPNL 
         
         # left shares
@@ -645,6 +755,8 @@ def getDailyReport(report_date):
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
         if len(symbol.split(' ')) > 1 and "00" in symbol:
             unrealizedPNL = unrealizedPNL * 100 #option
+        elif report.futureComission != 0.0:
+            unrealizedPNL = unrealizedPNL * multiplier
         # if no buys or sells on that day, calculate the base money separately
         # else, the base money is already applied in average price
         if report.buys == 0 or report.sells == 0:
@@ -687,6 +799,8 @@ def getDailyReport(report_date):
         if EOD >=0:
             if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.LMV = EOD * closing * 100 #option
+            elif report.futureComission != 0.0:
+                report.LMV = EOD * closing * multiplier # future
             else:
                 report.LMV = EOD * closing
             report.SMV = 0
@@ -694,6 +808,8 @@ def getDailyReport(report_date):
             report.LMV = 0
             if len(symbol.split(' ')) > 1 and "00" in symbol:
                 report.SMV = EOD * closing * 100 #option
+            elif report.futureComission != 0.0:
+                report.SMV = EOD * closing * multiplier # future
             else:
                 report.SMV = EOD * closing
         
@@ -714,6 +830,8 @@ def getDailyReport(report_date):
         daily_report.accruedSecFees += report.accruedSecFees
         daily_report.clearanceFees += report.clearanceFees
         daily_report.brokerCommission += report.brokerCommission
+        daily_report.futureCommission += report.futureComission
+        daily_report.exchangeFees += report.exchangeFees
         daily_report.commission += report.commission
         daily_report.ecnFees += report.ecnFees
         daily_report.netPNL += report.netPNL
@@ -769,6 +887,8 @@ def getMonthlyReport(daily_report):
         monthly_report.accruedSecFees += daily_report.accruedSecFees
         monthly_report.clearanceFees += daily_report.clearanceFees
         monthly_report.brokerCommission += daily_report.brokerCommission
+        monthly_report.futureCommission += daily_report.futureCommission
+        monthly_report.exchangeFees += daily_report.exchangeFees
         monthly_report.commission += daily_report.commission
         monthly_report.ecnFees += daily_report.ecnFees
         monthly_report.netPNL += daily_report.netPNL
@@ -786,6 +906,8 @@ def getMonthlyReport(daily_report):
             monthly_report.accruedSecFees += dr.accruedSecFees
             monthly_report.clearanceFees += dr.clearanceFees
             monthly_report.brokerCommission += dr.brokerCommission
+            monthly_report.futureCommission += dr.futureCommission
+            monthly_report.exchangeFees += dr.exchangeFees
             monthly_report.commission += dr.commission
             monthly_report.ecnFees += dr.ecnFees
             monthly_report.netPNL += dr.netPNL
@@ -1107,6 +1229,7 @@ def getBrokerCommission(path):
     print "Done"
     return True       
 
+# import the dividend files
 def getDividendByDir(path):
     print "Getting dividend record from files..."
     filelist = os.listdir(path)
@@ -1175,6 +1298,72 @@ def getDividendByDir(path):
                 print str(e.message)
                 log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
                 log.write( "\tGet dividend %s from mark file %s failed: %s\n" % (trade.symbol, filename, str(e.message)) )
+                continue
+
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+
+# import the futures file
+def getProFuturesByDir(path):
+    print "Getting futures record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            try:
+                date_str = row[1].split('/')
+                if len(date_str[2]) == 2:
+                    year = "20" + date_str[2]
+                else:
+                    year = date_str[2]
+                today = date(int(year), int(date_str[0]), int(date_str[1]))
+                #print today
+                
+                trade = Trade()
+                
+                message = row[16].strip()
+                if message != "EXECUTION":
+                    continue
+
+                trade.symbol = row[20].strip()
+                if trade.symbol == None or trade.symbol == "":
+                    continue                
+  
+                trade.account = row[10]
+                trade.securityType = "FUTURE"               
+                
+                side = row[17]
+                if side == "B":
+                    trade.side = "BUY"
+                else:
+                    trade.side = "SEL"
+                
+                trade.destination = row[5].upper()
+                
+                trade.quantity = int(row[18])
+                
+                price = row[28] + row[29]
+                trade.price = float(price) / 100
+                    
+                trade.executionId = row[12] + "-" + row[13]
+                trade.tradeDate = today    
+                trade.save() # save into database
+                    
+            except Exception, e:
+                print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
                 continue
 
         file.close()    

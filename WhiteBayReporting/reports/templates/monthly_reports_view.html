@@ -53,7 +53,9 @@
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
 		<th>BrokerComm</th>
+		<th>FutureComm</th>
 		<th>Clearance</th>
+		<th>Exchange Fees</th>
 		<th>Commission</th>
 		<th>SEC Fees</th>
 		<th>Accrued SEC Fees</th>
@@ -77,7 +79,9 @@
 		{% endif %}
 		
 		<td>{{ report.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ report.futureCommission|floatformat:2|intcomma }}</td>
 		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
+		<td>{{ report.exchangeFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.commission|floatformat:2|intcomma }}</td>
 		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.accruedSecFees|floatformat:2|intcomma }}</td>
@@ -106,7 +110,9 @@
 		<th>Gross PNL</th>
 		<th>Unrealized PNL</th>
 		<th>BrokerComm</th>
+		<th>FutureComm</th>
 		<th>Clearance</th>
+		<th>Exchange Fees</th>
 		<th>Commission</th>
 		<th>SEC Fees</th>
 		<th>Accrued SEC Fees</th>
@@ -134,7 +140,9 @@
 		{% endif %}
 		
 		<td>{{ report.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ report.futureCommission|floatformat:2|intcomma }}</td>
 		<td>{{ report.clearanceFees|floatformat:2|intcomma }}</td>
+		<td>{{ report.exchangeFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.commission|floatformat:2|intcomma }}</td>
 		<td>{{ report.secFees|floatformat:2|intcomma }}</td>
 		<td>{{ report.accruedSecFees|floatformat:2|intcomma }}</td>
@@ -168,7 +176,9 @@
 		{% endif %}
 		
 		<td>{{ total.brokerCommission|floatformat:2|intcomma }}</td>
+		<td>{{ total.futureCommission|floatformat:2|intcomma }}</td>
 		<td>{{ total.clearanceFees|floatformat:2|intcomma }}</td>
+		<td>{{ total.exchangeFees|floatformat:2|intcomma }}</td>
 		<td>{{ total.commission|floatformat:2|intcomma }}</td>
 		<td>{{ total.secFees|floatformat:2|intcomma }}</td>
 		<td>{{ total.accruedSecFees|floatformat:2|intcomma }}</td>

@@ -103,7 +103,9 @@ function createReportList(data) {
 		html += "<th><button class='btn btn-link tab' id='grossPNL' value=0 onclick=changeOrder(this.id)>Gross PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='unrealizedPNL' value=0 onclick=changeOrder(this.id)>Unrealized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='brokerCommission' value=0 onclick=changeOrder(this.id)>BrokerComm</button></th>";
+		html += "<th><button class='btn btn-link tab' id='futureCommission' value=0 onclick=changeOrder(this.id)>FutureComm</button></th>";
 		html += "<th><button class='btn btn-link tab' id='clearanceFees' value=0 onclick=changeOrder(this.id)>Clearance</button></th>";
+		html += "<th><button class='btn btn-link tab' id='exchangeFees' value=0 onclick=changeOrder(this.id)>Exchange Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeOrder(this.id)>Commission</button></th>";
 		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeOrder(this.id)>SEC Fees</button></th>";
 		html += "<th><button class='btn btn-link tab' id='accruedSecFees' value=0 onclick=changeOrder(this.id)>Accrued SEC Fees</button></th>";
@@ -144,7 +146,9 @@ function createReportList(data) {
 			}
 			
 			html += "<td>" + addCommas(report.brokerCommission.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(report.futureCommission.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.clearanceFees.toFixed(2)) + "</td>";
+			html += "<td>" + addCommas(report.exchangeFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.commission.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.secFees.toFixed(2)) + "</td>";
 			html += "<td>" + addCommas(report.accruedSecFees.toFixed(2)) + "</td>";
