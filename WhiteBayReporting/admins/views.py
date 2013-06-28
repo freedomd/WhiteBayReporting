@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer, Route, Account, Group
+from admins.models import Broker, Trader, System, Firm, Employer, FutureFeeRate, Route, Account, Group
 from settings import ERROR_LOG
 
 def navbar_settings(request):
@@ -37,6 +37,12 @@ def employerView(request):
     pk = request.GET.get('pk')
     employer_list = Employer.objects.all().order_by("name")  
     return render(request,"employer_view.html", locals())
+
+@login_required
+def futureFeeRateView(request):
+    pk = request.GET.get('pk')
+    futureFeeRate_list = FutureFeeRate.objects.all().order_by("symbol")
+    return render(request, "futureFeeRate_view.html", locals())
 
 @login_required
 def accountView(request):
@@ -298,6 +304,49 @@ def modEmployer(request):
         except Exception, e:
             print str(e.message)
             url = "/employerProfile/"
+
+    return HttpResponseRedirect(url)
+
+@login_required
+def addFuture(request):
+    if request.POST:
+        symbol = request.POST.get('add_symbol')
+        clearingFeeRate = request.POST.get('add_clearing')
+        exchangeFeeRate = request.POST.get('add_exchange')
+        
+        try:
+            FutureFeeRate.objects.create(symbol = symbol, clearingFeeRate = clearingFeeRate, exchangeFeeRate = exchangeFeeRate)
+
+        except Exception, e:
+            print str(e.message)
+    
+    return HttpResponseRedirect("/futureFeeRateProfile/")
+
+@login_required
+def modFuture(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('mod_pk')
+        
+        try:
+            future = FutureFeeRate.objects.get(pk = pk)
+            if delete:
+                future.delete()
+                url = "/futureFeeRateProfile/"
+            elif save:
+                symbol = request.POST.get('mod_symbol')
+                clearingFeeRate = request.POST.get('mod_clearing')
+                exchangeFeeRate = request.POST.get('mod_exchange')
+                
+                future.symbol = symbol
+                future.clearingFeeRate = clearingFeeRate
+                future.exchangeFeeRate = exchangeFeeRate
+                future.save()
+                url = "/futureFeeRateProfile/?pk=" + str(pk)
+        except Exception, e:
+            print str(e.message)
+            url = "/futureFeeRateProfile/"
 
     return HttpResponseRedirect(url)
 

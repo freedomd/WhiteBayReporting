@@ -1,6 +1,20 @@
 from django.db import models
 from django.contrib import admin
 
+    
+# future fees rate based on symbol
+class FutureFeeRate(models.Model):
+    
+    symbol = models.CharField( max_length=50 )
+    clearingFeeRate = models.FloatField( default=0.00 )
+    exchangeFeeRate = models.FloatField( default=0.00 )
+    
+    def save(self, *args, **kwargs): 
+        super(FutureFeeRate, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.symbol)
+
 
 class Broker(models.Model):
     

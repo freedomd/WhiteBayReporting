@@ -443,6 +443,99 @@ function confirm_delete_employer() {
 }
 
 /*****************************************************************************************
+/* FutureFeeRate
+*/
+
+function selectFuture(value) {
+	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
+	
+	if(value == "default") {
+		$('#mod_future').hide();
+		$('#add_future').hide();
+		return ;
+	} else if(value == "add") {
+		$('#mod_future').hide();
+		$('#add_future').show();
+	} else { 
+    	Dajaxice.admins.getFuture(showFuture, {'pk': value}, {'error_callback': custom_error}); 		
+    }       
+    
+}
+
+function showFuture(data) {
+	$('#mod_future').hide();
+	$('#add_future').hide();
+	if(data.success == "true") {
+		$('#mod_future').show();
+		$('#mod_pk').val(data.pk);
+		$('#mod_symbol').val(data.symbol);
+		$('#mod_clearing').val(data.clearing.toFixed(4));
+		$('#mod_exchange').val(data.exchange.toFixed(4));
+	} else {
+		html = "";
+		html += data.message;
+		$('#message').append(html);
+	}
+}
+
+function validate_add_future(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_symbol) == false) {
+			html = "<span class='help-inline message'>You must enter a symbol.</span>";
+			$("#add_symbol").after(html);
+			add_symbol.focus();
+			return false;
+		} 
+		if (validate_required(add_clearing) == false || validate_number(add_clearing) == false) {
+			html = "<span class='help-inline message'>You must enter a valid clearance fee rate.</span>";
+			$("#add_clearing").after(html);
+			add_clearing.focus();
+			return false;
+		}
+		if (validate_required(add_exchange) == false || validate_number(add_exchange) == false) {
+			html = "<span class='help-inline message'>You must enter a valid exchange fee rate.</span>";
+			$("#add_exchange").after(html);
+			add_exchange.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function validate_mod_future(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(mod_symbol) == false) {
+			html = "<span class='help-inline message'>You must enter a symbol.</span>";
+			$("#mod_symbol").after(html);
+			mod_symbol.focus();
+			return false;
+		} 
+		if (validate_required(mod_clearing) == false || validate_number(mod_clearing) == false) {
+			html = "<span class='help-inline message'>You must enter a valid clearance fee rate.</span>";
+			$("#mod_clearing").after(html);
+			mod_clearing.focus();
+			return false;
+		}
+		if (validate_required(mod_exchange) == false || validate_number(mod_exchange) == false) {
+			html = "<span class='help-inline message'>You must enter a valid exchange fee rate.</span>";
+			$("#mod_exchange").after(html);
+			mod_exchange.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function confirm_delete_future() {
+	var result = confirm("Delete This Future?")
+  	return result;
+}
+
+/*****************************************************************************************
 /* Account
 */
 

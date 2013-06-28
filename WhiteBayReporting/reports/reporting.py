@@ -4,7 +4,7 @@ Created on May 1, 2013
 @author: ZhiZeng
 '''
 import os
-from admins.models import Firm, Broker, Route, Account
+from admins.models import Firm, Broker, Route, Account, FutureFeeRate
 from trades.models import Trade, RollTrade
 from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -123,6 +123,8 @@ def getSupplementByDate(path, mark_date):
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             if not header:               
                 try:      
+                    if row == None or row == "" or len(row) == 0:
+                        continue
                     #symbol
                     type = row[6].strip()
                     if type == "SCO" or type == "SPO": # stock option
@@ -272,6 +274,9 @@ def getMarksByDir(path):
         
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             try:
+                if row == None or row == "" or len(row) == 0:
+                    continue
+                
                 symbol = row[19].strip()
                 if symbol == "" or symbol == None:
                     continue
@@ -345,7 +350,10 @@ def refreshReports(today):
 def newReport(account, symbol, today):
     
     try:
-        mainAccount = account[:5]
+        if "UNM" not in account:
+            mainAccount = account[:5]
+        else:
+            mainAccount = account
         new_report = Report.objects.get(Q(account=mainAccount) & Q(symbol=symbol) & Q(reportDate=today))
             
     except Report.DoesNotExist: # today's new does not exist  
@@ -622,10 +630,15 @@ def getReportByDate(today):
         else: ## future fees
             # future commission
             futureCommission = 0.05 * rtrade.quantity
-            # future clearing fee, not implemented yet
-            clearance = 0.0
-            # future exchange fee, not implemented yet
-            exchangeFees = 0.0
+            # future clearing fee, exchange fee
+            try:
+                futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
+                future = FutureFeeRate.objects.get(symbol = futureSymbol)
+                clearance = future.clearingFeeRate * rtrade.quantity
+                exchangeFees = future.exchangeFeeRate * rtrade.quantity
+            except:
+                clearance = 0.0
+                exchangeFees = 0.0
                 
         ## update report
         new_report.clearanceFees += clearance
@@ -1312,7 +1325,7 @@ def getDividendByDir(path):
     print "Done"
     return True
 
-# import the futures file
+# import the Pro type futures file
 def getProFuturesByDir(path):
     print "Getting futures record from files..."
     filelist = os.listdir(path)
@@ -1366,6 +1379,75 @@ def getProFuturesByDir(path):
                     trade.price = float(price) / 100
                         
                     trade.executionId = row[12] + "-" + row[13]
+                    trade.tradeDate = today    
+                    trade.save() # save into database
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+
+
+# import the EDF type future files
+def getEdfFuturesByDir(path):
+    print "Getting futures record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+        header = True
+
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            if not header:
+                try:
+                    date_str = row[2].split('/')
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+                    #print today
+                    
+                    trade = Trade()
+                    
+                    action = row[9].strip()
+                    if action != "EXECUTION":
+                        continue
+    
+                    trade.symbol = row[12].strip()
+                    if trade.symbol == None or trade.symbol == "":
+                        continue                
+      
+                    trade.account = row[26]
+                    trade.securityType = "FUTURE"               
+                    
+                    side = row[10]
+                    if side == "B":
+                        trade.side = "BUY"
+                    else:
+                        trade.side = "SEL"
+                    
+                    trade.destination = row[4].upper()
+                    
+                    trade.quantity = int(row[11])
+                    
+                    trade.price = float(row[19])
+                        
+                    trade.executionId = row[7]
                     trade.tradeDate = today    
                     trade.save() # save into database
                         

@@ -1,0 +1,107 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#futureFeeRate_stack").addClass("active");
+			{% if pk %}
+			selectFuture({{ pk }})
+			{% endif %}
+	});
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectFuture('add')">Add a Future</a></li>
+        {% for future in futureFeeRate_list %}
+			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="mod_future" style="display: none; margin-top:10px;">
+	<form method='post' class='form-horizontal' action='/modFuture/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_symbol">Future Symbol</label>
+    		<div class="controls">
+				<input name='mod_symbol' id='mod_symbol' type='text' class='span4' placeholder='Future Symbol'>
+			</div>
+		</div>
+		
+		<div class="control-group">	
+			<label class="control-label" for="mod_clearing">Clearing Fee Rate</label>
+    		<div class="controls">
+				<input name='mod_clearing' id='mod_clearing' type='text' class='span4' placeholder='Clearing Fee Rate'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+			<label class="control-label" for="mod_exchange">Exchange Fee Rate</label>
+    		<div class="controls">
+				<input name='mod_exchange' id='mod_exchange' type='text' class='span4' placeholder='Exchange Fee Rate'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_future(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_future()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_future" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addFuture/' onsubmit='return validate_add_future(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_symbol">Future Symbol</label>
+    		<div class="controls">
+				<input name='add_symbol' id='add_symbol' type='text' class='span4' placeholder='Future Symbol'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_clearing">Clearing Fee Rate</label>
+    		<div class="controls">
+				<input name='add_clearing' id='add_clearing' type='text' class='span4' placeholder='Clearing Fee Rate'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_exchange">Exchange Fee Rate</label>
+    		<div class="controls">
+				<input name='add_exchange' id='add_exchange' type='text' class='span4' placeholder='Exchange Fee Rate'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

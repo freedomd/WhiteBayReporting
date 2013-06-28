@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker, Trader, System, Employer, Account, Group
+from admins.models import Broker, Trader, System, Employer, Account, Group, FutureFeeRate
 from django.core import serializers
 
 @dajaxice_register
@@ -58,6 +58,23 @@ def getTrader(request, pk):
             'email': trader.email, 'username': trader.username, 
             'password': trader.password, 'cfee': trader.clearanceFee, 'bfee': trader.brokerFee, 
             'system_list': simplejson.loads(system_list_serialized),
+            'success': success, 'message': message }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getFuture(request, pk):
+    try:
+        future = FutureFeeRate.objects.get(pk = pk)
+        success = "true"
+        message = ""
+    except:
+        success = "false"
+        message = "No such trader found."
+    
+    data = {'pk': future.pk, 'symbol': future.symbol, 
+            'clearing': future.clearingFeeRate,
+            'exchange': future.exchangeFeeRate,
             'success': success, 'message': message }
     
     return simplejson.dumps(data)

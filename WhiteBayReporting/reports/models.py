@@ -30,7 +30,7 @@ class Security(models.Model):
     
     def __unicode__(self):
         return str(self.symbol)
-
+    
 # report for each symbol everyday
 class Report(models.Model):
     
