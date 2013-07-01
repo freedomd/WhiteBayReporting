@@ -1375,8 +1375,19 @@ def getProFuturesByDir(path):
                     
                     trade.quantity = int(row[18])
                     
-                    price = row[28] + row[29]
-                    trade.price = float(price) / 100
+                    # handle different format price
+                    if row[28] == "LMT":
+                        price = row[27]
+                    else:
+                        higher = row[28]
+                        lower = row[29]
+                        while len(lower) < 3:
+                            lower = "0" + lower
+                        price = higher + lower
+                    if "." in price:
+                        trade.price = float(price)
+                    else:
+                        trade.price = float(price) / 100
                         
                     trade.executionId = row[12] + "-" + row[13]
                     trade.tradeDate = today    
@@ -1548,7 +1559,74 @@ def setupReport(path):
                         symbol += date_str + "P" + strike_str
                         #print symbol
                     elif type == "SSU":     
-                        symbol = row[5].strip()
+                        symbol = row[5].strip()                       
+                    elif type == "FUTURE" or type == "FPO" or type == "FCO": # future
+                        if "UNM" in new_report.account:
+                            new_report.account = new_report.account[:8]
+                        else:
+                            new_report.account = new_report.account[:5]
+                        
+                        stock = row[5].split('.')[0]
+                        time = row[5].split('.')[1]
+                        year_symbol = time[1]
+                        month_symbol = time[2:]
+                        if month_symbol == "01":
+                            m_symbol = "F"
+                        elif month_symbol == "02":
+                            m_symbol = "G"
+                        elif month_symbol == "03":
+                            m_symbol = "H"
+                        elif month_symbol == "04":
+                            m_symbol = "J"
+                        elif month_symbol == "05":
+                            m_symbol = "K"
+                        elif month_symbol == "06":
+                            m_symbol = "M"
+                        elif month_symbol == "07":
+                            m_symbol = "N"
+                        elif month_symbol == "08":
+                            m_symbol = "Q"
+                        elif month_symbol == "09":
+                            m_symbol = "U"
+                        elif month_symbol == "10":
+                            m_symbol = "V"
+                        elif month_symbol == "11":
+                            m_symbol = "X"
+                        elif month_symbol == "12":
+                            m_symbol = "Z"
+                        
+                        underlying = stock + m_symbol + year_symbol
+                        if type == "FUTURE":
+                            symbol = underlying
+                        else: # future option
+                            #expiration date
+                            exp_date = row[8].split("/")
+                            if len(exp_date[0]) == 1:
+                                month = "0" + exp_date[0]
+                            else:
+                                month = exp_date[0]
+                            if len(exp_date[1]) == 1:
+                                day = "0" + exp_date[1]
+                            else:
+                                day = exp_date[1]
+                            year = exp_date[2]
+                            if len(year) == 4:
+                                year = year[2:]
+                            date_str = year + month + day
+                            
+                            #strike
+                            strike = float(row[9])
+                            strike_str = str(int(strike * 1000))
+                            while (len(strike_str) < 8):
+                                strike_str = "0" + strike_str
+                                                       
+                            while len(underlying) < 6:
+                                underlying += " "
+                            
+                            if type == "FCO":
+                                symbol = underlying + date_str + "C" + strike_str
+                            elif type == "FPO":
+                                symbol = underlying + date_str + "P" + strike_str
                     else:
                         continue
                     
