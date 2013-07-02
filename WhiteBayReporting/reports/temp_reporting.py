@@ -498,10 +498,172 @@ def getReportByDate(today):
         rollTrades = getRollTrades(today)
     
     print "finish rolling trades, trades: " + str(len(Trade.objects.filter(tradeDate=today))) + ", rolltrades: " + str(len(RollTrade.objects.filter(tradeDate=today)))
-    for rtrade in rollTrades:
-        new_report = newReport(rtrade.account, rtrade.symbol, today)
+    
+    # pick up all the reports for today
+    report_list = Report.objects.filter(reportDate=today)
+    
+    for new_report in report_list:
+        # find all the trades related to the report
+        rtrades = RollTrade.objects.filter(Q(account__icontains=new_report.account) & 
+                                           Q(symbol = new_report.symbol) & Q(tradeDate = new_report.reportDate))
         #print new_report.account + ", " + new_report.symbol
+        for rtrade in rtrades:
+            if today <= date(2012, 11, 20): # for rollTrades, did this in getRollTrades() method
+                #exercised option
+                if rtrade.description == "ASSIGNED OPTION" or rtrade.description == "EXERCISED OPTION":
+                    rtrade.price = new_report.mark
+                    rtrade.save()
+                # transferred from exercised option pnl, calculate the base money, clear the quantity
+                elif "PNL" in rtrade.description:
+                    symb = rtrade.description.split(":")[1]
+                    new_report = newReport(rtrade.account, symb, today)
+                    price = new_report.mark
+                    quantity = rtrade.quantity
+                    rtrade.baseMoney = price * quantity
+                    rtrade.quantity = 0
+                    rtrade.save()
+                    
+            # if the trade is dividend
+            if "DIVIDEND" in rtrade.description:
+                # cash dividend
+                if "CASH" in rtrade.description:
+                    new_report.todayCash -= rtrade.baseMoney
+                    if "DIVP" not in rtrade.description:
+                        new_report.cashClearFlag = True
+                # stock dividend
+                elif "STOCK" in rtrade.description:
+                    new_report.todayShare += rtrade.quantity
+                    if "DSTP" not in rtrade.description:
+                        new_report.shareClearFlag = True               
+            # if the trade is an option transferred pnl
+            elif rtrade.price == 0.00 and rtrade.quantity == 0:
+                # if no buy or sell on that day, then we cannot add the pnl into average
+                # calculate it separately
+                if 'BUY' in rtrade.side:
+                    #print "in buy: " + rtrade.account + " " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                    total = new_report.buys * new_report.buyAve
+                    total += rtrade.baseMoney # add the base money into the total
+                    if new_report.buys != 0 and new_report.sells != 0:
+                        new_report.buyAve = total / new_report.buys
+                    new_report.baseMoney -= rtrade.baseMoney
+                    #print str(new_report.baseMoney)
+                else:
+                    #print "in sell: " + rtrade.account + " "  + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                    total = new_report.sells * new_report.sellAve
+                    total += rtrade.baseMoney
+                    if new_report.buys != 0 and new_report.sells != 0:
+                        new_report.sellAve = total / new_report.sells
+                    new_report.baseMoney += rtrade.baseMoney
+                    #print str(new_report.baseMoney)
+            
+            else:
+                # normal trades 
+                # buy and sell
+                if 'BUY' in rtrade.side:
+                    total = new_report.buys * new_report.buyAve
+                    total += rtrade.quantity * rtrade.price # new total
+                    new_report.buys += rtrade.quantity # new buys
+                    new_report.buyAve = total / new_report.buys # new buy ave
+                        
+                elif 'SEL' in rtrade.side or rtrade.side == "SS":
+                    total = new_report.sells * new_report.sellAve
+                    total += rtrade.quantity * rtrade.price # new total
+                    new_report.sells += rtrade.quantity # new sells
+                    new_report.sellAve = total / new_report.sells # new sell ave
+                        
+                else:
+                    print "Error: Invalid Side."
+                    continue
+                
+                
+                #Fees
+                firm = Firm.objects.all()[0]
+                if today < date(2013, 5, 28):
+                    secRate = firm.secFee  
+                else:
+                    secRate = 0.00001740
+                
+                #no ecn fees for transfer
+                if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
+                    #brockerCommission = 0.0
+                    ecnFees = 0.0
+                else:
+                    # already calculated
+                    ecnFees = rtrade.ecnFees
+                   
+                ## sec fees
+                if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" \
+                    and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+                    #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
+                    if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
+                        secFees = rtrade.price * rtrade.quantity * 100 * secRate
+                    else:
+                        secFees = rtrade.price * rtrade.quantity * secRate
+                    rsecFees = round(secFees, 2)
+                            
+                    #print "sec: " + str(secFees) + ", rsec: " + str(rsecFees)
+                    if secFees > rsecFees:
+                        secFees = rsecFees + 0.01
+                    else:
+                        secFees = rsecFees
+                    #print "after sec: " + str(secFees)
+                else:
+                    secFees = 0
+                
+                ## broker commission
+                try:
+                    broker = Broker.objects.get(Q(brokerNumber=rtrade.broker) & Q(securityType=rtrade.securityType))
+                    brokerCommission = rtrade.quantity * broker.commissionRate
+                except Broker.DoesNotExist:
+                    brokerCommission = 0.0
+                    
+                    
+                if rtrade.securityType != "FUTURE":
+                    ## clearance fee
+                    clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+                    clearance = round(clearance, 2)            
+                    if clearance > 3.00:
+                        clearance = 3.00
+                    elif clearance < 0.01:
+                        clearance = 0.01
         
+                    futureCommission = 0.0
+                    exchangeFees = 0.0
+                else: ## future fees
+                    # future commission
+                    futureCommission = 0.05 * rtrade.quantity
+                    # future clearing fee, exchange fee
+                    try:
+                        futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
+                        future = FutureFeeRate.objects.get(symbol = futureSymbol)
+                        clearance = future.clearingFeeRate * rtrade.quantity
+                        exchangeFees = future.exchangeFeeRate * rtrade.quantity
+                    except:
+                        clearance = 0.0
+                        exchangeFees = 0.0
+                        
+                ## update report
+                new_report.clearanceFees += clearance
+                new_report.brokerCommission += brokerCommission
+                new_report.futureCommission += futureCommission
+                new_report.exchangeFees += exchangeFees
+                new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees
+                # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
+                if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+                    new_report.accruedSecFees += secFees
+                else:
+                    new_report.secFees += secFees
+                new_report.ecnFees += ecnFees 
+            
+            new_report.save()
+        # finished this report    
+        rtrades.delete()
+        
+    # handle the left trades
+    rtrades = RollTrade.objects.filter(tradeDate=today)
+    
+    for rtrade in rtrades:
+        new_report = newReport(rtrade.account, rtrade.symbol, today)
         if today <= date(2012, 11, 20): # for rollTrades, did this in getRollTrades() method
             #exercised option
             if rtrade.description == "ASSIGNED OPTION" or rtrade.description == "EXERCISED OPTION":
@@ -529,11 +691,9 @@ def getReportByDate(today):
                 new_report.todayShare += rtrade.quantity
                 if "DSTP" not in rtrade.description:
                     new_report.shareClearFlag = True
-            new_report.save()
-            continue
             
         # if the trade is an option transferred pnl
-        if rtrade.price == 0.00 and rtrade.quantity == 0:
+        elif rtrade.price == 0.00 and rtrade.quantity == 0:
             # if no buy or sell on that day, then we cannot add the pnl into average
             # calculate it separately
             if 'BUY' in rtrade.side:
@@ -552,115 +712,113 @@ def getReportByDate(today):
                     new_report.sellAve = total / new_report.sells
                 new_report.baseMoney += rtrade.baseMoney
                 #print str(new_report.baseMoney)
-            new_report.save()
-            continue
-        
-        # normal trades 
-        # buy and sell
-        if 'BUY' in rtrade.side:
-            total = new_report.buys * new_report.buyAve
-            total += rtrade.quantity * rtrade.price # new total
-            new_report.buys += rtrade.quantity # new buys
-            new_report.buyAve = total / new_report.buys # new buy ave
-                
-        elif 'SEL' in rtrade.side or rtrade.side == "SS":
-            total = new_report.sells * new_report.sellAve
-            total += rtrade.quantity * rtrade.price # new total
-            new_report.sells += rtrade.quantity # new sells
-            new_report.sellAve = total / new_report.sells # new sell ave
-                
-        else:
-            print "Error: Invalid Side."
-            continue
-            
-            
-        #Fees
-        firm = Firm.objects.all()[0]
-        if today < date(2013, 5, 28):
-            secRate = firm.secFee  
-        else:
-            secRate = 0.00001740
-        
-        #no ecn fees for transfer
-        if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
-            #brockerCommission = 0.0
-            ecnFees = 0.0
-        else:
-            # already calculated
-            ecnFees = rtrade.ecnFees
-           
-        ## sec fees
-        if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" \
-            and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
-            #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
-            if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
-                secFees = rtrade.price * rtrade.quantity * 100 * secRate
-            else:
-                secFees = rtrade.price * rtrade.quantity * secRate
-            rsecFees = round(secFees, 2)
-                    
-            #print "sec: " + str(secFees) + ", rsec: " + str(rsecFees)
-            if secFees > rsecFees:
-                secFees = rsecFees + 0.01
-            else:
-                secFees = rsecFees
-            #print "after sec: " + str(secFees)
-        else:
-            secFees = 0
-        
-        ## broker commission
-        try:
-            broker = Broker.objects.get(Q(brokerNumber=rtrade.broker) & Q(securityType=rtrade.securityType))
-            brokerCommission = rtrade.quantity * broker.commissionRate
-        except Broker.DoesNotExist:
-            brokerCommission = 0.0
-            
-            
-        if rtrade.securityType != "FUTURE":
-            ## clearance fee
-            clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
-            clearance = round(clearance, 2)            
-            if clearance > 3.00:
-                clearance = 3.00
-            elif clearance < 0.01:
-                clearance = 0.01
 
-            futureCommission = 0.0
-            exchangeFees = 0.0
-        else: ## future fees
-            # future commission
-            futureCommission = 0.05 * rtrade.quantity
-            # future clearing fee, exchange fee
-            try:
-                futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
-                future = FutureFeeRate.objects.get(symbol = futureSymbol)
-                clearance = future.clearingFeeRate * rtrade.quantity
-                exchangeFees = future.exchangeFeeRate * rtrade.quantity
-            except:
-                clearance = 0.0
-                exchangeFees = 0.0
-                
-        ## update report
-        new_report.clearanceFees += clearance
-        new_report.brokerCommission += brokerCommission
-        new_report.futureCommission += futureCommission
-        new_report.exchangeFees += exchangeFees
-        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees
-        # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
-        if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
-            new_report.accruedSecFees += secFees
         else:
-            new_report.secFees += secFees
-        new_report.ecnFees += ecnFees
-        new_report.save()            
+            # normal trades 
+            # buy and sell
+            if 'BUY' in rtrade.side:
+                total = new_report.buys * new_report.buyAve
+                total += rtrade.quantity * rtrade.price # new total
+                new_report.buys += rtrade.quantity # new buys
+                new_report.buyAve = total / new_report.buys # new buy ave
+                    
+            elif 'SEL' in rtrade.side or rtrade.side == "SS":
+                total = new_report.sells * new_report.sellAve
+                total += rtrade.quantity * rtrade.price # new total
+                new_report.sells += rtrade.quantity # new sells
+                new_report.sellAve = total / new_report.sells # new sell ave
+                    
+            else:
+                print "Error: Invalid Side."
+                continue
+                
+                
+            #Fees
+            firm = Firm.objects.all()[0]
+            if today < date(2013, 5, 28):
+                secRate = firm.secFee  
+            else:
+                secRate = 0.00001740
+            
+            #no ecn fees for transfer
+            if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
+                #brockerCommission = 0.0
+                ecnFees = 0.0
+            else:
+                # already calculated
+                ecnFees = rtrade.ecnFees
+               
+            ## sec fees
+            if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" \
+                and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+                #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
+                if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
+                    secFees = rtrade.price * rtrade.quantity * 100 * secRate
+                else:
+                    secFees = rtrade.price * rtrade.quantity * secRate
+                rsecFees = round(secFees, 2)
+                        
+                #print "sec: " + str(secFees) + ", rsec: " + str(rsecFees)
+                if secFees > rsecFees:
+                    secFees = rsecFees + 0.01
+                else:
+                    secFees = rsecFees
+                #print "after sec: " + str(secFees)
+            else:
+                secFees = 0
+            
+            ## broker commission
+            try:
+                broker = Broker.objects.get(Q(brokerNumber=rtrade.broker) & Q(securityType=rtrade.securityType))
+                brokerCommission = rtrade.quantity * broker.commissionRate
+            except Broker.DoesNotExist:
+                brokerCommission = 0.0
+                
+                
+            if rtrade.securityType != "FUTURE":
+                ## clearance fee
+                clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+                clearance = round(clearance, 2)            
+                if clearance > 3.00:
+                    clearance = 3.00
+                elif clearance < 0.01:
+                    clearance = 0.01
     
-    # delete the rolltrades
-#     if today > date(2012, 11, 20):
-#         rollTrades.delete()
+                futureCommission = 0.0
+                exchangeFees = 0.0
+            else: ## future fees
+                # future commission
+                futureCommission = 0.05 * rtrade.quantity
+                # future clearing fee, exchange fee
+                try:
+                    futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
+                    future = FutureFeeRate.objects.get(symbol = futureSymbol)
+                    clearance = future.clearingFeeRate * rtrade.quantity
+                    exchangeFees = future.exchangeFeeRate * rtrade.quantity
+                except:
+                    clearance = 0.0
+                    exchangeFees = 0.0
+                    
+            ## update report
+            new_report.clearanceFees += clearance
+            new_report.brokerCommission += brokerCommission
+            new_report.futureCommission += futureCommission
+            new_report.exchangeFees += exchangeFees
+            new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees
+            # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
+            if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+                new_report.accruedSecFees += secFees
+            else:
+                new_report.secFees += secFees
+            new_report.ecnFees += ecnFees  
+        
+        new_report.save()              
+    # finished this report    
+    rtrades.delete()
+        
     
-    #getPNLs(today)
     getDailyReport(today)
-    
+        
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     
@@ -1378,15 +1536,16 @@ def getProFuturesByDir(path):
                     # handle different format price
                     if row[28] == "LMT":
                         price = row[27]
+                        trade.price = float(price)
+                    elif row[29] == "LMT":
+                        price = row[28]
+                        trade.price = float(price)
                     else:
                         higher = row[28]
                         lower = row[29]
                         while len(lower) < 3:
                             lower = "0" + lower
                         price = higher + lower
-                    if "." in price:
-                        trade.price = float(price)
-                    else:
                         trade.price = float(price) / 100
                         
                     trade.executionId = row[12] + "-" + row[13]
