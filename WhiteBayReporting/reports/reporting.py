@@ -87,7 +87,7 @@ def getMultiplierByDate(path, today):
                         new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=today, multiplier=multiplier)
                 except Exception, e:
                     print str(e.message)
-                    #log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
                     log.write( "\tGet multiplier of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
                     continue
             else:
@@ -160,9 +160,9 @@ def getSupplementByDate(path, mark_date):
                             #print symbol
                     elif type == "FUTURE" or type == "FPO" or type == "FCO": # future
                         stock = row[5].split('.')[0]
-                        time = row[5].split('.')[1]
-                        year_symbol = time[1]
-                        month_symbol = time[2:]
+                        time_str = row[5].split('.')[1]
+                        year_symbol = time_str[1]
+                        month_symbol = time_str[2:]
                         if month_symbol == "01":
                             m_symbol = "F"
                         elif month_symbol == "02":
@@ -191,35 +191,17 @@ def getSupplementByDate(path, mark_date):
                         underlying = stock + m_symbol + year_symbol
                         if type == "FUTURE":
                             symbol = underlying
-                        else: # future option
-                            #expiration date
-                            exp_date = row[8].split("/")
-                            if len(exp_date[0]) == 1:
-                                month = "0" + exp_date[0]
+                        else: # future option                           
+                            strike = row[9]
+                            if float(strike) == int(strike.split('.')[0]):
+                                strike_str = strike.split('.')[0]
                             else:
-                                month = exp_date[0]
-                            if len(exp_date[1]) == 1:
-                                day = "0" + exp_date[1]
-                            else:
-                                day = exp_date[1]
-                            year = exp_date[2]
-                            if len(year) == 4:
-                                year = year[2:]
-                            date_str = year + month + day
-                            
-                            #strike
-                            strike = float(row[9])
-                            strike_str = str(int(strike * 1000))
-                            while (len(strike_str) < 8):
-                                strike_str = "0" + strike_str
-                                                       
-                            while len(underlying) < 6:
-                                underlying += " "
+                                strike_str = strike                                                                              
                             
                             if type == "FCO":
-                                symbol = underlying + date_str + "C" + strike_str
+                                symbol = underlying + " C" + strike_str
                             elif type == "FPO":
-                                symbol = underlying + date_str + "P" + strike_str
+                                symbol = underlying + " P" + strike_str
                     else: # stock
                         symbol = row[5].strip() 
                         #print symbol
@@ -240,7 +222,7 @@ def getSupplementByDate(path, mark_date):
                         
                 except Exception, e:
                     print str(e.message)
-                    #log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
                     log.write( "\tGet mark price of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
                     continue
             else:
@@ -1388,8 +1370,11 @@ def getProFuturesByDir(path):
                         trade.price = float(price)
                     else:
                         trade.price = float(price) / 100
-                        
-                    trade.executionId = row[12] + "-" + row[13]
+                    
+                    if row[12] != "" and row[12] != None:
+                        trade.executionId = row[12] + "-" + row[13]
+                    else:
+                        trade.executionId = row[13]
                     trade.tradeDate = today    
                     trade.save() # save into database
                         
@@ -1469,6 +1454,89 @@ def getEdfFuturesByDir(path):
                     continue
             else:
                 header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+
+# ipmort the future files of account 71178
+def get78FuturesByDir(path):
+    print "Getting futures record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            try:
+                if '/' in row[1]:
+                    date_str = row[1].split('/')
+                    if len(date_str[2]) == 2:
+                        year = "20" + date_str[2]
+                    else:
+                        year = date_str[2]
+                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+                elif '-' in row[1]:
+                    date_str = row[1].split('-')
+                    if len(date_str[0]) == 2:
+                        year = "20" + date_str[0]
+                    else:
+                        year = date_str[0]
+                    today = date(int(year), int(date_str[1]), int(date_str[2]))
+                else:
+                    continue
+                
+
+
+                
+                trade = Trade()
+                
+                action = row[16].strip()
+                message = row[34].strip()
+                if action != "EXECUTION" or (message != "Filled" and message != "Partially Filled"):
+                    continue
+
+                trade.symbol = row[20].strip()
+                if trade.symbol == None or trade.symbol == "":
+                    continue               
+                # option
+                if len(trade.symbol.split(' ')) > 1:
+                    trade.securityType = "FUTOPTION"
+                else:
+                    trade.securityType = "FUTURE"     
+                
+                trade.account = row[10] + "R1"
+                          
+                
+                side = row[17]
+                if side == "B":
+                    trade.side = "BUY"
+                else:
+                    trade.side = "SEL"
+                
+                trade.destination = row[5].upper()
+                
+                trade.quantity = int(row[18])
+                
+                price = row[26]
+                trade.price = float(price) / 100
+                
+                trade.executionId = row[13]
+                trade.tradeDate = today    
+                trade.save() # save into database
+                    
+            except Exception, e:
+                print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
+                continue
         file.close()    
     log.close()
     print "Done"
@@ -1567,9 +1635,9 @@ def setupReport(path):
                             new_report.account = new_report.account[:5]
                         
                         stock = row[5].split('.')[0]
-                        time = row[5].split('.')[1]
-                        year_symbol = time[1]
-                        month_symbol = time[2:]
+                        time_str = row[5].split('.')[1]
+                        year_symbol = time_str[1]
+                        month_symbol = time_str[2:]
                         if month_symbol == "01":
                             m_symbol = "F"
                         elif month_symbol == "02":
@@ -1598,35 +1666,18 @@ def setupReport(path):
                         underlying = stock + m_symbol + year_symbol
                         if type == "FUTURE":
                             symbol = underlying
-                        else: # future option
-                            #expiration date
-                            exp_date = row[8].split("/")
-                            if len(exp_date[0]) == 1:
-                                month = "0" + exp_date[0]
-                            else:
-                                month = exp_date[0]
-                            if len(exp_date[1]) == 1:
-                                day = "0" + exp_date[1]
-                            else:
-                                day = exp_date[1]
-                            year = exp_date[2]
-                            if len(year) == 4:
-                                year = year[2:]
-                            date_str = year + month + day
-                            
+                        else: # future option                           
                             #strike
-                            strike = float(row[9])
-                            strike_str = str(int(strike * 1000))
-                            while (len(strike_str) < 8):
-                                strike_str = "0" + strike_str
-                                                       
-                            while len(underlying) < 6:
-                                underlying += " "
+                            strike = row[9]
+                            if float(strike) == int(strike.split('.')[0]):
+                                strike_str = strike.split('.')[0]
+                            else:
+                                strike_str = strike
                             
                             if type == "FCO":
-                                symbol = underlying + date_str + "C" + strike_str
+                                symbol = underlying + " C" + strike_str
                             elif type == "FPO":
-                                symbol = underlying + date_str + "P" + strike_str
+                                symbol = underlying + " P" + strike_str
                     else:
                         continue
                     
