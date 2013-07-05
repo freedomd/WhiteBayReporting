@@ -75,6 +75,7 @@ def getFuture(request, pk):
     data = {'pk': future.pk, 'symbol': future.symbol, 
             'clearing': future.clearingFeeRate,
             'exchange': future.exchangeFeeRate,
+            'nfa': future.nfaFeeRate,
             'success': success, 'message': message }
     
     return simplejson.dumps(data)

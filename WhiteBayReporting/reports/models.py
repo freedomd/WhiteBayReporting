@@ -55,6 +55,7 @@ class Report(models.Model):
     futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
     exchangeFees = models.FloatField( default=0.00)
+    nfaFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
@@ -97,7 +98,8 @@ class DailyReport(models.Model):
     brokerCommission = models.FloatField( default=0.00 )
     futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
-    exchangeFees = models.FloatField( default=0.00)   
+    exchangeFees = models.FloatField( default=0.00)
+    nfaFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"
@@ -126,6 +128,7 @@ class MonthlyReport(models.Model):
     futureCommission = models.FloatField( default=0.00)
     clearanceFees = models.FloatField( default=0.00 )
     exchangeFees = models.FloatField( default=0.00)
+    nfaFees = models.FloatField( default=0.00 )
     secFees = models.FloatField( default=0.00 )
     ecnFees = models.FloatField( default=0.00 )
     # for the trades whose Route is "WBPT" and Destination is "FBCO", "UBS", or "BARC"

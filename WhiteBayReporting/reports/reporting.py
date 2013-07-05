@@ -572,7 +572,7 @@ def getReportByDate(today):
             ecnFees = rtrade.ecnFees
            
         ## sec fees
-        if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" \
+        if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" and rtrade.securityType != "FUTOPTION" \
             and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
             #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
             if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
@@ -598,7 +598,7 @@ def getReportByDate(today):
             brokerCommission = 0.0
             
             
-        if rtrade.securityType != "FUTURE":
+        if rtrade.securityType != "FUTURE" and rtrade.securityType != "FUTOPTION":
             ## clearance fee
             clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
             clearance = round(clearance, 2)            
@@ -609,6 +609,7 @@ def getReportByDate(today):
 
             futureCommission = 0.0
             exchangeFees = 0.0
+            nfaFees = 0.0
         else: ## future fees
             # future commission
             futureCommission = 0.05 * rtrade.quantity
@@ -618,6 +619,7 @@ def getReportByDate(today):
                 future = FutureFeeRate.objects.get(symbol = futureSymbol)
                 clearance = future.clearingFeeRate * rtrade.quantity
                 exchangeFees = future.exchangeFeeRate * rtrade.quantity
+                nfaFees = future.nfaFeeRate * rtrade.quantity
             except:
                 clearance = 0.0
                 exchangeFees = 0.0
@@ -627,7 +629,8 @@ def getReportByDate(today):
         new_report.brokerCommission += brokerCommission
         new_report.futureCommission += futureCommission
         new_report.exchangeFees += exchangeFees
-        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees
+        new_report.nfaFees += nfaFees
+        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
@@ -745,7 +748,7 @@ def getDailyReport(report_date):
         
         # gross PNL  
         grossPNL = common * (sellAve - buyAve)
-        if len(symbol.split(' ')) > 1 and "00" in symbol:
+        if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
             grossPNL = grossPNL * 100 #option
         elif report.futureCommission != 0.0:
             grossPNL = grossPNL * multiplier # future
@@ -755,7 +758,7 @@ def getDailyReport(report_date):
         buys -= common
         sells -= common
         unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
-        if len(symbol.split(' ')) > 1 and "00" in symbol:
+        if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
             unrealizedPNL = unrealizedPNL * 100 #option
         elif report.futureCommission != 0.0:
             unrealizedPNL = unrealizedPNL * multiplier
@@ -799,7 +802,7 @@ def getDailyReport(report_date):
         
         # LMV and SMV
         if EOD >=0:
-            if len(symbol.split(' ')) > 1 and "00" in symbol:
+            if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
                 report.LMV = EOD * closing * 100 #option
             elif report.futureCommission != 0.0:
                 report.LMV = EOD * closing * multiplier # future
@@ -808,7 +811,7 @@ def getDailyReport(report_date):
             report.SMV = 0
         else:
             report.LMV = 0
-            if len(symbol.split(' ')) > 1 and "00" in symbol:
+            if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
                 report.SMV = EOD * closing * 100 #option
             elif report.futureCommission != 0.0:
                 report.SMV = EOD * closing * multiplier # future
@@ -834,6 +837,7 @@ def getDailyReport(report_date):
         daily_report.brokerCommission += report.brokerCommission
         daily_report.futureCommission += report.futureCommission
         daily_report.exchangeFees += report.exchangeFees
+        daily_report.nfaFees += report.nfaFees
         daily_report.commission += report.commission
         daily_report.ecnFees += report.ecnFees
         daily_report.netPNL += report.netPNL
@@ -891,6 +895,7 @@ def getMonthlyReport(daily_report):
         monthly_report.brokerCommission += daily_report.brokerCommission
         monthly_report.futureCommission += daily_report.futureCommission
         monthly_report.exchangeFees += daily_report.exchangeFees
+        monthly_report.nfaFees += daily_report.nfaFees
         monthly_report.commission += daily_report.commission
         monthly_report.ecnFees += daily_report.ecnFees
         monthly_report.netPNL += daily_report.netPNL
@@ -910,6 +915,7 @@ def getMonthlyReport(daily_report):
             monthly_report.brokerCommission += dr.brokerCommission
             monthly_report.futureCommission += dr.futureCommission
             monthly_report.exchangeFees += dr.exchangeFees
+            monthly_report.nfaFees += dr.nfaFees
             monthly_report.commission += dr.commission
             monthly_report.ecnFees += dr.ecnFees
             monthly_report.netPNL += dr.netPNL
@@ -1345,7 +1351,11 @@ def getProFuturesByDir(path):
                         continue                
       
                     trade.account = row[10] + "R1"
-                    trade.securityType = "FUTURE"               
+                    # option
+                    if len(trade.symbol.split(' ')) > 1:
+                        trade.securityType = "FUTOPTION"
+                    else:
+                        trade.securityType = "FUTURE"               
                     
                     side = row[17]
                     if side == "B":
@@ -1429,7 +1439,11 @@ def getEdfFuturesByDir(path):
                         continue                
       
                     trade.account = row[26] + "U1"
-                    trade.securityType = "FUTURE"               
+                    # option
+                    if len(trade.symbol.split(' ')) > 1:
+                        trade.securityType = "FUTOPTION"
+                    else:
+                        trade.securityType = "FUTURE"                
                     
                     side = row[10]
                     if side == "B":
@@ -1492,9 +1506,6 @@ def get78FuturesByDir(path):
                     today = date(int(year), int(date_str[1]), int(date_str[2]))
                 else:
                     continue
-                
-
-
                 
                 trade = Trade()
                 

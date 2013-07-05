@@ -473,6 +473,7 @@ function showFuture(data) {
 		$('#mod_symbol').val(data.symbol);
 		$('#mod_clearing').val(data.clearing.toFixed(4));
 		$('#mod_exchange').val(data.exchange.toFixed(4));
+		$('#mod_nfa').val(data.nfa.toFixed(4));
 	} else {
 		html = "";
 		html += data.message;
@@ -501,6 +502,12 @@ function validate_add_future(thisform) {
 			add_exchange.focus();
 			return false;
 		}
+		if (validate_required(add_nfa) == false || validate_number(add_nfa) == false) {
+			html = "<span class='help-inline message'>You must enter a valid nfa fee rate.</span>";
+			$("#add_nfa").after(html);
+			add_nfa.focus();
+			return false;
+		}
 	}
 	return true
 }
@@ -524,6 +531,12 @@ function validate_mod_future(thisform) {
 			html = "<span class='help-inline message'>You must enter a valid exchange fee rate.</span>";
 			$("#mod_exchange").after(html);
 			mod_exchange.focus();
+			return false;
+		}
+		if (validate_required(mod_nfa) == false || validate_number(mod_nfa) == false) {
+			html = "<span class='help-inline message'>You must enter a valid nfa fee rate.</span>";
+			$("#mod_nfa").after(html);
+			mod_nfa.focus();
 			return false;
 		}
 	}

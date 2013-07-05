@@ -313,9 +313,11 @@ def addFuture(request):
         symbol = request.POST.get('add_symbol')
         clearingFeeRate = request.POST.get('add_clearing')
         exchangeFeeRate = request.POST.get('add_exchange')
+        nfaFeeRate = request.POST.get('add_nfa')
         
         try:
-            FutureFeeRate.objects.create(symbol = symbol, clearingFeeRate = clearingFeeRate, exchangeFeeRate = exchangeFeeRate)
+            FutureFeeRate.objects.create(symbol = symbol, clearingFeeRate = clearingFeeRate, 
+                                         exchangeFeeRate = exchangeFeeRate, nfaFeeRate = nfaFeeRate)
 
         except Exception, e:
             print str(e.message)
@@ -338,10 +340,12 @@ def modFuture(request):
                 symbol = request.POST.get('mod_symbol')
                 clearingFeeRate = request.POST.get('mod_clearing')
                 exchangeFeeRate = request.POST.get('mod_exchange')
+                nfaFeeRate = request.POST.get('mod_nfa')
                 
                 future.symbol = symbol
                 future.clearingFeeRate = clearingFeeRate
                 future.exchangeFeeRate = exchangeFeeRate
+                future.nfaFeeRate = nfaFeeRate
                 future.save()
                 url = "/futureFeeRateProfile/?pk=" + str(pk)
         except Exception, e:

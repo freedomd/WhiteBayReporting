@@ -8,6 +8,7 @@ class FutureFeeRate(models.Model):
     symbol = models.CharField( max_length=50 )
     clearingFeeRate = models.FloatField( default=0.00 )
     exchangeFeeRate = models.FloatField( default=0.00 )
+    nfaFeeRate = models.FloatField( default=0.00 )
     
     def save(self, *args, **kwargs): 
         super(FutureFeeRate, self).save(*args, **kwargs)
