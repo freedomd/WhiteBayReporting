@@ -237,7 +237,7 @@ def getAccountList(request, group, tab, strorder):
         method = "-" + tab
     
         
-    if int(group) == -1:
+    if  group == "":
         account_list = Account.objects.all().order_by(method)
     else:
         account_list = Account.objects.filter(group=group).order_by(method)

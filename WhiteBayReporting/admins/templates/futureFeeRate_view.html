@@ -23,7 +23,7 @@
 	<ul class="nav nav-pills nav-stacked" id="pills">
   		<li id="pilladd" class="active"><a class="btn-link" onclick="selectFuture('add')">Add a Future</a></li>
         {% for future in futureFeeRate_list %}
-			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }}</a></li>
+			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }} {{future.group}}</a></li>
 		{% endfor %}
 	</ul>
 </div>
@@ -66,6 +66,17 @@
 		</div>
 		
 		<div class="control-group">
+    		<label class="control-label" for="add_group">Groups</label>
+    		<div class="controls">
+				<select name="mod_group" id="mod_group">
+  					{% for group in group_list %}			
+  					<option value={{ group.name }}>{{ group.name }}</option>
+  					{% endfor %}
+				</select>
+			</div>
+		</div>
+		
+		<div class="control-group">
     		<div class="controls">
 				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_future(this)'>
 				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_future()'>
@@ -102,6 +113,17 @@
 			<label class="control-label" for="add_nfa">NFA Fee Rate</label>
     		<div class="controls">
 				<input name='add_nfa' id='add_nfa' type='text' class='span4' placeholder='NFA Fee Rate'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_group">Groups</label>
+    		<div class="controls">
+				<select name="add_group" id="add_group">
+  					{% for group in group_list %}			
+  					<option value={{ group.name }}>{{ group.name }}</option>
+  					{% endfor %}
+				</select>
 			</div>
 		</div>
 		

@@ -48,9 +48,9 @@
     		<label class="control-label" for="add_group">Groups</label>
     		<div class="controls">
 				<select name="mod_group" id="mod_group">
-  					<option value="-1">None</option>
+  					<option value="">None</option>
   					{% for group in group_list %}			
-  					<option value={{ group.pk }}>{{ group.name }}</option>
+  					<option value={{ group.name }}>{{ group.name }}</option>
   					{% endfor %}
 				</select>
 			</div>
@@ -79,9 +79,9 @@
     		<label class="control-label" for="add_group">Groups</label>
     		<div class="controls">
 				<select name="add_group" id="add_group">
-  					<option value="-1">None</option>
+  					<option value="">None</option>
   					{% for group in group_list %}			
-  					<option value={{ group.pk }}>{{ group.name }}</option>
+  					<option value={{ group.name }}>{{ group.name }}</option>
   					{% endfor %}
 				</select>
 			</div>

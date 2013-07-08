@@ -474,6 +474,7 @@ function showFuture(data) {
 		$('#mod_clearing').val(data.clearing.toFixed(4));
 		$('#mod_exchange').val(data.exchange.toFixed(4));
 		$('#mod_nfa').val(data.nfa.toFixed(4));
+		$('#mod_group').val(data.group)
 	} else {
 		html = "";
 		html += data.message;

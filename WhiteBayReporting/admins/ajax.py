@@ -76,6 +76,7 @@ def getFuture(request, pk):
             'clearing': future.clearingFeeRate,
             'exchange': future.exchangeFeeRate,
             'nfa': future.nfaFeeRate,
+            'group': future.group,
             'success': success, 'message': message }
     
     return simplejson.dumps(data)

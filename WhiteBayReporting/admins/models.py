@@ -10,6 +10,8 @@ class FutureFeeRate(models.Model):
     exchangeFeeRate = models.FloatField( default=0.00 )
     nfaFeeRate = models.FloatField( default=0.00 )
     
+    group = models.CharField( max_length=30, default="")
+    
     def save(self, *args, **kwargs): 
         super(FutureFeeRate, self).save(*args, **kwargs)
     
@@ -103,7 +105,7 @@ class Account(models.Model):
     accruedSecFees = models.FloatField(default=0.00 )
 
     
-    group = models.IntegerField( default=-1 ) # group pk, -1 for no group
+    group = models.CharField( max_length=30, blank=True, null=True, default="" ) # group name, empty for no group
     
     def save(self, *args, **kwargs): 
         super(Account, self).save(*args, **kwargs)

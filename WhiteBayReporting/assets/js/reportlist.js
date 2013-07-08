@@ -215,10 +215,10 @@ function changeAccountOrder(tab) {
 }
 
 
-function getAccountList(group_pk) {
+function getAccountList(group_name) {
 	$("#reports_container").empty();
 	$("#message_container").empty(); 
-    Dajaxice.reports.getAccountList(createAccountList, { 'group': group_pk,
+    Dajaxice.reports.getAccountList(createAccountList, { 'group': group_name,
     												     'tab': $("#tab").val(),
     											 	     'strorder': $("#order").val() },
     						            		 	     {'error_callback': custom_error}); 		       

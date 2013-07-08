@@ -42,6 +42,7 @@ def employerView(request):
 def futureFeeRateView(request):
     pk = request.GET.get('pk')
     futureFeeRate_list = FutureFeeRate.objects.all().order_by("symbol")
+    group_list = Group.objects.all().order_by("name")
     return render(request, "futureFeeRate_view.html", locals())
 
 @login_required
@@ -314,10 +315,12 @@ def addFuture(request):
         clearingFeeRate = request.POST.get('add_clearing')
         exchangeFeeRate = request.POST.get('add_exchange')
         nfaFeeRate = request.POST.get('add_nfa')
+        group = request.POST.get('add_group')
         
         try:
             FutureFeeRate.objects.create(symbol = symbol, clearingFeeRate = clearingFeeRate, 
-                                         exchangeFeeRate = exchangeFeeRate, nfaFeeRate = nfaFeeRate)
+                                         exchangeFeeRate = exchangeFeeRate, nfaFeeRate = nfaFeeRate,
+                                         group = group)
 
         except Exception, e:
             print str(e.message)
@@ -341,11 +344,13 @@ def modFuture(request):
                 clearingFeeRate = request.POST.get('mod_clearing')
                 exchangeFeeRate = request.POST.get('mod_exchange')
                 nfaFeeRate = request.POST.get('mod_nfa')
+                group = request.POST.get('mod_group')
                 
                 future.symbol = symbol
                 future.clearingFeeRate = clearingFeeRate
                 future.exchangeFeeRate = exchangeFeeRate
                 future.nfaFeeRate = nfaFeeRate
+                future.group = group
                 future.save()
                 url = "/futureFeeRateProfile/?pk=" + str(pk)
         except Exception, e:
@@ -359,7 +364,7 @@ def modFuture(request):
 def addAccount(request):
     if request.POST:
         account = request.POST.get('add_name')
-        group = int(request.POST.get('add_group'))
+        group = request.POST.get('add_group')
         
         try:
             Account.objects.get(account = account)
@@ -382,7 +387,7 @@ def modAccount(request):
                 url = "/accountProfile/"
             elif save:
                 account_name = str(request.POST.get('mod_name'))
-                group = int(request.POST.get('mod_group'))
+                group = request.POST.get('mod_group')
 
                 if account.account != account_name:
                     try:

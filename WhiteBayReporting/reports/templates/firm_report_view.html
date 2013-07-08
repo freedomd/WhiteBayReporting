@@ -14,16 +14,16 @@
 	</script>
 </head>
 
-<body onload=getAccountList(-1)>
+<body onload=getAccountList("")>
 <input id="tab" value="{{ default }}" style="display: none;">
 <input id="order" value="{{ default_order }}" style="display: none;">
 
 <div class="container">
 <div id="filter">
 	<select name="groups" id="groups" onchange="getAccountList(this.value)">
-		<option value="-1">All Groups</option>
+		<option value="">All Groups</option>
   		{% for group in group_list %}			
-  		<option value={{ group.pk }}>{{ group.name }}</option>
+  		<option value={{ group.name }}>{{ group.name }}</option>
   		{% endfor %}
 	</select>
 </div> 

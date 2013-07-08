@@ -616,7 +616,12 @@ def getReportByDate(today):
             # future clearing fee, exchange fee
             try:
                 futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
-                future = FutureFeeRate.objects.get(symbol = futureSymbol)
+                if "UNM" in rtrade.account:
+                    group = Account.objects.get(account = rtrade.account[:8]).group
+                else:
+                    group = Account.objects.get(account = rtrade.account[:5]).group
+                
+                future = FutureFeeRate.objects.get(Q(symbol = futureSymbol) & Q(group = group))
                 clearance = future.clearingFeeRate * rtrade.quantity
                 exchangeFees = future.exchangeFeeRate * rtrade.quantity
                 nfaFees = future.nfaFeeRate * rtrade.quantity
@@ -865,7 +870,11 @@ def getAccountSummary(daily_report):
         account.save()
     except Account.DoesNotExist:
         report_list = DailyReport.objects.filter(account = daily_report.account)
-        account = Account.objects.create(account=daily_report.account)
+        if daily_report.account == "71111":
+            group = "HigherFeeRate"
+        else:
+            group = "LowerFeeRate"
+        account = Account.objects.create(account=daily_report.account, group = group)
         for report in report_list:
             account.grossPNL += report.grossPNL
             account.unrealizedPNL += report.unrealizedPNL
