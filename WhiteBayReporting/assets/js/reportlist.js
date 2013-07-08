@@ -230,7 +230,7 @@ function createAccountList(data) {
 	$("#reports_container").empty(); // delete all the data
 	$("#message_container").empty(); // delete all the data
 	if(number == 0) {
-		$("#reports_container").removeClass("data_container");
+		$("#reports_container").removeClass("account_container");
 		var html = "";
 		html += "No accounts found.";
 		$("#reports_container").append(html);
@@ -313,7 +313,7 @@ function createAccountList(data) {
 		
 		html += "</table>";
 	
-		$("#reports_container").addClass("data_container");
+		$("#reports_container").addClass("account_container");
 		$("#reports_container").append(html);
     }
 }
