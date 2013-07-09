@@ -129,7 +129,7 @@ def getAccount(request, pk):
         success = "false"
         message = "No such account found."
     
-    data = {'pk': account.pk, 'group': account.group, 'account': account.account,
+    data = {'pk': account.pk, 'account': account.account,
             'success': success, 'message': message }
     
     return simplejson.dumps(data)

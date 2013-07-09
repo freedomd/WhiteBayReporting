@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer, FutureFeeRate, Route, Account, Group
+from admins.models import Broker, Trader, System, Firm, Employer, FutureFeeRate, FutureFeeGroup, Route, Account, Group
 from settings import ERROR_LOG
 
 def navbar_settings(request):
@@ -46,10 +47,18 @@ def futureFeeRateView(request):
     return render(request, "futureFeeRate_view.html", locals())
 
 @login_required
-def accountView(request):
+def futureFeeGroupView(request):
     pk = request.GET.get('pk')
     account_list = Account.objects.all().order_by("account")  
     group_list = Group.objects.all().order_by("name")
+    symbol_list = FutureFeeRate.objects.values("symbol").order_by("symbol").distinct()
+    feeGroup_list = FutureFeeGroup.objects.all().order_by("symbol")
+    return render(request, "futureFeeGroup_view.html", locals())
+
+@login_required
+def accountView(request):
+    pk = request.GET.get('pk')
+    account_list = Account.objects.all().order_by("account")  
     return render(request,"account_view.html", locals())
 
 @login_required
@@ -317,13 +326,16 @@ def addFuture(request):
         nfaFeeRate = request.POST.get('add_nfa')
         group = request.POST.get('add_group')
         
+        # avoid duplicate
         try:
+            FutureFeeRate.objects.get(Q(symbol=symbol) & Q(clearingFeeRate=clearingFeeRate) & 
+                                      Q(exchangeFeeRate = exchangeFeeRate) & Q(nfaFeeRate = nfaFeeRate) &
+                                      Q(group = group))
+
+        except FutureFeeRate.DoesNotExist:
             FutureFeeRate.objects.create(symbol = symbol, clearingFeeRate = clearingFeeRate, 
                                          exchangeFeeRate = exchangeFeeRate, nfaFeeRate = nfaFeeRate,
                                          group = group)
-
-        except Exception, e:
-            print str(e.message)
     
     return HttpResponseRedirect("/futureFeeRateProfile/")
 
@@ -364,12 +376,11 @@ def modFuture(request):
 def addAccount(request):
     if request.POST:
         account = request.POST.get('add_name')
-        group = request.POST.get('add_group')
         
         try:
             Account.objects.get(account = account)
         except Account.DoesNotExist:
-            Account.objects.create(account = account, group = group)
+            Account.objects.create(account = account)
             
     return HttpResponseRedirect("/accountProfile/")
 
@@ -387,7 +398,6 @@ def modAccount(request):
                 url = "/accountProfile/"
             elif save:
                 account_name = str(request.POST.get('mod_name'))
-                group = request.POST.get('mod_group')
 
                 if account.account != account_name:
                     try:
@@ -395,8 +405,7 @@ def modAccount(request):
                         # if exists, forbidden
                     except Account.DoesNotExist:
                         account.account = account_name
-                
-                account.group = group
+
                 account.save()
                 url = "/accountProfile/?pk=" + str(pk)
         except Exception, e:
@@ -404,6 +413,27 @@ def modAccount(request):
             url = "/accountProfile/"
 
     return HttpResponseRedirect(url)
+
+@login_required
+def modFeeGroup(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        symbol = request.POST.getlist('symbols')[0]
+        account = request.POST.getlist('accounts')[0]
+        group = request.POST.getlist('groups')[0]
+        
+        try:
+            feeGroup = FutureFeeGroup.objects.get(Q(symbol = symbol) & Q(account = account))
+            if delete:
+                feeGroup.delete()
+            elif save:
+                feeGroup.group = group
+                feeGroup.save()
+        except FutureFeeGroup.DoesNotExist:
+            FutureFeeGroup.objects.create(symbol = symbol, account = account, group = group)
+
+    return HttpResponseRedirect("/futureFeeGroupProfile/")
 
 @login_required
 def addGroup(request):

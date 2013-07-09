@@ -550,6 +550,37 @@ function confirm_delete_future() {
 }
 
 /*****************************************************************************************
+/* FutureFeeGroup
+*/
+
+function validate_feeGroup(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(symbols) == false) {
+			html = "<span class='help-inline message'>You must select a symbol.</span>";
+			$("#symbols").after(html);
+			return false;
+		} 
+		if (validate_required(accounts) == false) {
+			html = "<span class='help-inline message'>You must select an account.</span>";
+			$("#accounts").after(html);
+			return false;
+		}
+		if (validate_required(groups) == false) {
+			html = "<span class='help-inline message'>You must select a group.</span>";
+			$("#groups").after(html);
+			return false;
+		}
+	}
+	return true
+}
+
+function confirm_delete_feeGroup() {
+	var result = confirm("Delete This Future Group Record?")
+  	return result;
+}
+
+/*****************************************************************************************
 /* Account
 */
 
@@ -565,7 +596,6 @@ function selectAccount(value) {
 	} else if(value == "add") {
 		$('#mod_account').hide();
 		$('#add_account').show();
-		$('#add_group').val("-1");
 	} else { 
     	Dajaxice.admins.getAccount(showAccount, {'pk': value}, {'error_callback': custom_error}); 		
     }       
@@ -578,7 +608,6 @@ function showAccount(data) {
 	if(data.success == "true") {
 		$('#mod_account').show();
 		$('#mod_pk').val(data.pk);
-		$('#mod_group').val(data.group);
 		$('#mod_name').val(data.account);
 	} else {
 		html = "";

@@ -4,7 +4,7 @@ Created on May 1, 2013
 @author: ZhiZeng
 '''
 import os
-from admins.models import Firm, Broker, Route, Account, FutureFeeRate
+from admins.models import Firm, Broker, Route, Account, FutureFeeRate, FutureFeeGroup
 from trades.models import Trade, RollTrade
 from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -621,11 +621,9 @@ def getReportByDate(today):
                         report_account = rtrade.account[:8]
                     else:
                         report_account = rtrade.account[:5]
-                    group = Account.objects.get(account = report_account).group
+                    group = FutureFeeGroup.objects.get(Q(symbol=futureSymbol) & Q(account=report_account))
                 except Account.DoesNotExist:
-                    if report_account == "71111" or report_account == "71123" or report_account == "71124":
-                        group = "HigherFeeRate"
-                    else:
+                        # default
                         group = "LowerFeeRate"
                 
                 future = FutureFeeRate.objects.get(Q(symbol = futureSymbol) & Q(group = group))
@@ -635,6 +633,7 @@ def getReportByDate(today):
             except:
                 clearance = 0.0
                 exchangeFees = 0.0
+                nfaFees = 0.0
                 
         ## update report
         new_report.clearanceFees += clearance
@@ -877,11 +876,7 @@ def getAccountSummary(daily_report):
         account.save()
     except Account.DoesNotExist:
         report_list = DailyReport.objects.filter(account = daily_report.account)
-        if daily_report.account == "71111" or daily_report.account == "71123" or daily_report.account == "71124":
-            group = "HigherFeeRate"
-        else:
-            group = "LowerFeeRate"
-        account = Account.objects.create(account=daily_report.account, group = group)
+        account = Account.objects.create(account=daily_report.account)
         for report in report_list:
             account.grossPNL += report.grossPNL
             account.unrealizedPNL += report.unrealizedPNL

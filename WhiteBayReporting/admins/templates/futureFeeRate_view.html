@@ -23,7 +23,7 @@
 	<ul class="nav nav-pills nav-stacked" id="pills">
   		<li id="pilladd" class="active"><a class="btn-link" onclick="selectFuture('add')">Add a Future</a></li>
         {% for future in futureFeeRate_list %}
-			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }} {{future.group}}</a></li>
+			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }} {{future.group|truncatechars:4}}</a></li>
 		{% endfor %}
 	</ul>
 </div>

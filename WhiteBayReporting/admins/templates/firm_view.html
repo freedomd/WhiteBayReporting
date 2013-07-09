@@ -67,7 +67,7 @@
   		<option value="default">--- Select Broker ---</option>
   		<option value="add">Add a Broker</option>
         {% for broker in broker_list %}
-			<option value="{{ broker.pk }}">{{ broker.brokerNumber }}</option>
+			<option value="{{ broker.pk }}">{{ broker.brokerNumber }} {{broker.securityType}}</option>
 		{% endfor %}
     </select>
 </div> 

@@ -105,7 +105,7 @@ class Account(models.Model):
     accruedSecFees = models.FloatField(default=0.00 )
 
     
-    group = models.CharField( max_length=30, blank=True, null=True, default="" ) # group name, empty for no group
+    #group = models.CharField( max_length=30, blank=True, null=True, default="" ) # group name, empty for no group
     
     def save(self, *args, **kwargs): 
         super(Account, self).save(*args, **kwargs)
@@ -113,6 +113,18 @@ class Account(models.Model):
     def __unicode__(self):
         return str(self.account)
 
+# account's future group
+class FutureFeeGroup(models.Model):
+    
+    account = models.CharField( max_length=30 )
+    symbol = models.CharField( max_length=50 )
+    group = models.CharField( max_length=30 )   
+    
+    def save(self, *args, **kwargs):
+        super(FutureFeeGroup, self).save(*args, **kwargs)
+        
+    def __unicode__(self):
+        return str(self.account + " " + self.symbol)
 
 # firm profile
 class Firm(models.Model):
