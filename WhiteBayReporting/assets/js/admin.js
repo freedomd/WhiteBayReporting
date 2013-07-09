@@ -557,17 +557,17 @@ function validate_feeGroup(thisform) {
 	$(".message").html("");
 	with (thisform) {
 		if (validate_required(symbols) == false) {
-			html = "<span class='help-inline message'>You must select a symbol.</span>";
+			html = "<span class='help-block message'>You must select a symbol.</span>";
 			$("#symbols").after(html);
 			return false;
 		} 
 		if (validate_required(accounts) == false) {
-			html = "<span class='help-inline message'>You must select an account.</span>";
+			html = "<span class='help-block message'>You must select an account.</span>";
 			$("#accounts").after(html);
 			return false;
 		}
 		if (validate_required(groups) == false) {
-			html = "<span class='help-inline message'>You must select a group.</span>";
+			html = "<span class='help-block message'>You must select a group.</span>";
 			$("#groups").after(html);
 			return false;
 		}
