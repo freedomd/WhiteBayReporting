@@ -426,7 +426,8 @@ def modFeeGroup(request):
         try:
             feeGroup = FutureFeeGroup.objects.get(Q(symbol = symbol) & Q(account = account))
             if delete:
-                feeGroup.delete()
+                if feeGroup.group == group:
+                    feeGroup.delete()
             elif save:
                 feeGroup.group = group
                 feeGroup.save()
