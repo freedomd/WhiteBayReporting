@@ -84,6 +84,17 @@ def queryFutureList(request, symbol):
     return simplejson.dumps(data)
 
 @dajaxice_register
+def showFutureList(request):
+    
+    # get all the objects
+    future_list = FutureFeeRate.objects.all().order_by("symbol", "group")        
+    future_list_serialized = serializers.serialize('json', future_list)
+
+    data = { 'future_list': simplejson.loads(future_list_serialized) }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
 def getFuture(request, pk):
     try:
         future = FutureFeeRate.objects.get(pk = pk)

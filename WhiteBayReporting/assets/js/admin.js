@@ -451,6 +451,11 @@ function queryFutureList() {
     							   				 	  {'error_callback': custom_error}); 		       
 }
 
+function showFutureList() {
+	$("#symbols").val("");
+	Dajaxice.admins.showFutureList(createFutureList, {'error_callback': custom_error}); 
+}
+
 function createFutureList(data) {
 	var number = data.future_list.length;
 	$("#futures_container").empty(); // delete all the data
