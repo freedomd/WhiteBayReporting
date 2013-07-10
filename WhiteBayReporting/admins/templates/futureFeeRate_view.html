@@ -22,10 +22,21 @@
 <!--Sidebar content-->
 	<ul class="nav nav-pills nav-stacked" id="pills">
   		<li id="pilladd" class="active"><a class="btn-link" onclick="selectFuture('add')">Add a Future</a></li>
-        {% for future in futureFeeRate_list %}
-			<li id="pill{{ future.pk }}"><a class="btn-link" onclick="selectFuture({{ future.pk }})">{{ future.symbol }} {{future.group|truncatechars:4}}</a></li>
-		{% endfor %}
 	</ul>
+	<div class="container">
+	<div id="filter">
+		<input id="symbols" type="text" class="span2" placeholder="Future Symbol">
+  		<div style="clear:both;"></div> 
+	</div> 
+	<button class="btn btn-info btn-small" onclick="queryFutureList();" style="margin-left:35px;">Search</button>
+	</div>
+	
+	<!-- futures list  -->
+	<div id="message_container" class="future_container">
+	</div>
+	<div id="futures_container" class="future_container">
+	</div>
+	
 </div>
 
 

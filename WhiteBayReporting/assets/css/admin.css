@@ -11,6 +11,10 @@
 	padding: 20px;
 }
 
+.future_container {
+ 	width: 150px;
+}
+
 .system_show {
   	padding-left:0px;
 }
@@ -90,3 +94,6 @@
 	padding-left: 30px;
 }
 
+.nav-2col > li {
+	float: left;
+}

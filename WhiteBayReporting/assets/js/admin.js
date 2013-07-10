@@ -446,9 +446,51 @@ function confirm_delete_employer() {
 /* FutureFeeRate
 */
 
+function queryFutureList() { 
+    Dajaxice.admins.queryFutureList(createFutureList, {'symbol': $("#symbols").val()},
+    							   				 	  {'error_callback': custom_error}); 		       
+}
+
+function createFutureList(data) {
+	var number = data.future_list.length;
+	$("#futures_container").empty(); // delete all the data
+	$("#message_container").empty(); // delete all the data
+	if(number == 0) {
+		$("#futures_container").removeClass("container");
+		var html = "";
+		html += "No futures found.";
+		$("#futures_container").append(html);
+	} else {
+		var html = "";
+		
+		html += "<ul class='nav nav-pills nav-stacked' id='futurepills'>";
+				
+		for(i = 0; i < number; i++) { // create a new list of reports
+			var pk = data.future_list[i].pk;
+			var future = data.future_list[i].fields;
+			var group = "";
+			
+			if (future.group == "HigherFeeRate") {
+				group = "Higher";
+			} else {
+				group = "Lower";
+			}
+			
+			html += "<li id='pill" + pk + "'><a class='btn-link' onclick='selectFuture(" + pk + ")'>" 
+			+ future.symbol + " " + group + "</a></li>";
+		}
+		
+		html += "</ul>";
+		
+		$("#futures_container").addClass("container");
+		$("#futures_container").append(html);
+    }
+}
+
 function selectFuture(value) {
 	$("#message").html("");
 	$("#pills").find('li').removeClass("active");
+	$("#futurepills").find('li').removeClass("active");
 	$("#pill"+value).addClass("active");
 	
 	if(value == "default") {
@@ -587,6 +629,7 @@ function confirm_delete_feeGroup() {
 function selectAccount(value) {
 	$("#message").html("");
 	$("#pills").find('li').removeClass("active");
+	$("#accountpills").find('li').removeClass("active");
 	$("#pill"+value).addClass("active");
 	
 	if(value == "default") {

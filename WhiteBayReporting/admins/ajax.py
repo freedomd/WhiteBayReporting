@@ -2,6 +2,7 @@ from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
 from admins.models import Broker, Trader, System, Employer, Account, Group, FutureFeeRate
 from django.core import serializers
+from django.db.models import Q
 
 @dajaxice_register
 def getBroker(request, pk):
@@ -63,6 +64,26 @@ def getTrader(request, pk):
     return simplejson.dumps(data)
 
 @dajaxice_register
+def queryFutureList(request, symbol):
+    
+    # start filter
+    future_list = None
+    
+    if symbol is not u"" or None:
+        if future_list is None:
+            future_list = FutureFeeRate.objects.filter(Q(symbol__icontains=symbol))
+        else:
+            future_list = future_list.filter(Q(symbol__icontains=symbol))
+    
+    future_list = future_list.order_by("symbol", "group")
+        
+    future_list_serialized = serializers.serialize('json', future_list)
+
+    data = { 'future_list': simplejson.loads(future_list_serialized) }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
 def getFuture(request, pk):
     try:
         future = FutureFeeRate.objects.get(pk = pk)
@@ -70,7 +91,7 @@ def getFuture(request, pk):
         message = ""
     except:
         success = "false"
-        message = "No such trader found."
+        message = "No such Future found."
     
     data = {'pk': future.pk, 'symbol': future.symbol, 
             'clearing': future.clearingFeeRate,

@@ -22,10 +22,13 @@
 <!--Sidebar content-->
 	<ul class="nav nav-pills nav-stacked" id="pills">
   		<li id="pilladd" class="active"><a class="btn-link" onclick="selectAccount('add')">Add an Account</a></li>
+  	</ul>
+  	<ul class="nav nav-pills nav-2col" id="accountpills">
         {% for account in account_list %}
 			<li id="pill{{ account.pk }}"><a class="btn-link" onclick="selectAccount({{ account.pk }})">{{ account.account }}</a></li>
 		{% endfor %}
 	</ul>
+
 </div>
 
 
