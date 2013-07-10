@@ -447,12 +447,16 @@ function confirm_delete_employer() {
 */
 
 function queryFutureList() { 
+	$('#mod_future').hide();
+	$('#add_future').hide();
     Dajaxice.admins.queryFutureList(createFutureList, {'symbol': $("#symbols").val()},
     							   				 	  {'error_callback': custom_error}); 		       
 }
 
 function showFutureList() {
 	$("#symbols").val("");
+	$('#mod_future').hide();
+	$('#add_future').hide();
 	Dajaxice.admins.showFutureList(createFutureList, {'error_callback': custom_error}); 
 }
 
