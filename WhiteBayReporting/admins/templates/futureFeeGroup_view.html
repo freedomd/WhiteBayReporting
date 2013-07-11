@@ -10,6 +10,8 @@
 	});
 </script>
 
+<input id="csrf" type="hidden" value="{% csrf_token %}"/>
+
 <div id="group_list">
 <table class="table group_table table-bordered">
     <tr><th>Future Symbol</th><th>Account</th><th>Group</th><th>Operation</th></tr>
@@ -18,52 +20,40 @@
 	{% csrf_token %}
    	<tr>
    	<td>
-	   	<div id="filter" style="padding-bottom:20px;margin-top:10px;">
-	  	<select  id="symbols" name = "symbols" size = "1" style = "width:180px">
-	  		<option value="">--- Select Symbol ---</option>
+	  	<select  id="symbols" name = "symbols" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px" onchange="selectFeeGroup()">
+	  		<option value="default">--- Select Symbol ---</option>
 	        {% for symbol in symbol_list %}
 				<option value="{{ symbol.symbol }}">{{ symbol.symbol }}</option>
 			{% endfor %}
 	    </select>
-		</div>
 	</td>
 	<td>
-	   	<div id="filter" style="padding-bottom:20px;margin-top:10px;">
-	  	<select  id="accounts" name = "accounts" size = "1" style = "width:180px">
-	  		<option value="">--- Select Account ---</option>
+	  	<select  id="accounts" name = "accounts" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px" onchange="selectFeeGroup()">
+	  		<option value="default">--- Select Account ---</option>
 	        {% for account in account_list %}
 				<option value="{{ account.account }}">{{ account.account }}</option>
 			{% endfor %}
 	    </select>
-		</div>
 	</td>
 	<td>
-	   	<div id="filter" style="padding-bottom:20px;margin-top:10px;">
-	  	<select  id="groups" name = "groups" size = "1" style = "width:180px">
-	  		<option value="">--- Select Group ---</option>
+	  	<select  id="groups" name = "groups" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px" onchange="selectFeeGroup()">
+	  		<option value="default">--- Select Group ---</option>
 	        {% for group in group_list %}
 				<option value="{{ group.name }}">{{ group.name }}</option>
 			{% endfor %}
 	    </select>
-		</div>
 	</td>
    	<td>
-   		<input type='submit' name="save" class='btn btn-info' value='Save'>
-		<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_feeGroup()'>
+   		<input type='submit' id='add' name="add" class='btn btn-success' value='Add'>
+		<!-- <input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_feeGroup()'> -->
    	</td>
    	</tr>
    	</form>
-   	
-   	{% for tuple in feeGroup_list %}
-		{% csrf_token %}
-    	<tr>
-    	<td>{{ tuple.symbol }}</td>
-    	<td>{{ tuple.account }}</td>
-    	<td>{{ tuple.group }}</td>
-    	<td></td>
-    	</tr>
-    {% endfor %}
 </table>
+   	
+ 	<div id="feegroup_container" class="feegroup_container"> 	
+ 	</div>   	
+
 <div>
 
 {% endblock %}

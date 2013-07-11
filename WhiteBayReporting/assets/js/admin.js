@@ -32,7 +32,7 @@ function validate_number(field){
 
 function validate_required(field) {
 	with (field) {
-		if (value == null || value == ""){
+		if (value == null || value == "" || value == "default"){
 			return false;
 		} else {
 			return true;
@@ -75,10 +75,6 @@ function showBroker(data) {
 		html += data.message;
 		$('#message').append(html);
 	}
-}
-
-function modifyBroker() {
-	Dajaxice.admins.modifyBroker(showBroker, {'pk': value}, {'error_callback': custom_error});
 }
 
 function validate_add_broker(thisform) {
@@ -624,6 +620,77 @@ function validate_feeGroup(thisform) {
 		}
 	}
 	return true
+}
+
+function selectFeeGroup() {
+	var symbol = $("#symbols").val();
+	var account = $("#accounts").val();
+	var group = $("#groups").val();
+	
+	Dajaxice.admins.getFeeGroup(showFeeGroup, {'symbol': symbol, 'account': account, 'group': group},
+							 	{'error_callback': custom_error}); 
+}
+
+function showFeeGroup(data) {
+	$("#feegroup_container").empty(); // delete all the data
+	
+	if (data.success == "false") {
+		$("#feegroup_container").removeClass("container");
+		var html = data.message;
+		$("#feegroup_container").append(html);
+	} else {	
+		var number = data.feeGroupList.length;
+		
+		// one account should be in only one group for one symbol
+		if (data.existed == "true") {
+			$("#add").attr("disabled", true);
+		} else if ($("#add").attr("disabled", true)) {
+			$("#add").removeAttr("disabled");
+		}
+		
+		if(number == 0) {
+			$("#feegroup_container").removeClass("container");
+			var html = "";
+			$("#feegroup_container").append(html);
+		} else {
+			var html = "";
+			var csrf = $("#csrf").val();
+			
+			html += "<table class='table group_table table-bordered'>";
+			for(i = 0; i < number; i++) { // create a new list of reports
+				var feegroup = data.feeGroupList[i].fields;
+				html += "<form method='post' action='/modFeeGroup/' onsubmit='return validate_feeGroup(this)'>";
+				html += csrf;
+				html += "<tr>";
+				html += "<td>" + feegroup.symbol;
+				html += "<input type='hidden' name='symbols' value='" + feegroup.symbol + "'/></td>";
+				html += "<td>" + feegroup.account;
+				html += "<input type='hidden' name='accounts' value='" + feegroup.account + "'/></td>";
+				
+				html += "<td>" + "<select  id='groups' name = 'groups' size = '1' style = 'padding-bottom:20px;margin-top:10px;width:180px'>";
+				html +=	"<option value=" + feegroup.group + ">" + feegroup.group + "</option>";				
+				for (j = 0; j < data.groupList.length; j++) {
+					var group = data.groupList[j].fields;
+					
+					if (group.name != feegroup.group) {
+						html += "<option value=" + group.name + ">" + group.name + "</option>";
+					}
+				}
+				html += "</select></td>";
+				
+				html += "<td><input type='submit' name='save' class='btn btn-info' value='Save'>";
+				html += "<input type='submit' name='delete' class='btn btn-danger' value='Delete' style='margin-left:5px;'" +
+						"onclick='return confirm_delete_feeGroup()'></td>";
+				html += "</tr>";
+				html += "</form>";
+			}
+			
+			html += "</table>";
+			
+			$("#feegroup_container").addClass("container");
+			$("#feegroup_container").append(html);
+	    }
+	}
 }
 
 function confirm_delete_feeGroup() {

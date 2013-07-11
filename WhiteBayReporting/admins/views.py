@@ -417,11 +417,18 @@ def modAccount(request):
 @login_required
 def modFeeGroup(request):
     if request.POST:
+        add = request.POST.get('add')
         save = request.POST.get('save')
         delete = request.POST.get('delete')
-        symbol = request.POST.getlist('symbols')[0]
-        account = request.POST.getlist('accounts')[0]
-        group = request.POST.getlist('groups')[0]
+        
+        if add:
+            symbol = request.POST.getlist('symbols')[0]
+            account = request.POST.getlist('accounts')[0]
+            group = request.POST.getlist('groups')[0]
+        else:
+            symbol = request.POST.get('symbols')
+            account = request.POST.get('accounts')
+            group = request.POST.get('groups')
         
         try:
             feeGroup = FutureFeeGroup.objects.get(Q(symbol = symbol) & Q(account = account))

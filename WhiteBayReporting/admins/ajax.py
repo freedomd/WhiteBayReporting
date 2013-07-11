@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker, Trader, System, Employer, Account, Group, FutureFeeRate
+from admins.models import Broker, Trader, System, Employer, Account, Group, FutureFeeRate, FutureFeeGroup
 from django.core import serializers
 from django.db.models import Q
 
@@ -19,27 +19,6 @@ def getBroker(request, pk):
             'success': success, 'message': message }
     #print data
     
-    return simplejson.dumps(data)
-
-
-@dajaxice_register
-def modifyBroker(request, pk, brokerNumber, securityType, commissionRate):
-    try:
-        broker = Broker.objects.get(pk = pk)
-        broker.brokerNumber = brokerNumber
-        broker.securityType = securityType
-        broker.commissionRate = commissionRate
-        broker.save()
-        success = "true"
-        message = ""
-    except:
-        success = "false"
-        message = "No such broker found."
-    
-    data = {'pk': broker.pk, 'brokerNumber': broker.brokerNumber, 'securityType': broker.securityType, 
-            'commissionRate': broker.commissionRate, 
-            'success': success, 'message': message }
-
     return simplejson.dumps(data)
 
 @dajaxice_register
@@ -178,5 +157,47 @@ def getGroup(request, pk):
     
     data = {'pk': group.pk, 'name': group.name,
             'success': success, 'message': message }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getFeeGroup(request, symbol, account, group):
+    #print symbol, account, group
+    try:
+        feeGroupList = None
+        if symbol != "default":
+            feeGroupList = FutureFeeGroup.objects.filter(Q(symbol=symbol))
+        if account != "default":
+            if feeGroupList == None:
+                feeGroupList = FutureFeeGroup.objects.filter(Q(account=account))
+            else:
+                feeGroupList = feeGroupList.filter(Q(account=account))
+            num = len(feeGroupList) # one account should be only in one group for one symbol
+        if group != "default":
+            if feeGroupList == None:
+                feeGroupList = FutureFeeGroup.objects.filter(Q(group=group))
+            else:
+                feeGroupList = feeGroupList.filter(Q(group=group))
+        
+        groupList = Group.objects.all()
+        groupList_serialized = serializers.serialize('json', groupList)
+        
+        feeGroupList = feeGroupList.order_by("symbol", "account")
+        feeGroupList_serialized = serializers.serialize('json', feeGroupList)
+        
+        if symbol != "default" and account != "default" and num != 0:
+            existed = "true"
+        else:
+            existed = "false"
+        success = "true"
+        message = ""
+        data = {'feeGroupList': simplejson.loads(feeGroupList_serialized),
+                'groupList': simplejson.loads(groupList_serialized),
+                'existed': existed, 'success': success, 'message': message }
+    except:
+        success = "false"
+        message = ""
+        data = { 'success': success, 'message': message }
+
     
     return simplejson.dumps(data)
