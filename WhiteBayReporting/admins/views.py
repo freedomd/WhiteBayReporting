@@ -5,6 +5,7 @@ from django.db.models import Q
 from datetime import date
 from admins.models import Broker, Trader, System, Firm, Employer, FutureFeeRate, FutureFeeGroup, Route, Account, Group
 from settings import ERROR_LOG
+from django.views.decorators.csrf import csrf_exempt
 
 def navbar_settings(request):
     account_list = Account.objects.all().order_by("account")
@@ -47,6 +48,7 @@ def futureFeeRateView(request):
     return render(request, "futureFeeRate_view.html", locals())
 
 @login_required
+@csrf_exempt
 def futureFeeGroupView(request):
     pk = request.GET.get('pk')
     account_list = Account.objects.all().order_by("account")  
