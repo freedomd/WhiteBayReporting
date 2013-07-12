@@ -654,13 +654,13 @@ function showFeeGroup(data) {
 			$("#feegroup_container").append(html);
 		} else {
 			var html = "";
-			var csrf = $("#csrf").val();
+			//var csrf = $.cookie('csrftoken');
 			
 			html += "<table class='table group_table table-bordered'>";
 			for(i = 0; i < number; i++) { // create a new list of reports
 				var feegroup = data.feeGroupList[i].fields;
 				html += "<form method='post' action='/modFeeGroup/' onsubmit='return validate_feeGroup(this)'>";
-				html += csrf;
+				//html += csrf;
 				html += "<tr>";
 				html += "<td>" + feegroup.symbol;
 				html += "<input type='hidden' name='symbols' value='" + feegroup.symbol + "'/></td>";

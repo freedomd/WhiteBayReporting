@@ -10,14 +10,14 @@
 	});
 </script>
 
-<input id="csrf" type="hidden" value="{% csrf_token %}"/>
+<!-- <input id="csrf" type="hidden" value="{% csrf_token %}"/> -->
 
 <div id="group_list">
 <table class="table group_table table-bordered">
     <tr><th>Future Symbol</th><th>Account</th><th>Group</th><th>Operation</th></tr>
    	
    	<form method='post' action='/modFeeGroup/' onsubmit='return validate_feeGroup(this)'>
-	{% csrf_token %}
+	<!-- {% csrf_token %} -->
    	<tr>
    	<td>
 	  	<select  id="symbols" name = "symbols" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px" onchange="selectFeeGroup()">

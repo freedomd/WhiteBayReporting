@@ -48,7 +48,6 @@ def futureFeeRateView(request):
     return render(request, "futureFeeRate_view.html", locals())
 
 @login_required
-@csrf_exempt
 def futureFeeGroupView(request):
     pk = request.GET.get('pk')
     account_list = Account.objects.all().order_by("account")  
@@ -417,6 +416,7 @@ def modAccount(request):
     return HttpResponseRedirect(url)
 
 @login_required
+@csrf_exempt
 def modFeeGroup(request):
     if request.POST:
         add = request.POST.get('add')
