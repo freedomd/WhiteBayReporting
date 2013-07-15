@@ -66,17 +66,14 @@ def getMultiplierByDate(path, today):
                     expDate = str(row[36]).strip()
             
                     if expDate != "" and expDate != "0": # future option
-                        date_str = expDate[2:]
                         #strike
-                        strike = float(row[19])
-                        strike_str = str(int(strike * 1000))
-                        while (len(strike_str) < 8):
-                            strike_str = "0" + strike_str
-                        
-                        while len(symbol) < 6:
-                            symbol += " "
+                        strike = row[19]
+                        if float(strike) == int(strike.split('.')[0]):
+                            strike_str = strike.split('.')[0]
+                        else:
+                            strike_str = strike
     
-                        symbol += date_str + row[18] + strike_str
+                        symbol += " " + row[18].strip() + strike_str
                         #print symbol
     
                     multiplier = int(float(str(row[10]).strip()))
@@ -621,10 +618,14 @@ def getReportByDate(today):
                         report_account = rtrade.account[:8]
                     else:
                         report_account = rtrade.account[:5]
-                    group = FutureFeeGroup.objects.get(Q(symbol=futureSymbol) & Q(account=report_account))
-                except Account.DoesNotExist:
+                    groupObj = FutureFeeGroup.objects.get(Q(symbol=futureSymbol) & Q(account=report_account))
+                    group = groupObj.group
+                except FutureFeeGroup.DoesNotExist:
                         # default
-                        group = "LowerFeeRate"
+                        if "UNM" in rtrade.account:
+                            group = "UNMFeeRate"
+                        else:
+                            group = "LowerFeeRate"
                 
                 future = FutureFeeRate.objects.get(Q(symbol = futureSymbol) & Q(group = group))
                 clearance = future.clearingFeeRate * rtrade.quantity

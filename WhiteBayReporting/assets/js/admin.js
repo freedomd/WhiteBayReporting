@@ -477,8 +477,10 @@ function createFutureList(data) {
 			
 			if (future.group == "HigherFeeRate") {
 				group = "Higher";
-			} else {
+			} else if (future.group == "LowerFeeRate"){
 				group = "Lower";
+			} else {
+				group = "UNM";
 			}
 			
 			html += "<li id='pill" + pk + "'><a class='btn-link' onclick='selectFuture(" + pk + ")'>" 
