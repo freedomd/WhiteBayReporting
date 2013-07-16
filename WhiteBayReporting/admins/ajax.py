@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from dajaxice.decorators import dajaxice_register
-from admins.models import Broker, Trader, System, Employer, Account, Group, FutureFeeRate, FutureFeeGroup
+from admins.models import Broker, Trader, System, Employer, Account, Group, FutureMultiplier, FutureFeeRate, FutureFeeGroup
 from django.core import serializers
 from django.db.models import Q
 
@@ -91,6 +91,54 @@ def getFuture(request, pk):
             'success': success, 'message': message }
     
     return simplejson.dumps(data)
+
+@dajaxice_register
+def queryFutureMultiList(request, symbol):
+    
+    # start filter
+    future_list = None
+    
+    if symbol is not u"" or None:
+        if future_list is None:
+            future_list = FutureMultiplier.objects.filter(Q(symbol__icontains=symbol))
+        else:
+            future_list = future_list.filter(Q(symbol__icontains=symbol))
+    
+    future_list = future_list.order_by("symbol")
+        
+    future_list_serialized = serializers.serialize('json', future_list)
+
+    data = { 'future_list': simplejson.loads(future_list_serialized) }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def showFutureMultiList(request):
+    
+    # get all the objects
+    future_list = FutureMultiplier.objects.all().order_by("symbol")        
+    future_list_serialized = serializers.serialize('json', future_list)
+
+    data = { 'future_list': simplejson.loads(future_list_serialized) }
+    
+    return simplejson.dumps(data)
+
+@dajaxice_register
+def getFutureMulti(request, pk):
+    try:
+        future = FutureMultiplier.objects.get(pk = pk)
+        success = "true"
+        message = ""
+    except:
+        success = "false"
+        message = "No such Future found."
+    
+    data = {'pk': future.pk, 'symbol': future.symbol, 
+            'multiplier': future.multiplier,
+            'success': success, 'message': message }
+    
+    return simplejson.dumps(data)
+
 
 @dajaxice_register
 def getSystem(request, systemIdList):

@@ -599,6 +599,134 @@ function confirm_delete_future() {
 }
 
 /*****************************************************************************************
+/* FutureMultiplier
+*/
+
+function queryFutureMultiList() { 
+	$('#mod_futureMultiplier').hide();
+	$('#add_futureMultiplier').hide();
+    Dajaxice.admins.queryFutureMultiList(createFutureMultiList, {'symbol': $("#symbols").val()},
+    							   				 	  {'error_callback': custom_error}); 		       
+}
+
+function showFutureMultiList() {
+	$("#symbols").val("");
+	$('#mod_futureMultiplier').hide();
+	$('#add_futureMultiplier').hide();
+	Dajaxice.admins.showFutureMultiList(createFutureMultiList, {'error_callback': custom_error}); 
+}
+
+function createFutureMultiList(data) {
+	var number = data.future_list.length;
+	$("#futureMultis_container").empty(); // delete all the data
+	$("#message_container").empty(); // delete all the data
+	if(number == 0) {
+		$("#futureMultis_container").removeClass("container");
+		var html = "";
+		html += "No futures found.";
+		$("#futureMultis_container").append(html);
+	} else {
+		var html = "";
+		
+		html += "<ul class='nav nav-pills nav-stacked' id='futureMultipills'>";
+				
+		for(i = 0; i < number; i++) { // create a new list of reports
+			var pk = data.future_list[i].pk;
+			var future = data.future_list[i].fields;
+			
+			html += "<li id='pill" + pk + "'><a class='btn-link' onclick='selectFutureMultiplier(" + pk + ")'>" 
+			+ future.symbol + "</a></li>";
+		}
+		
+		html += "</ul>";
+		
+		$("#futureMultis_container").addClass("container");
+		$("#futureMultis_container").append(html);
+    }
+}
+
+function selectFutureMultiplier(value) {
+	$("#message").html("");
+	$("#pills").find('li').removeClass("active");
+	$("#futureMultipills").find('li').removeClass("active");
+	$("#pill"+value).addClass("active");
+	
+	if(value == "default") {
+		$('#mod_futureMultiplier').hide();
+		$('#add_futureMultiplier').hide();
+		return ;
+	} else if(value == "add") {
+		$('#mod_futureMultiplier').hide();
+		$('#add_futureMultiplier').show();
+	} else { 
+    	Dajaxice.admins.getFutureMulti(showFutureMultiplier, {'pk': value}, {'error_callback': custom_error}); 		
+    }       
+    
+}
+
+function showFutureMultiplier(data) {
+	$('#mod_futureMultiplier').hide();
+	$('#add_futureMultiplier').hide();
+	if(data.success == "true") {
+		$('#mod_futureMultiplier').show();
+		$('#mod_pk').val(data.pk);
+		$('#mod_symbol').val(data.symbol);
+		$('#mod_multiplier').val(data.multiplier);
+	} else {
+		html = "";
+		html += data.message;
+		$('#message').append(html);
+	}
+}
+
+function validate_add_futureMultiplier(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_symbol) == false) {
+			html = "<span class='help-inline message'>You must enter a symbol.</span>";
+			$("#add_symbol").after(html);
+			add_symbol.focus();
+			return false;
+		} 
+		if (validate_required(add_multiplier) == false || validate_number(add_multiplier) == false) {
+			html = "<span class='help-inline message'>You must enter a valid multiplier.</span>";
+			$("#add_multiplier").after(html);
+			add_multiplier.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function validate_mod_futureMultiplier(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(mod_symbol) == false) {
+			html = "<span class='help-inline message'>You must enter a symbol.</span>";
+			$("#mod_symbol").after(html);
+			mod_symbol.focus();
+			return false;
+		} 
+		if (validate_required(mod_multiplier) == false || validate_number(mod_multiplier) == false) {
+			html = "<span class='help-inline message'>You must enter a valid multiplier.</span>";
+			$("#mod_multiplier").after(html);
+			mod_multiplier.focus();
+			return false;
+		}
+	}
+	return true
+}
+
+function confirm_delete_futureMultiplier() {
+	var result = confirm("Delete This Future?")
+  	return result;
+}
+
+
+
+
+
+/*****************************************************************************************
 /* FutureFeeGroup
 */
 

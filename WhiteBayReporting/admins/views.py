@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import date
-from admins.models import Broker, Trader, System, Firm, Employer, FutureFeeRate, FutureFeeGroup, Route, Account, Group
+from admins.models import Broker, Trader, System, Firm, Employer, FutureMultiplier, FutureFeeRate, FutureFeeGroup, Route, Account, Group
 from settings import ERROR_LOG
 from django.views.decorators.csrf import csrf_exempt
 
@@ -55,6 +55,13 @@ def futureFeeGroupView(request):
     symbol_list = FutureFeeRate.objects.values("symbol").order_by("symbol").distinct()
     feeGroup_list = FutureFeeGroup.objects.all().order_by("symbol")
     return render(request, "futureFeeGroup_view.html", locals())
+
+@login_required
+def futureMultiplierView(request):
+    pk = request.GET.get('pk')
+    futureMulti_list = FutureMultiplier.objects.all().order_by("symbol")
+    
+    return render(request, "futureMultiplier_view.html", locals())
 
 @login_required
 def accountView(request):
@@ -372,6 +379,46 @@ def modFuture(request):
 
     return HttpResponseRedirect(url)
 
+@login_required
+def addFutureMultiplier(request):
+    if request.POST:
+        symbol = request.POST.get('add_symbol')
+        multiplier = request.POST.get('add_multiplier')
+        
+        # avoid duplicate
+        try:
+            FutureMultiplier.objects.get(Q(symbol=symbol))
+
+        except FutureMultiplier.DoesNotExist:
+            FutureMultiplier.objects.create(symbol = symbol, multiplier = multiplier)
+    
+    return HttpResponseRedirect("/futureMultiplierProfile/")
+
+@login_required
+def modFutureMultiplier(request):
+    if request.POST:
+        save = request.POST.get('save')
+        delete = request.POST.get('delete')
+        pk = request.POST.get('mod_pk')
+        
+        try:
+            future = FutureMultiplier.objects.get(pk = pk)
+            if delete:
+                future.delete()
+                url = "/futureMultiplierProfile/"
+            elif save:
+                symbol = request.POST.get('mod_symbol')
+                multiplier = request.POST.get('mod_multiplier')
+                
+                future.symbol = symbol
+                future.multiplier = multiplier
+                future.save()
+                url = "/futureMultiplierProfile/?pk=" + str(pk)
+        except Exception, e:
+            print str(e.message)
+            url = "/futureFeeRateProfile/"
+
+    return HttpResponseRedirect(url)
 
 @login_required
 def addAccount(request):

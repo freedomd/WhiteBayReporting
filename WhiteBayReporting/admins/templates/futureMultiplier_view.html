@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#futureMultiplier_stack").addClass("active");
+			{% if pk %}
+			selectFutureMultiplier({{ pk }})
+			{% endif %}
+	});
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<ul class="nav nav-pills nav-stacked" id="pills">
+  		<li id="pilladd" class="active"><a class="btn-link" onclick="selectFutureMultiplier('add')">Add a Future</a></li>
+  	</ul>
+	<div class="container">
+		<div id="filter">
+			<input id="symbols" type="text" class="span2" placeholder="Future Symbol">
+	  		<div style="clear:both;"></div> 
+		</div> 
+		<button class="btn btn-info btn-small" onclick="queryFutureMultiList();" style="margin-left:2px;">Search</button>
+		<button class="btn btn-info btn-small" onclick="showFutureMultiList();" style="margin-left:5px;">Show All</button>
+	</div>
+	
+	<!-- futures list  -->
+	<div id="message_container" class="future_container" style="margin-top:5px;">
+	</div>
+	<div id="futureMultis_container" class="future_container" style="margin-top:5px;">
+	</div>
+
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="mod_futureMultiplier" style="display: none; margin-top:10px;">
+	<form method='post' class='form-horizontal' action='/modFutureMultiplier/'>
+		{% csrf_token %}
+		<input name='mod_pk' id='mod_pk' style='display: none;' type='text'>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_symbol">Future Symbol</label>
+    		<div class="controls">
+				<input name='mod_symbol' id='mod_symbol' type='text' class='span4' placeholder='Future'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="mod_multiplier">Multiplier</label>
+    		<div class="controls">
+				<input name='mod_multiplier' id='mod_multiplier' type='text' class='span4' placeholder='Multiplier'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' name="save" class='btn btn-info' value='Save' onclick='return validate_mod_futureMultiplier(this)'>
+				<input type='submit' name="delete" class='btn btn-danger' value='Delete' onclick='return confirm_delete_futureMultiplier()'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="add_futureMultiplier" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addFutureMultiplier/' onsubmit='return validate_add_futureMultiplier(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_symbol">Future Symbol</label>
+    		<div class="controls">
+				<input name='add_symbol' id='add_symbol' type='text' class='span4' placeholder='Future'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_multiplier">Multiplier</label>
+    		<div class="controls">
+				<input name='add_multiplier' id='add_multiplier' type='text' class='span4' placeholder='Multiplier'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

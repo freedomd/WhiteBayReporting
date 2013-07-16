@@ -4,7 +4,7 @@ Created on May 1, 2013
 @author: ZhiZeng
 '''
 import os
-from admins.models import Firm, Broker, Route, Account, FutureFeeRate, FutureFeeGroup
+from admins.models import Firm, Broker, Route, Account, FutureFeeRate, FutureFeeGroup, FutureMultiplier
 from trades.models import Trade, RollTrade
 from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -729,12 +729,20 @@ def getDailyReport(report_date):
             symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
             closing = symbol_mark.closing
             report.closing = closing
-            multiplier = symbol_mark.multiplier
             #print report.symbol + ", " + report.closing
         except: 
-            multiplier = 1
             log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
             log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
+        
+        # check multiplier
+        try:    
+            if "UNM" in report.account:
+                futureSymbol = symbol[0:len(symbol)-2]
+                multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
+            else:
+                multiplier = symbol_mark.multiplier
+        except:
+            multiplier = 1
         
         # discard useless report
         if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
@@ -810,7 +818,7 @@ def getDailyReport(report_date):
         # unrealizedPNL
         report.unrealizedPNL = unrealizedPNL
         # net PNL
-        report.netPNL = report.netPNL + report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
+        report.netPNL +=  report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -1389,9 +1397,11 @@ def getProFuturesByDir(path):
                             lower = "0" + lower
                         price = higher + lower
                     if "." in price:
-                        trade.price = float(price)
+                        price = float(price)
                     else:
-                        trade.price = float(price) / 100
+                        price = float(price) / 100
+                        
+                    trade.price = round(price, 5)
                     
                     if row[12] != "" and row[12] != None:
                         trade.executionId = row[12] + "-" + row[13]
@@ -1467,7 +1477,9 @@ def getEdfFuturesByDir(path):
                     
                     trade.quantity = int(row[11])
                     
-                    trade.price = float(row[19])
+                    price = float(row[19])
+                    
+                    trade.price = round(price, 5)
                         
                     trade.executionId = row[7]
                     trade.tradeDate = today    
@@ -1549,7 +1561,9 @@ def get78FuturesByDir(path):
                 trade.quantity = int(row[18])
                 
                 price = row[26]
-                trade.price = float(price) / 100
+                price = float(price) / 100
+                
+                trade.price = round(price, 5)
                 
                 trade.executionId = row[13]
                 trade.tradeDate = today    

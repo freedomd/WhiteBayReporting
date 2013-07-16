@@ -17,6 +17,18 @@ class FutureFeeRate(models.Model):
     
     def __unicode__(self):
         return str(self.symbol)
+    
+# future multiplier per contract based on symbol
+class FutureMultiplier(models.Model):
+    
+    symbol = models.CharField( max_length=50 )
+    multiplier = models.IntegerField( default=1 )
+    
+    def save(self, *args, **kwargs): 
+        super(FutureMultiplier, self).save(*args, **kwargs)
+    
+    def __unicode__(self):
+        return str(self.symbol)
 
 
 class Broker(models.Model):
