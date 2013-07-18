@@ -18,7 +18,48 @@ from settings import DATASOURCE, DATASOURCE_USERNAME, DATASOURCE_PASSWORD
 from settings import TRADE_PATH, MARK_PATH, TEMP_PATH
 from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 import string
+import zipfile
 
+# convert edf future file from txt to csv
+def convertEdfFuture(input):    
+    # the csv filename
+    output = input.replace(".txt", ".csv")
+
+    inFile = open(input, 'rb')
+    outFile = open(output, 'wb')
+    
+    # edf future txt file is separated by tab
+    in_txt = csv.reader(inFile, delimiter='\t')
+    out_csv = csv.writer(outFile)
+    
+    # write into the target csv file
+    out_csv.writerows(in_txt)
+    
+    # remove the txt file
+    inFile.close()
+    os.remove(input)
+    outFile.close()
+    
+    print "Done"
+    
+# unzip pro future file
+def unzipProFuture(input):
+    # zip file and parent path
+    zfile = zipfile.ZipFile(input)
+    parent = os.path.dirname(input)
+    
+    for fname in zfile.namelist():
+        # unzip files in the same directory
+        filename = parent + '/' + fname
+        outFile = open(filename, 'wb')
+        outFile.write(zfile.read(fname))
+        outFile.close()
+    
+    # remove the zip file
+    zfile.close()
+    os.remove(input)
+    
+    print "Done"
 
 # save data into database
 def getSecurities(filepath, today):
@@ -1239,11 +1280,17 @@ def getBrokerCommission(path):
             #print header
             if not header:
                 try:                    
-                    new_broker = Broker()
-                    new_broker.brokerNumber = row[0].strip()
-                    new_broker.securityType = row[1].strip()
-                    new_broker.commissionRate = float(row[2])
-                    new_broker.save()
+                    brokerNumber = row[0].strip()
+                    securityType = row[1].strip()
+                    try:
+                        Broker.objects.get(Q(brokerNumber=brokerNumber) & Q(securityType=securityType))
+                    except Broker.DoesNotExist:
+                        # avoid duplicate
+                        new_broker = Broker()
+                        new_broker.brokerNumber = brokerNumber
+                        new_broker.securityType = securityType
+                        new_broker.commissionRate = float(row[2])
+                        new_broker.save()
                         
                 except Exception, e:
                     print str(e.message)
@@ -1733,12 +1780,77 @@ def setupReport(path):
                     new_report.save()
                         
                 except Exception, e:
-                    print str(e.message)
+                    #print str(e.message)
                     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
                     log.write( "\tGet symbol %s from mark file %s failed: %s\n" % (new_report.symbol, filename, str(e.message)) )
                     continue
             else:
                 header = False
+        file.close()    
+    log.close()
+    print "Done"
+    return True
+
+
+# setup dividend
+def setupDividend(path):
+    print "Getting dividend record from files..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG, "a")
+    
+    for filename in filelist: # each file represent one day
+        #print filename
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb')
+
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            try:
+                today = date(2013,5,17)
+                #print today
+                
+                symbol = row[18].strip()
+                if symbol == None or symbol == "":
+                    continue
+                
+                entryType = row[16].strip()
+                if entryType != "DV":
+                    continue
+                
+                # currently, we only handle DV
+                account = row[4]
+                if "UNM" in account:
+                    account = account[:8]
+                else:
+                    account = account[:5]
+                
+                try:
+                    report = Report.objects.get(Q(account=account) & Q(symbol=symbol) & Q(reportDate=today))
+                except Report.DoesNotExist:
+                    report = Report()
+                    report.account = account
+                    report.symbol = symbol
+                               
+                description = row[15].strip()
+                if description == "DIVP" or description == "DIV" or \
+                    description == "MDIV" or description == "RCP" or \
+                    description == "FDV" or description == "FTD":
+                    report.pendingCash -= float(row[14])
+                elif description == "DSTP" or description == "DST":
+                    report.pendingShare += int(row[12])
+                    
+                report.reportDate = today    
+                report.save() # save into database
+                    
+            except Exception, e:
+                print str(e.message)
+                log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                log.write( "\tGet dividend %s from mark file %s failed: %s\n" % (report.symbol, filename, str(e.message)) )
+                continue
+
         file.close()    
     log.close()
     print "Done"

@@ -108,11 +108,15 @@ def addBroker(request):
         commissionRate = request.POST.get('add_commission')
 
         try:
-            broker = Broker.objects.create(brokerNumber = brokerNumber, securityType = securityType, 
-                                           commissionRate = commissionRate)
-            firm = Firm.objects.all()[0]
-            firm.brokers.add(broker)
-            firm.save()
+            try:
+                Broker.objects.get(Q(brokerNumber = brokerNumber) & Q(securityType = securityType))
+            except Broker.DoesNotExist:
+                # avoid duplicate
+                broker = Broker.objects.create(brokerNumber = brokerNumber, securityType = securityType, 
+                                               commissionRate = commissionRate)
+                firm = Firm.objects.all()[0]
+                firm.brokers.add(broker)
+                firm.save()
         except Exception, e:
             print str(e.message)
     
@@ -133,10 +137,20 @@ def modBroker(request):
                 brokerNumber = request.POST.get('mod_name')
                 securityType = request.POST.get('mod_type')
                 commissionRate = request.POST.get('mod_commission')
-                broker.brokerNumber = brokerNumber
-                broker.securityType = securityType
-                broker.commissionRate = commissionRate
-                broker.save()
+                if broker.brokerNumber != brokerNumber or broker.securityType != securityType: # changed brokerNumber
+                    try:
+                        # avoid duplicate
+                        new_Broker = Broker.objects.get(Q(brokerNumber=brokerNumber) & Q(securityType=securityType))
+                    except Broker.DoesNotExist:
+                        broker.brokerNumber = brokerNumber
+                        broker.securityType = securityType
+                        broker.commissionRate = commissionRate
+                        broker.save()
+                else: # only commissionRate changed
+                    broker.brokerNumber = brokerNumber
+                    broker.securityType = securityType
+                    broker.commissionRate = commissionRate
+                    broker.save()
         except Exception, e:
             print str(e.message)
 
