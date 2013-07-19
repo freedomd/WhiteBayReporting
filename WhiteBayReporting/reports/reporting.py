@@ -1439,7 +1439,7 @@ def getProFuturesByDir(path):
                         price = row[27]
                     else:
                         higher = row[28]
-                        lower = row[29]
+                        lower = row[29].split('.')[0]
                         while len(lower) < 3:
                             lower = "0" + lower
                         price = higher + lower
