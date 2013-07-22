@@ -388,29 +388,37 @@ def newReport(account, symbol, today):
 
 # For exercised or assigned option, the execution price is the average
 def getExecutionPrice(account, symbol, tradeDate):
+    log = open(ERROR_LOG, "a")
     
-    new_report = newReport(account, symbol, tradeDate)
-    # check if SOD is zero
-    quantity = new_report.SOD
-    total = new_report.SOD * new_report.mark
+    try:
+        new_report = newReport(account, symbol, tradeDate)
+        # check if SOD is zero
+        quantity = new_report.SOD
+        total = new_report.SOD * new_report.mark
+        
+        if quantity == 0:
+            ## not correct implemented yet
+            # check if there is trade on tradeDate
+            trade_list = Trade.objects.filter(Q(account = account) & Q(tradeDate = tradeDate)
+                                              & Q(symbol = symbol) & ~Q(description__icontains = "OPTION"))
+            #print new_report.account + ", " + new_report.symbol
+            # calculate the average price
+            for t in trade_list:
+                #print "in list " + t.side + ", " + str(t.price) + ", " + str(t.quantity) + t.executionId
+                
+                # to be modified
+                if "BUY" in t.side:
+                    quantity += t.quantity
+                    total += t.quantity * t.price
+         
+        price = total / quantity
+    except Exception, e: # old report does not exist
+        price = 0.0
+        print str(e.message)
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tGet execution price of %s in account %s failed: %s\n" % (symbol, account, str(e.message)))
     
-    if quantity == 0:
-        ## not correct implemented yet
-        # check if there is trade on tradeDate
-        trade_list = Trade.objects.filter(Q(account = account) & Q(tradeDate = tradeDate)
-                                          & Q(symbol = symbol) & ~Q(description__icontains = "OPTION"))
-        #print new_report.account + ", " + new_report.symbol
-        # calculate the average price
-        for t in trade_list:
-            #print "in list " + t.side + ", " + str(t.price) + ", " + str(t.quantity) + t.executionId
-            
-            # to be modified
-            if "BUY" in t.side:
-                quantity += t.quantity
-                total += t.quantity * t.price
-     
-    price = total / quantity
-    
+    log.close()
     return price
             
 
@@ -1061,6 +1069,26 @@ def getTradesByDir(path):
                         while len(end) < 8:
                             end = "0" + end
                         trade.symbol = symb + front + end
+                    elif row[2] == "OPT" and row[6] == "INSTINET":
+                        symbol_str = row[1].split(" ")
+                        # underlying
+                        symb = symbol_str[0]
+                        while len(symb) < 6:
+                            symb += " "
+                        # expiry date
+                        ex_Date = symbol_str[1].split("/")
+                        ex_year = ex_Date[2]
+                        ex_month = ex_Date[0]
+                        ex_day = ex_Date[1]                        
+                        expiry = ex_year[2:] + ex_month + ex_day
+                        # side
+                        side = symbol_str[2]
+                        # price
+                        price = symbol_str[3].replace(".", "")
+                        while len(price) < 8:
+                            price = "0" + price
+                        # symbol
+                        trade.symbol = symb + expiry + side + price
                     else:
                         trade.symbol = row[1].strip()
                     trade.securityType = row[2]
@@ -1077,7 +1105,7 @@ def getTradesByDir(path):
                                                trade.price, trade.quantity)
                     
                     # broker
-                    if trade.route == "INSTINET":
+                    if trade.route == "INSTINET" and trade.destination != "":
                         trade.broker = "INCA"
                     elif trade.route == "WBPT":
                         if trade.destination == "BARCAP":
@@ -1086,8 +1114,12 @@ def getTradesByDir(path):
                             trade.broker = "FBCO"
                         elif trade.destination == "UBS":
                             trade.broker = "UBSS"
+                        elif trade.destination == "NASDAQ":
+                            trade.broker = "NSDQ"
                     elif trade.route == "ITGI" and trade.securityType == "SEC":
                         trade.broker = "ITGI"
+                    elif trade.route == "BAML" and trade.destination == "NSDQ":
+                        trade.broker = "NSDQ"
                     
                     trade.save() # save into database
                 except Exception, e:
@@ -1147,6 +1179,8 @@ def getTransferAsTradesByDir(path):
                         
                     trade.quantity = int(row[20].split('.')[0].replace(',',''))
                     trade.price = float(row[21])
+                    if trade.price == 0.0:
+                        continue
                     trade.tradeDate = today
                     trade.description = "TRANSFER"
                     trade.save() # save into database
@@ -1181,6 +1215,8 @@ def getOptionsAsTradesByDir(path):
             #print header
             if not header:
                 try:
+                    fields = len(row)
+                    
                     date_str = row[6].split('/')
                     if len(date_str[2]) == 2:
                         year = "20" + date_str[2]
@@ -1200,20 +1236,20 @@ def getOptionsAsTradesByDir(path):
                     else:
                         trade.securityType = "OPT"
                     
-                    side = row[12]
+                    side = row[fields-19]
                     if side.strip() == "S":
                         trade.side = "SEL"
                     else:
                         trade.side = "BUY"
                     
-                    trade.quantity = int(row[17])
+                    trade.quantity = int(row[fields-14])
                     trade.tradeDate = today
                     
                     if sec == "SSU": #stock
-                        trade.price = float(row[18])
+                        trade.price = float(row[fields-13])
                         trade.description = "EXERCISE"
                     else: #option
-                        action = row[11]
+                        action = row[fields-20]
                         trade.price = 0.00
                         if action == "Expired":
                             trade.description = "EXPIRED OPTION"
@@ -1359,7 +1395,8 @@ def getDividendByDir(path):
                 trade.description = row[15].strip()
                 if trade.description == "DIVP" or trade.description == "DIV" or \
                     trade.description == "MDIV" or trade.description == "RCP" or \
-                    trade.description == "FDV" or trade.description == "FTD":
+                    trade.description == "FDV" or trade.description == "FTD" or \
+                    trade.description == "NRPT":
                     trade.description = "CASH DIVIDEND, " + trade.description
                     trade.baseMoney = float(row[14])
                 elif trade.description == "DSTP" or trade.description == "DST":
@@ -1444,7 +1481,11 @@ def getProFuturesByDir(path):
                             lower = "0" + lower
                         price = higher + lower
                     if "." in price:
-                        price = float(price)
+                        intPrice = price.split('.')[0]
+                        if int(intPrice) == float(price) and len(intPrice) > 4:
+                            price = float(price) / 100
+                        else:
+                            price = float(price)
                     else:
                         price = float(price) / 100
                         
@@ -1627,7 +1668,7 @@ def get78FuturesByDir(path):
     return True
 
 # import the mark file before the first day, set up the positions
-def setupReport(path):  
+def setupReport(path, reportDate):  
     print "Getting mark record from files..."
     filelist = os.listdir(path)
     filelist.sort()
@@ -1647,7 +1688,7 @@ def setupReport(path):
                 try:
                     #date_str = row[6].split('/')
                     ## for trading data start from 5/20, we import the mark file on 5/17 to setup
-                    today = date(2013, 5, 17)
+                    today = reportDate
                     #print today
                     
                     new_report = Report()
@@ -1793,7 +1834,7 @@ def setupReport(path):
 
 
 # setup dividend
-def setupDividend(path):
+def setupDividend(path, reportDate):
     print "Getting dividend record from files..."
     filelist = os.listdir(path)
     filelist.sort()
@@ -1809,7 +1850,7 @@ def setupDividend(path):
 
         for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
             try:
-                today = date(2013,5,17)
+                today = reportDate
                 #print today
                 
                 symbol = row[18].strip()
@@ -1835,12 +1876,17 @@ def setupDividend(path):
                     report.symbol = symbol
                                
                 description = row[15].strip()
-                if description == "DIVP" or description == "DIV" or \
-                    description == "MDIV" or description == "RCP" or \
-                    description == "FDV" or description == "FTD":
+                if description == "DIVP":
+#                     for setup dividend on 5/17
+#                     or description == "DIV" or \
+#                     description == "MDIV" or description == "RCP" or \
+#                     description == "FDV" or description == "FTD" or \
+#                     description == "NRPT":
                     report.pendingCash -= float(row[14])
-                elif description == "DSTP" or description == "DST":
+                elif description == "DSTP": #or description == "DST":
                     report.pendingShare += int(row[12])
+                else:
+                    continue
                     
                 report.reportDate = today    
                 report.save() # save into database
