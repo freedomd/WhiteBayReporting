@@ -20,6 +20,28 @@ from settings import TRADE_FILE_NAME, MARK_FILE_NAME
 import string
 import zipfile
 
+# convert security file from txt to csv
+def convertSecurity(input):    
+    # the csv filename
+    output = input.replace(".txt", ".csv")
+
+    inFile = open(input, 'rb')
+    outFile = open(output, 'wb')
+    
+    # edf future txt file is separated by tab
+    in_txt = csv.reader(inFile, delimiter='|')
+    out_csv = csv.writer(outFile)
+    
+    # write into the target csv file
+    out_csv.writerows(in_txt)
+    
+    # remove the txt file
+    inFile.close()
+    os.remove(input)
+    outFile.close()
+    
+    print "Done"
+
 # convert edf future file from txt to csv
 def convertEdfFuture(input):    
     # the csv filename
@@ -198,6 +220,9 @@ def getSupplementByDate(path, mark_date):
                             #print symbol
                     elif type == "FUTURE" or type == "FPO" or type == "FCO": # future
                         stock = row[5].split('.')[0]
+                        if stock == "17": # temp use, build a map later
+                            stock = "ZB"
+                        
                         time_str = row[5].split('.')[1]
                         year_symbol = time_str[1]
                         month_symbol = time_str[2:]
@@ -785,13 +810,10 @@ def getDailyReport(report_date):
         
         # check multiplier
         try:    
-            if "UNM" in report.account:
-                futureSymbol = symbol[0:len(symbol)-2]
-                multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
-            else:
-                multiplier = symbol_mark.multiplier
-        except:
-            multiplier = 1
+            futureSymbol = symbol[0:len(symbol)-2]
+            multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
+        except FutureMultiplier.DoesNotExist:
+            multiplier = symbol_mark.multiplier
         
         # discard useless report
         if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
@@ -1058,37 +1080,38 @@ def getTradesByDir(path):
                     trade = Trade()
                     trade.account = row[0]
                     #symbol
-                    if row[2] == "OPT" and row[6] == "BAML":
-                        symbol_str = row[1].split(" ")
-                        symb = symbol_str[0]
-                        while len(symb) < 6:
-                            symb += " "
-                        info = symbol_str[1]
-                        front = info[0:7]
-                        end = info[7:]
-                        while len(end) < 8:
-                            end = "0" + end
-                        trade.symbol = symb + front + end
-                    elif row[2] == "OPT" and row[6] == "INSTINET":
-                        symbol_str = row[1].split(" ")
-                        # underlying
-                        symb = symbol_str[0]
-                        while len(symb) < 6:
-                            symb += " "
-                        # expiry date
-                        ex_Date = symbol_str[1].split("/")
-                        ex_year = ex_Date[2]
-                        ex_month = ex_Date[0]
-                        ex_day = ex_Date[1]                        
-                        expiry = ex_year[2:] + ex_month + ex_day
-                        # side
-                        side = symbol_str[2]
-                        # price
-                        price = symbol_str[3].replace(".", "")
-                        while len(price) < 8:
-                            price = "0" + price
-                        # symbol
-                        trade.symbol = symb + expiry + side + price
+                    if row[2] == "OPT":
+                        if row[6] == "BAML":
+                            symbol_str = row[1].split(" ")
+                            symb = symbol_str[0]
+                            while len(symb) < 6:
+                                symb += " "
+                            info = symbol_str[1]
+                            front = info[0:7]
+                            end = info[7:]
+                            while len(end) < 8:
+                                end = "0" + end
+                            trade.symbol = symb + front + end
+                        elif row[6] == "CMZ" or row[6] == "INSTINET":
+                            symbol_str = row[1].split(" ")
+                            # underlying
+                            symb = symbol_str[0]
+                            while len(symb) < 6:
+                                symb += " "
+                            # expiry date
+                            ex_Date = symbol_str[1].split("/")
+                            ex_year = ex_Date[2]
+                            ex_month = ex_Date[0]
+                            ex_day = ex_Date[1]                        
+                            expiry = ex_year[2:] + ex_month + ex_day
+                            # side
+                            side = symbol_str[2]
+                            # price
+                            price = symbol_str[3].replace(".", "")
+                            while len(price) < 8:
+                                price = "0" + price
+                            # symbol
+                            trade.symbol = symb + expiry + side + price
                     else:
                         trade.symbol = row[1].strip()
                     trade.securityType = row[2]
@@ -1483,7 +1506,10 @@ def getProFuturesByDir(path):
                     if "." in price:
                         intPrice = price.split('.')[0]
                         if int(intPrice) == float(price) and len(intPrice) > 4:
-                            price = float(price) / 100
+                            if "HE" in trade.symbol or "LE" in trade.symbol:
+                                price = float(price) / 1000
+                            else:
+                                price = float(price) / 100
                         else:
                             price = float(price)
                     else:
@@ -1530,12 +1556,22 @@ def getEdfFuturesByDir(path):
         for row in csv.reader(file.read().splitlines(), delimiter=','): 
             if not header:
                 try:
-                    date_str = row[2].split('/')
-                    if len(date_str[2]) == 2:
-                        year = "20" + date_str[2]
+                    if '/' in row[2]:
+                        date_str = row[2].split('/')
+                        if len(date_str[2]) == 2:
+                            year = "20" + date_str[2]
+                        else:
+                            year = date_str[2]
+                        today = date(int(year), int(date_str[0]), int(date_str[1]))
+                    elif '-' in row[2]:
+                        date_str = row[2].split('-')
+                        if len(date_str[0]) == 2:
+                            year = "20" + date_str[0]
+                        else:
+                            year = date_str[0]
+                        today = date(int(year), int(date_str[1]), int(date_str[2]))
                     else:
-                        year = date_str[2]
-                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+                        continue
                     #print today
                     
                     trade = Trade()
