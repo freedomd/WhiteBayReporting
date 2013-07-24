@@ -885,6 +885,9 @@ def getDailyReport(report_date):
             report.pendingCash = 0.0
             report.todayCash = 0.0
             report.cashClearFlag = False
+        # even if all the same, also clear today's record
+        report.todayCash = 0.0
+        report.todayShare = 0
             
         # unrealizedPNL
         report.unrealizedPNL = unrealizedPNL
@@ -1269,7 +1272,7 @@ def getOptionsAsTradesByDir(path):
                     else:
                         trade.side = "BUY"
                     
-                    trade.quantity = int(row[fields-14])
+                    trade.quantity = int(row[fields-14].split('.')[0])
                     trade.tradeDate = today
                     
                     if sec == "SSU": #stock

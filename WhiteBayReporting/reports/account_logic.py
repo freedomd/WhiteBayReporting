@@ -4,7 +4,7 @@ This logic file contains useful methods for importing data from a new account th
 
 
 import os
-from admins.models import Firm, Account
+from admins.models import Firm, Account, Broker, FutureFeeGroup, FutureFeeRate, FutureMultiplier
 from trades.models import Trade, RollTrade
 from reports.models import Symbol, Report, DailyReport, MonthlyReport
 from datetime import date
@@ -157,6 +157,7 @@ def refreshReports(today, account):
             new_report.commission = 0.0
             new_report.clearanceFees = 0.0
             new_report.secFees = 0.0
+            new_report.baseMoney = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
             new_report.reportDate = today
@@ -173,17 +174,21 @@ def refreshReports(today, account):
 def newReport(account, symbol, today):
     
     try:
-        new_report = Report.objects.get(Q(account=account) & Q(symbol=symbol) & Q(reportDate=today))
+        if "UNM" not in account:
+            mainAccount = account[:5]
+        else:
+            mainAccount = account[:8]
+        new_report = Report.objects.get(Q(account=mainAccount) & Q(symbol=symbol) & Q(reportDate=today))
             
     except Report.DoesNotExist: # today's new does not exist  
         new_report = Report()
-        new_report.account = account
+        new_report.account = mainAccount
         new_report.symbol = symbol      
         new_report.reportDate = today
         new_report.save()
         #new_report = Report.objects.create(symbol=symbol, reportDate=today)
         
-    return new_report
+    return new_report    
     
 
 ###########################################################
@@ -279,28 +284,130 @@ def getPNLs(report_date, account):
 ###########################################################
 # calcluate fees for trades
 def getRollTrades(today, account):
-    trades = Trade.objects.filter(Q(tradeDate=today) & Q(account=account))
+    trades = Trade.objects.filter(Q(tradeDate=today) & Q(account__icontains=account))
     for trade in trades:
         try:
             
-            # TODO: add more fields here to roll
-            # TempKey = bo.account + "," + bo.bs + "," + bo.shortSign + "," + bo.symbol + "," + bo.extPrice + "," 
-            #           + bo.service + "," + bo.execBrkr + "," + bo.delBrkr + "," + bo.delBrkrNum 
-            #           + "," + bo.blotter + "," + bo.exchange;
+            # dividend
+            if "DIVIDEND" in trade.description:
+                new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
+                if (new_report.pendingShare != 0 and "DSTP" in trade.description ) or \
+                    (new_report.pendingCash != 0.0 and "DIVP" in trade.description):
+                    if "PENDING ALERT" not in trade.description:
+                        trade.description = "PENDING ALERT: " + trade.description
+                if (trade.quantity != 0 and "DSTP" not in trade.description) or \
+                    (trade.baseMoney != 0.0 and "DIVP" not in trade.description):
+                    if "SETTLED" not in trade.description:
+                        trade.description = "SETTLED: " + trade.description
+                trade.save()
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
+                                         tradeDate=trade.tradeDate, description = trade.description)
+                continue
             
-            rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+            # exercised option
+            if trade.description == "ASSIGNED OPTION" or trade.description == "EXERCISED OPTION":
+                if trade.price == 0.0:
+                    trade.price = getExecutionPrice(trade.account, trade.symbol, trade.tradeDate)                
+                    trade.save()
+                # do not roll the option exercised and assigned trade
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, route=trade.route, destination=trade.destination,
+                                         liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
+                continue
+            
+            # transferred from exercised option pnl, calculate the base money, clear the quantity
+            elif "PNL" in trade.description:
+                if trade.quantity != 0:
+                    symb = trade.description.split(":")[1]
+                    price = getExecutionPrice(trade.account, symb, trade.tradeDate)
+                    quantity = trade.quantity
+                    trade.baseMoney = price * quantity
+                    #print symb + ", " + str(price) + ", " + str(quantity) + ", " + str(trade.baseMoney)
+                    trade.quantity = 0
+                    trade.save()
+                # do not roll the option transferred trade
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                         route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)
+                continue
+                
+            # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
+            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
+                                         destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)
+                
+                continue
+            
+            # for Route "RAVEN", roll the trades with same account, symbol, and side
+            elif trade.route == "RAVEN":
+                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & Q(side=trade.side) &
+                                               Q(tradeDate=trade.tradeDate))
+                
+                total = (rtrade.quantity * rtrade.price) + (trade.quantity * trade.price)
+                rtrade.quantity += trade.quantity
+                rtrade.price = total / rtrade.quantity
+                rtrade.ecnFees += trade.ecnFees
+                rtrade.save()
+            
+            
+            # for Route "WBPT"                
+            else:
+                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
                                            Q(side=trade.side) & Q(price=trade.price) & 
-                                           #Q(route=trade.route) & Q(destination=trade.destination) & Q(liqFlag=trade.liqFlag) &    
-                                           Q(tradeDate=trade.tradeDate) )
-            rtrade.quantity += trade.quantity
-            rtrade.save()
+                                           Q(route=trade.route) & Q(destination=trade.destination) &    
+                                           Q(tradeDate=trade.tradeDate))
+                rtrade.quantity += trade.quantity 
+                rtrade.ecnFees += trade.ecnFees           
+                rtrade.save()
         except RollTrade.DoesNotExist:
-            RollTrade.objects.create(account=trade.account, symbol=trade.symbol, side=trade.side, 
-                                     price=trade.price, quantity=trade.quantity, 
-                                     #route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
-                                     tradeDate=trade.tradeDate)
+            RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                     side=trade.side, price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
+                                     ecnFees=trade.ecnFees, route=trade.route, destination=trade.destination,
+                                     broker = trade.broker, liqFlag=trade.liqFlag, tradeDate=trade.tradeDate,
+                                     description = trade.description)
     
-    return RollTrade.objects.filter(tradeDate=today)
+    return RollTrade.objects.filter(Q(tradeDate=today) & Q(account__icontains=account))
+
+# For exercised or assigned option, the execution price is the average
+def getExecutionPrice(account, symbol, tradeDate):
+    log = open(ERROR_LOG, "a")
+    
+    try:
+        new_report = newReport(account, symbol, tradeDate)
+        # check if SOD is zero
+        quantity = new_report.SOD
+        total = new_report.SOD * new_report.mark
+        
+        if quantity == 0:
+            ## not correct implemented yet
+            # check if there is trade on tradeDate
+            trade_list = Trade.objects.filter(Q(account = account) & Q(tradeDate = tradeDate)
+                                              & Q(symbol = symbol) & ~Q(description__icontains = "OPTION"))
+            #print new_report.account + ", " + new_report.symbol
+            # calculate the average price
+            for t in trade_list:
+                #print "in list " + t.side + ", " + str(t.price) + ", " + str(t.quantity) + t.executionId
+                
+                # to be modified
+                if "BUY" in t.side:
+                    quantity += t.quantity
+                    total += t.quantity * t.price
+         
+        price = total / quantity
+    except Exception, e: # old report does not exist
+        price = 0.0
+        print str(e.message)
+        log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+        log.write("\tGet execution price of %s in account %s failed: %s\n" % (symbol, account, str(e.message)))
+    
+    log.close()
+    return price
 
 def fe():
     #s = date(2013, 1, 3) 
@@ -431,12 +538,139 @@ def getFees(today, account):
 
 # get summary data of reports with a specific date
 def getDailyReport(report_date, account):
+    log = open(ERROR_LOG, "a")
     report_list = Report.objects.filter( Q(reportDate = report_date) & Q(account=account) )
     
-    if report_list.count() == 0:
-        return 
+    print "in daily report"
+    for report in report_list: 
+        # calculate the PNL first
+        symbol = report.symbol
+        mark = report.mark # mark to market value
+        closing = report.closing # closing price today
+        SOD = report.SOD # start of day
+        buys = report.buys
+        buyAve = report.buyAve
+        sells = report.sells
+        sellAve = report.sellAve
+        
+        # check closing 
+        try:
+            symbol_mark = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=report_date))
+            closing = symbol_mark.closing
+            report.closing = closing
+            #print report.symbol + ", " + report.closing
+        except: 
+            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+            log.write("\tWarnning: Cannot get closing price of %s.\n" % symbol)        
+        
+        # check multiplier
+        try:    
+            futureSymbol = symbol[0:len(symbol)-2]
+            multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
+        except FutureMultiplier.DoesNotExist:
+            multiplier = symbol_mark.multiplier
+        
+        # discard useless report
+        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
+            report.delete()
+            continue
+        
+        # calculate EOD
+        EOD = SOD + buys - sells
+
+        if SOD > 0:
+            total = buys * buyAve + mark * SOD
+            buys += SOD
+            buyAve = total / buys
+        elif SOD < 0:
+            total = sells * sellAve + mark * (-SOD)
+            sells -= SOD
+            sellAve = total / sells
+            
+        if buys >= sells:
+            common = sells
+        else:
+            common = buys
+        
+        # realized PNL  
+        realizedPNL = common * (sellAve - buyAve)
+        if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
+            realizedPNL = realizedPNL * 100 #option
+        elif report.futureCommission != 0.0:
+            realizedPNL = realizedPNL * multiplier # future
+        report.realizedPNL = realizedPNL 
+        
+        # left shares
+        buys -= common
+        sells -= common
+        unrealizedPNL = (closing - buyAve) * buys + (sellAve - closing) * sells
+        if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
+            unrealizedPNL = unrealizedPNL * 100 #option
+        elif report.futureCommission != 0.0:
+            unrealizedPNL = unrealizedPNL * multiplier
+        # if no buys or sells on that day, calculate the base money separately
+        # else, the base money is already applied in average price
+        if report.buys == 0 or report.sells == 0:
+            unrealizedPNL += report.baseMoney   
+        
+        # dividend
+        # stock dividend
+        if report.pendingShare != report.todayShare:
+            shareDiffer = report.todayShare - report.pendingShare
+            report.pendingShare = report.todayShare
+            report.todayShare = 0
+            unrealizedPNL += shareDiffer * report.closing
+            EOD += shareDiffer
+            print "Share:"
+            print report.account, report.symbol, shareDiffer
+        # cash dividend
+        if report.pendingCash != report.todayCash:
+            cashDiffer = report.todayCash - report.pendingCash
+            report.pendingCash = report.todayCash
+            report.todayCash = 0.0
+            report.netPNL += cashDiffer
+            print "Cash:"
+            print report.account, report.symbol, cashDiffer
+        # check if clear the dividend
+        if report.shareClearFlag == True:
+            report.pendingShare = 0
+            report.todayShare = 0
+            report.shareClearFlag = False
+        if report.cashClearFlag == True:
+            report.pendingCash = 0.0
+            report.todayCash = 0.0
+            report.cashClearFlag = False
+        # even if all the same, also clear today's record
+        report.todayCash = 0.0
+        report.todayShare = 0
+            
+        # unrealizedPNL
+        report.unrealizedPNL = unrealizedPNL
+        # net PNL
+        report.netPNL += report.realizedPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
+        
+        # LMV and SMV
+        if EOD >=0:
+            if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
+                report.LMV = EOD * closing * 100 #option
+            elif report.futureCommission != 0.0:
+                report.LMV = EOD * closing * multiplier # future
+            else:
+                report.LMV = EOD * closing
+            report.SMV = 0
+        else:
+            report.LMV = 0
+            if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
+                report.SMV = EOD * closing * 100 #option
+            elif report.futureCommission != 0.0:
+                report.SMV = EOD * closing * multiplier # future
+            else:
+                report.SMV = EOD * closing
+        
+        report.EOD = EOD   
+        report.save() 
     
-    for report in report_list:
+        # get daily report
         try:
             daily_report = DailyReport.objects.get( Q(account = report.account) & Q(reportDate = report_date) )
         except DailyReport.DoesNotExist:
@@ -444,11 +678,15 @@ def getDailyReport(report_date, account):
         daily_report.SOD += report.SOD
         daily_report.buys += report.buys
         daily_report.sells += report.sells
-        daily_report.grossPNL += report.grossPNL
+        daily_report.realizedPNL += report.realizedPNL
         daily_report.unrealizedPNL += report.unrealizedPNL
         daily_report.secFees += report.secFees
+        daily_report.accruedSecFees += report.accruedSecFees
         daily_report.clearanceFees += report.clearanceFees
         daily_report.brokerCommission += report.brokerCommission
+        daily_report.futureCommission += report.futureCommission
+        daily_report.exchangeFees += report.exchangeFees
+        daily_report.nfaFees += report.nfaFees
         daily_report.commission += report.commission
         daily_report.ecnFees += report.ecnFees
         daily_report.netPNL += report.netPNL
@@ -466,9 +704,10 @@ def getDailyReport(report_date, account):
 def getAccountSummary(daily_report):
     try:
         account = Account.objects.get(account=daily_report.account)
-        account.grossPNL += daily_report.grossPNL
+        account.realizedPNL += daily_report.realizedPNL
         account.unrealizedPNL += daily_report.unrealizedPNL
         account.secFees += daily_report.secFees
+        account.accruedSecFees += daily_report.accruedSecFees
         account.commission += daily_report.commission
         account.ecnFees += daily_report.ecnFees
         account.netPNL += daily_report.netPNL
@@ -477,9 +716,10 @@ def getAccountSummary(daily_report):
         report_list = DailyReport.objects.filter(account = daily_report.account)
         account = Account.objects.create(account=daily_report.account)
         for report in report_list:
-            account.grossPNL += report.grossPNL
+            account.realizedPNL += report.realizedPNL
             account.unrealizedPNL += report.unrealizedPNL
             account.secFees += report.secFees
+            account.accruedSecFees += report.accruedSecFees
             account.commission += report.commission
             account.ecnFees += report.ecnFees
             account.netPNL += report.netPNL
@@ -496,11 +736,15 @@ def getMonthlyReport(daily_report):
         monthly_report = MonthlyReport.objects.get(Q(account = daily_report.account) & Q(reportDate__year = year) & Q(reportDate__month = month))
         monthly_report.buys += daily_report.buys
         monthly_report.sells += daily_report.sells
-        monthly_report.grossPNL += daily_report.grossPNL
+        monthly_report.realizedPNL += daily_report.realizedPNL
         monthly_report.unrealizedPNL += daily_report.unrealizedPNL
         monthly_report.secFees += daily_report.secFees
+        monthly_report.accruedSecFees += daily_report.accruedSecFees
         monthly_report.clearanceFees += daily_report.clearanceFees
         monthly_report.brokerCommission += daily_report.brokerCommission
+        monthly_report.futureCommission += daily_report.futureCommission
+        monthly_report.exchangeFees += daily_report.exchangeFees
+        monthly_report.nfaFees += daily_report.nfaFees
         monthly_report.commission += daily_report.commission
         monthly_report.ecnFees += daily_report.ecnFees
         monthly_report.netPNL += daily_report.netPNL
@@ -512,11 +756,15 @@ def getMonthlyReport(daily_report):
         for dr in dreports:
             monthly_report.buys += dr.buys
             monthly_report.sells += dr.sells
-            monthly_report.grossPNL += dr.grossPNL
+            monthly_report.realizedPNL += dr.realizedPNL
             monthly_report.unrealizedPNL += dr.unrealizedPNL
             monthly_report.secFees += dr.secFees
+            monthly_report.accruedSecFees += dr.accruedSecFees
             monthly_report.clearanceFees += dr.clearanceFees
             monthly_report.brokerCommission += dr.brokerCommission
+            monthly_report.futureCommission += dr.futureCommission
+            monthly_report.exchangeFees += dr.exchangeFees
+            monthly_report.nfaFees += dr.nfaFees
             monthly_report.commission += dr.commission
             monthly_report.ecnFees += dr.ecnFees
             monthly_report.netPNL += dr.netPNL
@@ -528,41 +776,199 @@ def getReportByDate(today, account):
     
     refreshReports(today, account) # create new reports for those symbols have reports last trade date
     
-    trades = Trade.objects.filter( Q(tradeDate = today) & Q(account=account) ) 
+    rollTrades = getRollTrades(today, account)
     
-    for trade in trades:
-        new_report = newReport(trade.account, trade.symbol, today) # get report
+    print "finish rolling " + str(len(rollTrades))
+    
+    for rtrade in rollTrades:
+        new_report = newReport(rtrade.account, rtrade.symbol, today)
+        #print new_report.account + ", " + new_report.symbol
+        
+        if today <= date(2012, 11, 20): # for rollTrades, did this in getRollTrades() method
+            #exercised option
+            if rtrade.description == "ASSIGNED OPTION" or rtrade.description == "EXERCISED OPTION":
+                rtrade.price = new_report.mark
+                rtrade.save()
+            # transferred from exercised option pnl, calculate the base money, clear the quantity
+            elif "PNL" in rtrade.description:
+                symb = rtrade.description.split(":")[1]
+                new_report = newReport(rtrade.account, symb, today)
+                price = new_report.mark
+                quantity = rtrade.quantity
+                rtrade.baseMoney = price * quantity
+                rtrade.quantity = 0
+                rtrade.save()
                 
-        # update report
-        if trade.side == "BUY":
+        # if the trade is dividend
+        if "DIVIDEND" in rtrade.description:
+            # cash dividend
+            if "CASH" in rtrade.description:
+                new_report.todayCash -= rtrade.baseMoney
+                if "DIVP" not in rtrade.description:
+                    new_report.cashClearFlag = True
+            # stock dividend
+            elif "STOCK" in rtrade.description:
+                new_report.todayShare += rtrade.quantity
+                if "DSTP" not in rtrade.description:
+                    new_report.shareClearFlag = True
+            new_report.save()
+            continue
+            
+        # if the trade is an option transferred pnl
+        if rtrade.price == 0.00 and rtrade.quantity == 0:
+            # if no buy or sell on that day, then we cannot add the pnl into average
+            # calculate it separately
+            if 'BUY' in rtrade.side:
+                #print "in buy: " + rtrade.account + " " + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                total = new_report.buys * new_report.buyAve
+                total += rtrade.baseMoney # add the base money into the total
+                if new_report.buys != 0 and new_report.sells != 0:
+                    new_report.buyAve = total / new_report.buys
+                new_report.baseMoney -= rtrade.baseMoney
+                #print str(new_report.baseMoney)
+            else:
+                #print "in sell: " + rtrade.account + " "  + new_report.symbol + ", " + str(new_report.baseMoney) + ", " + str(rtrade.baseMoney)
+                total = new_report.sells * new_report.sellAve
+                total += rtrade.baseMoney
+                if new_report.buys != 0 and new_report.sells != 0:
+                    new_report.sellAve = total / new_report.sells
+                new_report.baseMoney += rtrade.baseMoney
+                #print str(new_report.baseMoney)
+            new_report.save()
+            continue
+        
+        # normal trades 
+        # buy and sell
+        if 'BUY' in rtrade.side:
             total = new_report.buys * new_report.buyAve
-            total += trade.quantity * trade.price # new total
-            new_report.buys += trade.quantity # new buys
+            total += rtrade.quantity * rtrade.price # new total
+            new_report.buys += rtrade.quantity # new buys
             new_report.buyAve = total / new_report.buys # new buy ave
-            
-        elif trade.side == "SEL" or trade.side == "SS":
+                
+        elif 'SEL' in rtrade.side or rtrade.side == "SS":
             total = new_report.sells * new_report.sellAve
-            total += trade.quantity * trade.price # new total
-            new_report.sells += trade.quantity # new sells
+            total += rtrade.quantity * rtrade.price # new total
+            new_report.sells += rtrade.quantity # new sells
             new_report.sellAve = total / new_report.sells # new sell ave
-            
+                
         else:
             print "Error: Invalid Side."
             continue
+            
+            
+        #Fees
+        firm = Firm.objects.all()[0]
+        if today < date(2013, 5, 28):
+            secRate = firm.secFee  
+        else:
+            secRate = 0.00001740
         
-        new_report.save() # save result
+        #no ecn fees for transfer
+        if rtrade.liqFlag == "" and rtrade.route == "" and rtrade.destination == "":
+            #brockerCommission = 0.0
+            ecnFees = 0.0
+        else:
+            # already calculated
+            ecnFees = rtrade.ecnFees
+           
+        ## sec fees
+        if "BUY" not in rtrade.side and rtrade.securityType != "FUTURE" and rtrade.securityType != "FUTOPTION" \
+            and rtrade.description != "ASSIGNED OPTION" and rtrade.description != "EXERCISED OPTION":
+            #print rtrade.account + ", " + rtrade.symbol + ", " + str(rtrade.price) + ", " + str(rtrade.quantity)            
+            if len(rtrade.symbol.split(' ')) > 1 and "00" in rtrade.symbol: # option
+                secFees = rtrade.price * rtrade.quantity * 100 * secRate
+            else:
+                secFees = rtrade.price * rtrade.quantity * secRate
+            rsecFees = round(secFees, 2)
+                    
+            #print "sec: " + str(secFees) + ", rsec: " + str(rsecFees)
+            if secFees > rsecFees:
+                secFees = rsecFees + 0.01
+            else:
+                secFees = rsecFees
+            #print "after sec: " + str(secFees)
+        else:
+            secFees = 0
         
-    getFees(today, account) # calculate fees
-    getPNLs(today, account) # calculate PNLS
-    getDailyReport(today, account) # get daily summary report
+        ## broker commission
+        try:
+            broker = Broker.objects.get(Q(brokerNumber=rtrade.broker) & Q(securityType=rtrade.securityType))
+            brokerCommission = rtrade.quantity * broker.commissionRate
+        except Broker.DoesNotExist:
+            brokerCommission = 0.0
+            
+            
+        if rtrade.securityType != "FUTURE" and rtrade.securityType != "FUTOPTION":
+            ## clearance fee
+            clearance = rtrade.quantity * 0.0001 # TODO: make this argument as a member of firm
+            clearance = round(clearance, 2)            
+            if clearance > 3.00:
+                clearance = 3.00
+            elif clearance < 0.01:
+                clearance = 0.01
+
+            futureCommission = 0.0
+            exchangeFees = 0.0
+            nfaFees = 0.0
+        else: ## future fees
+            # future commission
+            futureCommission = 0.05 * rtrade.quantity
+            # future clearing fee, exchange fee
+            try:
+                futureSymbol = rtrade.symbol[0:len(rtrade.symbol) - 2]
+                try:
+                    if "UNM" in rtrade.account:
+                        report_account = rtrade.account[:8]
+                    else:
+                        report_account = rtrade.account[:5]
+                    groupObj = FutureFeeGroup.objects.get(Q(symbol=futureSymbol) & Q(account=report_account))
+                    group = groupObj.group
+                except FutureFeeGroup.DoesNotExist:
+                        # default
+                        if "UNM" in rtrade.account:
+                            group = "UNMFeeRate"
+                        else:
+                            group = "LowerFeeRate"
+                
+                future = FutureFeeRate.objects.get(Q(symbol = futureSymbol) & Q(group = group))
+                clearance = future.clearingFeeRate * rtrade.quantity
+                exchangeFees = future.exchangeFeeRate * rtrade.quantity
+                nfaFees = future.nfaFeeRate * rtrade.quantity
+            except:
+                clearance = 0.0
+                exchangeFees = 0.0
+                nfaFees = 0.0
+                
+        ## update report
+        new_report.clearanceFees += clearance
+        new_report.brokerCommission += brokerCommission
+        new_report.futureCommission += futureCommission
+        new_report.exchangeFees += exchangeFees
+        new_report.nfaFees += nfaFees
+        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
+        # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
+        if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+            new_report.accruedSecFees += secFees
+        else:
+            new_report.secFees += secFees
+        new_report.ecnFees += ecnFees
+        new_report.save()            
+    
+    # delete the rolltrades
+#     if today > date(2012, 11, 20):
+#         rollTrades.delete()
+    
+    #getPNLs(today)
+    getDailyReport(today, account)
+    
     # now delete marks lt today, we do not need them anymore
     Symbol.objects.filter( symbolDate__lt=today ).delete() 
     
+    # we may want to delete the security primary exchange info after calculation
+    #Security.objects.filter( secDate__lt = today ).delete()
+        
     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
     log.write("\tReports calculating done.\n")
     log.close()
-    
-            
-            
             
             

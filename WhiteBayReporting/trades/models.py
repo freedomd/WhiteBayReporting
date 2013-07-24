@@ -26,7 +26,7 @@ class Trade(models.Model):
         super(Trade, self).save(*args, **kwargs)
     
     def __unicode__(self):
-        return str(self.id)
+        return str(self.account + " " + self.symbol + " " + str(self.tradeDate))
     
 
 
