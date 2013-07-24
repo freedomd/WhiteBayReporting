@@ -193,7 +193,7 @@ def getSummaryReport(request, account, symbol, datefrom, dateto, user_email):
         with open(filepath, 'wb') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(['Symbol', 'SOD', 'Buys', 'BuyAve', 'Sells', 'SellAve', 'EOD',
-                             'GrossPNL', 'UnrealizedPNL', 'Commission', 'SEC Fees', 'ECN Fees', 'Net PNL'])
+                             'RealizedPNL', 'UnrealizedPNL', 'Commission', 'SEC Fees', 'ECN Fees', 'Net PNL'])
             
             summary_list = getSummary(report_list.order_by("reportDate"))
             
@@ -202,7 +202,7 @@ def getSummaryReport(request, account, symbol, datefrom, dateto, user_email):
                 writer.writerow([report.symbol, report.SOD,
                                  report.buys, round(report.buyAve, 2), 
                                  report.sells, round(report.sellAve, 2), report.EOD,
-                                 round(report.grossPNL, 2), round(report.unrealizedPNL, 2), 
+                                 round(report.realizedPNL, 2), round(report.unrealizedPNL, 2), 
                                  round(report.commission, 2), round(report.secFees, 2), round(report.ecnFees, 2), 
                                  round(report.netPNL, 2)])
         
@@ -244,7 +244,7 @@ def getAccountList(request, group, tab, strorder):
     
     total = Account()
     for account in account_list:
-        total.grossPNL += account.grossPNL
+        total.realizedPNL += account.realizedPNL
         total.unrealizedPNL += account.unrealizedPNL
         total.netPNL += account.netPNL
     
@@ -255,7 +255,7 @@ def getAccountList(request, group, tab, strorder):
         
     account_list_serialized = serializers.serialize('json', account_list)
     data = { 'account_list': simplejson.loads(account_list_serialized),
-             'total_grossPNL': total.grossPNL,
+             'total_realizedPNL': total.realizedPNL,
              'total_unrealizedPNL': total.unrealizedPNL,
              'total_commission': total.commission,
              'total_secFees': total.secFees,

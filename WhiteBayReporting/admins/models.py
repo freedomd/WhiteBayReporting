@@ -106,7 +106,7 @@ class Group(models.Model):
 class Account(models.Model):
     
     account = models.CharField( max_length=30 )
-    grossPNL = models.FloatField( default=0.00 )
+    realizedPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     

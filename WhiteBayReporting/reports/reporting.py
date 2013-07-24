@@ -837,13 +837,13 @@ def getDailyReport(report_date):
         else:
             common = buys
         
-        # gross PNL  
-        grossPNL = common * (sellAve - buyAve)
+        # realized PNL  
+        realizedPNL = common * (sellAve - buyAve)
         if len(symbol.split(' ')) > 1 and "00" in symbol and report.futureCommission == 0.0:
-            grossPNL = grossPNL * 100 #option
+            realizedPNL = realizedPNL * 100 #option
         elif report.futureCommission != 0.0:
-            grossPNL = grossPNL * multiplier # future
-        report.grossPNL = grossPNL 
+            realizedPNL = realizedPNL * multiplier # future
+        report.realizedPNL = realizedPNL 
         
         # left shares
         buys -= common
@@ -889,7 +889,7 @@ def getDailyReport(report_date):
         # unrealizedPNL
         report.unrealizedPNL = unrealizedPNL
         # net PNL
-        report.netPNL +=  report.grossPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
+        report.netPNL += report.realizedPNL + report.unrealizedPNL# - report.secFees - report.accruedSecFees - report.ecnFees - report.commission
         
         # LMV and SMV
         if EOD >=0:
@@ -920,7 +920,7 @@ def getDailyReport(report_date):
         daily_report.SOD += report.SOD
         daily_report.buys += report.buys
         daily_report.sells += report.sells
-        daily_report.grossPNL += report.grossPNL
+        daily_report.realizedPNL += report.realizedPNL
         daily_report.unrealizedPNL += report.unrealizedPNL
         daily_report.secFees += report.secFees
         daily_report.accruedSecFees += report.accruedSecFees
@@ -946,7 +946,7 @@ def getDailyReport(report_date):
 def getAccountSummary(daily_report):
     try:
         account = Account.objects.get(account=daily_report.account)
-        account.grossPNL += daily_report.grossPNL
+        account.realizedPNL += daily_report.realizedPNL
         account.unrealizedPNL += daily_report.unrealizedPNL
         account.secFees += daily_report.secFees
         account.accruedSecFees += daily_report.accruedSecFees
@@ -958,7 +958,7 @@ def getAccountSummary(daily_report):
         report_list = DailyReport.objects.filter(account = daily_report.account)
         account = Account.objects.create(account=daily_report.account)
         for report in report_list:
-            account.grossPNL += report.grossPNL
+            account.realizedPNL += report.realizedPNL
             account.unrealizedPNL += report.unrealizedPNL
             account.secFees += report.secFees
             account.accruedSecFees += report.accruedSecFees
@@ -978,7 +978,7 @@ def getMonthlyReport(daily_report):
         monthly_report = MonthlyReport.objects.get(Q(account = daily_report.account) & Q(reportDate__year = year) & Q(reportDate__month = month))
         monthly_report.buys += daily_report.buys
         monthly_report.sells += daily_report.sells
-        monthly_report.grossPNL += daily_report.grossPNL
+        monthly_report.realizedPNL += daily_report.realizedPNL
         monthly_report.unrealizedPNL += daily_report.unrealizedPNL
         monthly_report.secFees += daily_report.secFees
         monthly_report.accruedSecFees += daily_report.accruedSecFees
@@ -998,7 +998,7 @@ def getMonthlyReport(daily_report):
         for dr in dreports:
             monthly_report.buys += dr.buys
             monthly_report.sells += dr.sells
-            monthly_report.grossPNL += dr.grossPNL
+            monthly_report.realizedPNL += dr.realizedPNL
             monthly_report.unrealizedPNL += dr.unrealizedPNL
             monthly_report.secFees += dr.secFees
             monthly_report.accruedSecFees += dr.accruedSecFees
@@ -1240,7 +1240,11 @@ def getOptionsAsTradesByDir(path):
                 try:
                     fields = len(row)
                     
-                    date_str = row[6].split('/')
+                    # different date format
+                    if len(row[6].split(' ')) > 1:
+                        date_str = row[6].split(' ')[0].split('/')
+                    else:
+                        date_str = row[6].split('/')
                     if len(date_str[2]) == 2:
                         year = "20" + date_str[2]
                     else:

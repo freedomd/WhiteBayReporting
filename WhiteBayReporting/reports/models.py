@@ -41,7 +41,7 @@ class Report(models.Model):
     buyAve = models.FloatField( default=0.00 )
     sells = models.IntegerField( default=0 )
     sellAve = models.FloatField( default=0.00 )
-    grossPNL = models.FloatField( default=0.00 )
+    realizedPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     LMV = models.FloatField( default=0.00 )
@@ -87,7 +87,7 @@ class DailyReport(models.Model):
     SOD = models.IntegerField( default=0 )
     buys = models.IntegerField( default=0 )
     sells = models.IntegerField( default=0 )
-    grossPNL = models.FloatField( default=0.00 )
+    realizedPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     LMV = models.FloatField( default=0.00 )
@@ -119,7 +119,7 @@ class MonthlyReport(models.Model):
     account = models.CharField( max_length=20 )
     buys = models.IntegerField( default=0 )
     sells = models.IntegerField( default=0 )
-    grossPNL = models.FloatField( default=0.00 )
+    realizedPNL = models.FloatField( default=0.00 )
     unrealizedPNL = models.FloatField( default=0.00 )
     netPNL = models.FloatField( default=0.00 )
     
@@ -174,7 +174,7 @@ class cacheReportApi:
         self.server.hset(key, "buyAve", report.buyAve)
         self.server.hset(key, "sells", report.sells)
         self.server.hset(key, "sellAve", report.sellAve)
-        self.server.hset(key, "grossPNL", report.grossPNL)
+        self.server.hset(key, "realizedPNL", report.realizedPNL)
         self.server.hset(key, "unrealizedPNL", report.unrealizedPNL)
         self.server.hset(key, "fees", report.fees)
         self.server.hset(key, "netPNL", report.netPNL)
@@ -215,7 +215,7 @@ class getCacheReportApi:
 #            r.buyAve = report['buyAve']
 #            r.sells = report['sells']
 #            r.sellAve = report['sellAve']
-#            r.grossPNL = report['grossPNL']
+#            r.realizedPNL = report['realizedPNL']
 #            r.unrealizedPNL = report['unrealizedPNL']
 #            r.fees = report['fees']
 #            r.netPNL = report['netPNL']

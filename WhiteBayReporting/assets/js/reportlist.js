@@ -100,7 +100,7 @@ function createReportList(data) {
 		html += "<th><button class='btn btn-link tab' id='buyAve' value=0 onclick=changeOrder(this.id)>Buy Ave</button></th>";
 		html += "<th><button class='btn btn-link tab' id='sells' value=0 onclick=changeOrder(this.id)>Sells</button></th>";
 		html += "<th><button class='btn btn-link tab' id='sellAve' value=0 onclick=changeOrder(this.id)>Sell Ave</button></th>";
-		html += "<th><button class='btn btn-link tab' id='grossPNL' value=0 onclick=changeOrder(this.id)>Gross PNL</button></th>";
+		html += "<th><button class='btn btn-link tab' id='realizedPNL' value=0 onclick=changeOrder(this.id)>Realized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='unrealizedPNL' value=0 onclick=changeOrder(this.id)>Unrealized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='brokerCommission' value=0 onclick=changeOrder(this.id)>BrokerComm</button></th>";
 		html += "<th><button class='btn btn-link tab' id='futureCommission' value=0 onclick=changeOrder(this.id)>FutureComm</button></th>";
@@ -134,10 +134,10 @@ function createReportList(data) {
 			html += "<td>" + addCommas(report.sells) + "</td>";
 			html += "<td>" + addCommas(report.sellAve.toFixed(2)) + "</td>";
 			
-			if(report.grossPNL >=0) {
-				html += "<td><span class='positive_data'>" + addCommas(report.grossPNL.toFixed(2)) + "</span></td>";
+			if(report.realizedPNL >=0) {
+				html += "<td><span class='positive_data'>" + addCommas(report.realizedPNL.toFixed(2)) + "</span></td>";
 			} else {
-				html += "<td><span class='negative_data'>" + addCommas(report.grossPNL.toFixed(2)) + "</span></td>";
+				html += "<td><span class='negative_data'>" + addCommas(report.realizedPNL.toFixed(2)) + "</span></td>";
 			}
 			
 			if(report.unrealizedPNL >=0) {
@@ -240,7 +240,7 @@ function createAccountList(data) {
 		html += "<table class='table table-striped table-bordered data_table'>";
 		html += "<tr id='title'>";
 		html += "<th><button class='btn btn-link tab' id='account' value=0 onclick=changeAccountOrder(this.id)>Account</button></th>";
-		html += "<th><button class='btn btn-link tab' id='grossPNL' value=0 onclick=changeAccountOrder(this.id)>Gross PNL</button></th>";
+		html += "<th><button class='btn btn-link tab' id='realizedPNL' value=0 onclick=changeAccountOrder(this.id)>Realized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='unrealizedPNL' value=0 onclick=changeAccountOrder(this.id)>Unrealized PNL</button></th>";
 		html += "<th><button class='btn btn-link tab' id='commission' value=0 onclick=changeAccountOrder(this.id)>Commission</button></th>";
 		html += "<th><button class='btn btn-link tab' id='secFees' value=0 onclick=changeAccountOrder(this.id)>SEC Fees</button></th>";
@@ -254,10 +254,10 @@ function createAccountList(data) {
 			html += "<tr>";
 			html += "<td><a href='/report/" + account.account + "/' >" + account.account + "</a></td>";
 			
-			if(account.grossPNL >=0) {
-				html += "<td><span class='positive_data'>" + addCommas(account.grossPNL.toFixed(2)) + "</span></td>";
+			if(account.realizedPNL >=0) {
+				html += "<td><span class='positive_data'>" + addCommas(account.realizedPNL.toFixed(2)) + "</span></td>";
 			} else {
-				html += "<td><span class='negative_data'>" + addCommas(account.grossPNL.toFixed(2)) + "</span></td>";
+				html += "<td><span class='negative_data'>" + addCommas(account.realizedPNL.toFixed(2)) + "</span></td>";
 			}
 			
 			if(account.unrealizedPNL >=0) {
@@ -285,10 +285,10 @@ function createAccountList(data) {
 		html += "<tr>";
 		html += "<td><strong>Total</strong></td>";
 			
-		if(data.total_grossPNL >=0) {
-			html += "<td><span class='positive_data'>" + addCommas(data.total_grossPNL.toFixed(2)) + "</span></td>";
+		if(data.total_realizedPNL >=0) {
+			html += "<td><span class='positive_data'>" + addCommas(data.total_realizedPNL.toFixed(2)) + "</span></td>";
 		} else {
-			html += "<td><span class='negative_data'>" + addCommas(data.total_grossPNL.toFixed(2)) + "</span></td>";
+			html += "<td><span class='negative_data'>" + addCommas(data.total_realizedPNL.toFixed(2)) + "</span></td>";
 		}
 			
 		if(data.total_unrealizedPNL >=0) {
