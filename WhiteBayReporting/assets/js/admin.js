@@ -99,7 +99,7 @@ function validate_add_broker(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function validate_mod_broker(thisform) {
@@ -126,13 +126,78 @@ function validate_mod_broker(thisform) {
 			return false;
 		} 
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_broker() {
 	var result = confirm("Delete This Broker?")
   	return result;
 }
+
+
+/*****************************************************************************************
+/* Trade
+*/
+
+function validate_add_trade(thisform) {
+	$(".message").html("");
+	with (thisform) {
+		if (validate_required(add_account) == false) {
+			html = "<span class='help-inline message'>You must enter an account.</span>";
+			$("#add_account").after(html);
+			add_account.focus();
+			return false;
+		} 
+		
+		if (validate_required(add_symbol) == false) {
+			html = "<span class='help-inline message'>You must enter a symbol.</span>";
+			$("#add_symbol").after(html);
+			add_symbol.focus();
+			return false;
+		}
+		
+		if (validate_number(add_quantity) == false || validate_required(add_quantity) == false) {
+			html = "<span class='help-inline message'>You must enter a valid quantity.</span>";
+			$("#add_quantity").after(html);
+			add_quantity.focus();
+			return false;
+		} 
+		
+		if (validate_number(add_price) == false || validate_required(add_price) == false) {
+			html = "<span class='help-inline message'>You must enter a valid price.</span>";
+			$("#add_price").after(html);
+			add_price.focus();
+			return false;
+		}
+		
+		if (validate_required(add_tradeDate) == false) {
+			html = "<span class='help-inline message'>You must enter a tradeDate.</span>";
+			$("#add_tradeDate").after(html);
+			add_tradeDate.focus();
+			return false;
+		}
+		
+//		var result_str = "account: " + add_account + "\n" +
+//				"symbol: " + add_symbol + "\n" +
+//				"side: " + add_side + "\n"  + 
+//				"quantity: " + add_quantity + "\n" +
+//				"price: " + add_price + "\n" + 
+//				"route: " + add_route + "\n" + 
+//				"destination: " + add_destination + "\n" + 
+//				"liqFlag: " + add_liqFlag + "\n" + 
+//				"tradeDate: " + add_tradeDate + "\n" + 
+//				"executionId: " + add_executionId;
+	}
+	
+	return true;
+	//return confirm_add(result_str);
+}
+
+//function confirm_add(str) {
+//	var result = confirm(str)
+//	
+//	return result;
+//}
 
 /*****************************************************************************************
 /* Trader
@@ -259,7 +324,7 @@ function validate_mod_trader(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_trader() {
@@ -296,7 +361,7 @@ function validate_system(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function getSystem() {
@@ -313,7 +378,7 @@ function getSystem() {
 		html += "<input name='systems' style='display:none' value='"+pk+"'>";
   		html += "<button type='button' class='close' data-dismiss='alert' onclick='removeSystem("+pk+")'>&times;</button>";
   		html += $("#type"+pk).html();
-		html += "</div>"
+		html += "</div>";
 	}
 	$(".system_list").append(html);	
 }
@@ -417,7 +482,7 @@ function validate_add_employer(thisform) {
 			return false;
 		} 
 	}
-	return true
+	return true;
 }
 
 function validate_mod_employer(thisform) {
@@ -430,7 +495,7 @@ function validate_mod_employer(thisform) {
 			return false;
 		} 
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_employer() {
@@ -559,7 +624,7 @@ function validate_add_future(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function validate_mod_future(thisform) {
@@ -590,7 +655,7 @@ function validate_mod_future(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_future() {
@@ -695,7 +760,7 @@ function validate_add_futureMultiplier(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function validate_mod_futureMultiplier(thisform) {
@@ -714,7 +779,7 @@ function validate_mod_futureMultiplier(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_futureMultiplier() {
@@ -749,7 +814,7 @@ function validate_feeGroup(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function selectFeeGroup() {
@@ -887,7 +952,7 @@ function validate_add_account(thisform) {
 			return ret;
 		}
 	}
-	return true
+	return true;
 }
 
 function validate_mod_account(thisform) {
@@ -912,7 +977,7 @@ function validate_mod_account(thisform) {
 			return ret;
 		} */
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_account() {
@@ -967,7 +1032,7 @@ function validate_add_group(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function validate_mod_group(thisform) {
@@ -980,7 +1045,7 @@ function validate_mod_group(thisform) {
 			return false;
 		}
 	}
-	return true
+	return true;
 }
 
 function confirm_delete_group() {

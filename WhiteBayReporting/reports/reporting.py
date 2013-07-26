@@ -1323,20 +1323,20 @@ def getOptionsAsTradesByDir(path):
                     else:
                         trade.securityType = "OPT"
                     
-                    side = row[fields-21]
-                    if side.strip() == "S":
+                    side = row[fields-19]
+                    if side.strip() == "SELL":
                         trade.side = "SEL"
                     else:
                         trade.side = "BUY"
                     
-                    trade.quantity = int(row[fields-16].split('.')[0])
+                    trade.quantity = int(row[fields-14].split('.')[0])
                     trade.tradeDate = today
                     
                     if sec == "SSU": #stock
-                        trade.price = float(row[fields-15])
+                        trade.price = float(row[fields-13])
                         trade.description = "EXERCISE"
                     else: #option
-                        action = row[fields-22]
+                        action = row[fields-23]
                         trade.price = 0.00
                         if action == "Expired":
                             trade.description = "EXPIRED OPTION"
@@ -1569,11 +1569,14 @@ def getProFuturesByDir(path):
                         price = higher + lower
                     if "." in price:
                         intPrice = price.split('.')[0]
-                        if int(intPrice) == float(price) and len(intPrice) > 4:
-                            if "HE" in trade.symbol or "LE" in trade.symbol:
-                                price = float(price) / 1000
-                            else:
-                                price = float(price) / 100
+                        if int(intPrice) == float(price):
+                            if len(intPrice) > 4:
+                                if "HE" in trade.symbol or "LE" in trade.symbol:
+                                    price = float(price) / 1000
+                                else:
+                                    price = float(price) / 100
+                            elif "QG" in trade.symbol:
+                                price = float(price) / 1000                             
                         else:
                             price = float(price)
                     else:

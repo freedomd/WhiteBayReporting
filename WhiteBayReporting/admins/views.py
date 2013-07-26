@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import date
 from admins.models import Broker, Trader, System, Firm, Employer, FutureMultiplier, FutureFeeRate, FutureFeeGroup, Route, Account, Group
+from trades.models import Trade
 from settings import ERROR_LOG
 from django.views.decorators.csrf import csrf_exempt
 
@@ -86,6 +87,10 @@ def routeView(request):
     return render(request,"route_view.html", locals())
 
 @login_required
+def tradeView(request):
+    return render(request,"trade_view.html", locals())
+
+@login_required
 def logView(request):  
     log = open(ERROR_LOG, "r")
     lines = []
@@ -156,6 +161,55 @@ def modBroker(request):
 
     return HttpResponseRedirect("/firmProfile/")
 
+@login_required
+def addTrade(request):
+    if request.POST:
+        account = request.POST.get('add_account')
+        symbol = request.POST.get('add_symbol')
+        securityType = request.POST.getlist('add_type')[0]
+        side = request.POST.getlist('add_side')[0]
+        quantity = request.POST.get('add_quantity')
+        price = request.POST.get('add_price')
+        route = request.POST.get('add_route')
+        destination = request.POST.get('add_destination')
+        liqFlag = request.POST.get('add_liqFlag')
+        tradeDate = request.POST.get('add_tradeDate')
+        executionId = request.POST.get('add_exeId')
+        
+        if executionId == "" or executionId == None:
+            executionId = "0"
+            
+        # broker
+        if route == "INSTINET" and destination != "":
+            broker = "INCA"
+        elif route == "WBPT":
+            if destination == "BARCAP":
+                broker = "BARC"
+            elif destination == "FBCO":
+                broker = "FBCO"
+            elif destination == "UBS":
+                broker = "UBSS"
+            elif destination == "NASDAQ":
+                broker = "NSDQ"
+        elif route == "ITGI" and securityType == "SEC":
+            broker = "ITGI"
+        elif route == "BAML" and destination == "NSDQ":
+            broker = "NSDQ"
+        else:
+            broker = ""
+        
+        description = "MANUALLY IMPORT"
+        
+        try:
+            Trade.objects.create(account=account, symbol=symbol, securityType=securityType, side=side, 
+                                 quantity=quantity, price=price, route=route, destination=destination, 
+                                 liqFlag=liqFlag, broker=broker, executionId = executionId,
+                                 tradeDate=tradeDate, description=description)
+        except Exception, e:
+            print str(e.message)
+            
+    return HttpResponseRedirect("/tradeManagement/")
+        
 
 @login_required
 def addTrader(request):

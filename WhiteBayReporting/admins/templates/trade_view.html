@@ -1,0 +1,137 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+  			$("#stacks").find('li').removeClass("active");
+			$("#trade_stack").addClass("active");
+	});
+	$("#add_tradeDate").datepick({dateFormat: 'yyyy-mm-dd'});
+	
+</script>
+
+
+
+<div class="container">
+<div class="container-fluid">
+<div class="row-fluid">
+<div class="span2">
+<!--Sidebar content-->
+	<h4>Supplement Trades</h4>
+</div>
+
+
+<div class="span10">
+<!--Body content-->
+
+<div id="add_trade" style="margin-top:10px">
+	<form method='post' class='form-horizontal' action='/addTrade/' onsubmit='return validate_add_trade(this)'>
+		{% csrf_token %}
+		<div class="control-group">
+    		<label class="control-label" for="add_account">Account</label>
+    		<div class="controls">
+				<input name='add_account' id='add_account' type='text' class='span4' placeholder='Account Number'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_symbol">Symbol</label>
+    		<div class="controls">
+				<input name='add_symbol' id='add_symbol' type='text' class='span4' placeholder='Symbol'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_type">Security Type</label>
+    		<div class="controls">
+				<select  id="add_type" name = "add_type" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px">
+			  		<option value="SEC">--- EQUITY ---</option>
+			  		<option value="OPT">--- OPTION ---</option>
+			  		<option value="FUTURE">--- FUTURE ---</option>
+			  		<option value="FUTOPTION">--- FUTURE OPTION ---</option>
+			  		<option value="BOND">--- BOND ---</option>
+			    </select>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_side">Side</label>
+    		<div class="controls">
+				<select  id="add_side" name = "add_side" size = "1" style = "padding-bottom:20px;margin-top:10px;width:180px">
+			  		<option value="BUY">--- BUY ---</option>
+			  		<option value="SELL">--- SELL ---</option>
+			  		<option value="SS">--- SELL SHORT ---</option>
+			    </select>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_quantity">Quantity</label>
+    		<div class="controls">
+				<input name='add_quantity' id='add_quantity' type='text' class='span4' placeholder='Quantity'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_price">Price</label>
+    		<div class="controls">
+				<input name='add_price' id='add_price' type='text' class='span4' placeholder='Price'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_route">Route</label>
+    		<div class="controls">
+				<input name='add_route' id='add_route' type='text' class='span4' placeholder='Route'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_destination">Destination</label>
+    		<div class="controls">
+				<input name='add_destination' id='add_destination' type='text' class='span4' placeholder='Destination'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_liqFlag">Liq Flag</label>
+    		<div class="controls">
+				<input name='add_liqFlag' id='add_liqFlag' type='text' class='span4' placeholder='Liq Flag'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_tradeDate">TradeDate</label>
+    		<div class="controls">
+				<input name='add_tradeDate' id='add_tradeDate' type='text' class='span4' placeholder='TradeDate'>
+			</div>
+		</div>
+		
+		
+		<div class="control-group">
+    		<label class="control-label" for="add_exeId">Execution ID</label>
+    		<div class="controls">
+				<input name='add_exeId' id='add_exeId' type='text' class='span4' placeholder='Execution ID'>
+			</div>
+		</div>
+		
+		<div class="control-group">
+    		<div class="controls">
+				<input type='submit' class='btn btn-success' value='Add'>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script>
+	$( "#add_tradeDate" ).datepicker({ dateFormat: "yy-mm-dd" });
+</script>
+
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}
