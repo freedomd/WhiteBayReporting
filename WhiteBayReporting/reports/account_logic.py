@@ -158,6 +158,7 @@ def refreshReports(today, account):
             new_report.clearanceFees = 0.0
             new_report.secFees = 0.0
             new_report.baseMoney = 0.0
+            new_report.netPNL = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
             new_report.reportDate = today
@@ -333,9 +334,41 @@ def getRollTrades(today, account):
                                          route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
                                          tradeDate=trade.tradeDate, description = trade.description)
                 continue
+            
+            # future
+            if trade.securityType == "FUTURE" and "UNM" in trade.account:
+                try: 
+                    futureSymbol = trade.symbol[0:len(trade.symbol)-2]
+                    multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
+                except FutureMultiplier.DoesNotExist:
+                    try:
+                        symbol_mark = Symbol.objects.get(Q(symbol=trade.symbol) & Q(symbolDate=trade.tradeDate)) 
+                        multiplier = symbol_mark.multiplier
+                    except Symbol.DoesNotExist:                    
+                        multiplier = 1
+                rPrice = trade.price * multiplier
+                realPrice = round(rPrice, 2)
+                price = realPrice / multiplier
+                price = round(price, 6)
+                
+                try:
+                    rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+                                                   Q(side=trade.side) & Q(price=price) &
+                                                   Q(tradeDate=trade.tradeDate))
+                    
+                    rtrade.quantity += trade.quantity
+                    rtrade.save()
+                except RollTrade.DoesNotExist:
+                    RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
+                                         destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)                    
+                continue
                 
             # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
-            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
+            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or \
+            trade.route == "CMZ" or trade.route == "":
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
                                          side=trade.side, price=trade.price, quantity=trade.quantity, 
                                          baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,

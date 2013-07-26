@@ -379,6 +379,7 @@ def refreshReports(today):
             new_report.clearanceFees = 0.0
             new_report.secFees = 0.0
             new_report.baseMoney = 0.0
+            new_report.netPNL = 0.0
             new_report.SOD = new_report.EOD 
             new_report.mark = new_report.closing
             new_report.reportDate = today
@@ -497,9 +498,41 @@ def getRollTrades(today):
                                          route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
                                          tradeDate=trade.tradeDate, description = trade.description)
                 continue
+            # future
+            if trade.securityType == "FUTURE" and "UNM" in trade.account:
+                try: 
+                    futureSymbol = trade.symbol[0:len(trade.symbol)-2]
+                    multiplier = FutureMultiplier.objects.get(Q(symbol=futureSymbol)).multiplier
+                except FutureMultiplier.DoesNotExist:
+                    try:
+                        symbol_mark = Symbol.objects.get(Q(symbol=trade.symbol) & Q(symbolDate=trade.tradeDate)) 
+                        multiplier = symbol_mark.multiplier
+                    except Symbol.DoesNotExist:                    
+                        multiplier = 1
+                rPrice = trade.price * multiplier
+                realPrice = round(rPrice, 2)
+                price = realPrice / multiplier
+                price = round(price, 6)
                 
+                try:
+                    rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+                                                   Q(side=trade.side) & Q(price=price) &
+                                                   Q(tradeDate=trade.tradeDate))
+                    
+                    rtrade.quantity += trade.quantity
+                    rtrade.save()
+                except RollTrade.DoesNotExist:
+                    RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
+                                         destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
+                                         tradeDate=trade.tradeDate, description = trade.description)                    
+                continue
+            
             # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
-            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or trade.route == "":
+            if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or \
+                trade.route == "CMZ" or trade.route == "":
+                               
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
                                          side=trade.side, price=trade.price, quantity=trade.quantity, 
                                          baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
@@ -522,13 +555,28 @@ def getRollTrades(today):
             
             # for Route "WBPT"                
             else:
-                rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
-                                           Q(side=trade.side) & Q(price=trade.price) & 
-                                           Q(route=trade.route) & Q(destination=trade.destination) &    
-                                           Q(tradeDate=trade.tradeDate))
-                rtrade.quantity += trade.quantity 
-                rtrade.ecnFees += trade.ecnFees           
-                rtrade.save()
+                if trade.destination == "FBCO" or trade.destination == "BARCAP" or trade.destination == "UBS":
+                    # for these three destination, aggregate to avg price
+                    rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+                                               Q(side=trade.side) & Q(route=trade.route) & 
+                                               Q(destination=trade.destination) &    
+                                               Q(tradeDate=trade.tradeDate))
+                    
+                    total = (rtrade.quantity * rtrade.price) + (trade.quantity * trade.price)
+                    rtrade.quantity += trade.quantity
+                    rtrade.price = total / rtrade.quantity
+                    rtrade.ecnFees += trade.ecnFees
+                    rtrade.save()
+                else:
+                    rtrade = RollTrade.objects.get(Q(account=trade.account) & Q(symbol=trade.symbol) & 
+                           Q(side=trade.side) & Q(price =trade.price) & Q(route=trade.route) & 
+                           Q(destination=trade.destination) &    
+                           Q(tradeDate=trade.tradeDate))
+                    
+                    rtrade.quantity += trade.quantity
+                    rtrade.ecnFees += trade.ecnFees
+                    rtrade.save()
+                    
         except RollTrade.DoesNotExist:
             RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
                                      side=trade.side, price=trade.price, quantity=trade.quantity, baseMoney = trade.baseMoney,
@@ -1102,11 +1150,20 @@ def getTradesByDir(path):
                             while len(symb) < 6:
                                 symb += " "
                             # expiry date
-                            ex_Date = symbol_str[1].split("/")
-                            ex_year = ex_Date[2]
-                            ex_month = ex_Date[0]
-                            ex_day = ex_Date[1]                        
-                            expiry = ex_year[2:] + ex_month + ex_day
+                            exp_date = symbol_str[1].split("/")
+                            if len(exp_date[0]) == 1:
+                                ex_month = "0" + exp_date[0]
+                            else:
+                                ex_month = exp_date[0]
+                            if len(exp_date[1]) == 1:
+                                ex_day = "0" + exp_date[1]
+                            else:
+                                ex_day = exp_date[1]
+                            ex_year = exp_date[2]
+                            if len(ex_year) == 4:
+                                ex_year = ex_year[2:]
+                                                     
+                            expiry = ex_year + ex_month + ex_day
                             # side
                             side = symbol_str[2]
                             # price
@@ -1266,20 +1323,20 @@ def getOptionsAsTradesByDir(path):
                     else:
                         trade.securityType = "OPT"
                     
-                    side = row[fields-19]
+                    side = row[fields-21]
                     if side.strip() == "S":
                         trade.side = "SEL"
                     else:
                         trade.side = "BUY"
                     
-                    trade.quantity = int(row[fields-14].split('.')[0])
+                    trade.quantity = int(row[fields-16].split('.')[0])
                     trade.tradeDate = today
                     
                     if sec == "SSU": #stock
-                        trade.price = float(row[fields-13])
+                        trade.price = float(row[fields-15])
                         trade.description = "EXERCISE"
                     else: #option
-                        action = row[fields-20]
+                        action = row[fields-22]
                         trade.price = 0.00
                         if action == "Expired":
                             trade.description = "EXPIRED OPTION"
@@ -1426,7 +1483,7 @@ def getDividendByDir(path):
                 if trade.description == "DIVP" or trade.description == "DIV" or \
                     trade.description == "MDIV" or trade.description == "RCP" or \
                     trade.description == "FDV" or trade.description == "FTD" or \
-                    trade.description == "NRPT":
+                    trade.description == "NRPT" or trade.description == "CFEE":
                     trade.description = "CASH DIVIDEND, " + trade.description
                     trade.baseMoney = float(row[14])
                 elif trade.description == "DSTP" or trade.description == "DST":
@@ -1522,7 +1579,7 @@ def getProFuturesByDir(path):
                     else:
                         price = float(price) / 100
                         
-                    trade.price = round(price, 5)
+                    trade.price = price
                     
                     if row[12] != "" and row[12] != None:
                         trade.executionId = row[12] + "-" + row[13]
@@ -1610,7 +1667,7 @@ def getEdfFuturesByDir(path):
                     
                     price = float(row[19])
                     
-                    trade.price = round(price, 5)
+                    trade.price = price
                         
                     trade.executionId = row[7]
                     trade.tradeDate = today    
@@ -1694,7 +1751,7 @@ def get78FuturesByDir(path):
                 price = row[26]
                 price = float(price) / 100
                 
-                trade.price = round(price, 5)
+                trade.price = price
                 
                 trade.executionId = row[13]
                 trade.tradeDate = today    
