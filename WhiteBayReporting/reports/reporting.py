@@ -377,6 +377,10 @@ def refreshReports(today):
             new_report.sellAve = 0.0
             new_report.commission = 0.0
             new_report.clearanceFees = 0.0
+            new_report.brokerCommission = 0.0
+            new_report.futureCommission = 0.0
+            new_report.exchangeFees = 0.0
+            new_report.nfaFees += 0.0
             new_report.secFees = 0.0
             new_report.baseMoney = 0.0
             new_report.netPNL = 0.0
@@ -464,6 +468,17 @@ def getRollTrades(today):
                     (trade.baseMoney != 0.0 and "DIVP" not in trade.description):
                     if "SETTLED" not in trade.description:
                         trade.description = "SETTLED: " + trade.description
+                trade.save()
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
+                                         tradeDate=trade.tradeDate, description = trade.description)
+                continue
+            
+            if "JOURNAL" in trade.description :
+                new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
+                if "SETTLED" not in trade.description:
+                        trade.description = "SETTLED: " + trade.description
+                        
                 trade.save()
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
                                          side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
@@ -632,6 +647,26 @@ def getReportByDate(today):
                     new_report.shareClearFlag = True
             new_report.save()
             continue
+        
+        # if the trade is a cash in
+        if "JOURNAL" in rtrade.description:
+            if "LIEU" in rtrade.description:
+                new_report.todayCash -= rtrade.baseMoney
+                new_report.cashClearFlag = True
+            elif "JE" in rtrade.description:
+                new_report.todayShare += rtrade.quantity
+                new_report.shareClearFlag = True
+            new_report.save()
+            continue
+        
+        # if the trade is future exchange fee
+        if "FUTURE EXCHANGE FEE" in rtrade.description:
+            if 'BUY' in rtrade.side:
+                new_report.exchangeFees += rtrade.baseMoney
+            else:
+                new_report.exchangeFees -= rtrade.baseMoney
+            new_report.save()
+            continue
             
         # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
@@ -764,7 +799,8 @@ def getReportByDate(today):
         new_report.futureCommission += futureCommission
         new_report.exchangeFees += exchangeFees
         new_report.nfaFees += nfaFees
-        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
+        new_report.commission += new_report.clearanceFees + new_report.brokerCommission + \
+                                new_report.futureCommission + new_report.exchangeFees + new_report.nfaFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
@@ -864,7 +900,9 @@ def getDailyReport(report_date):
             multiplier = symbol_mark.multiplier
         
         # discard useless report
-        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
+        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0 and \
+            report.exchangeFees == 0 and report.baseMoney == 0:
+
             report.delete()
             continue
         
@@ -1336,7 +1374,7 @@ def getOptionsAsTradesByDir(path):
                         trade.price = float(row[fields-13])
                         trade.description = "EXERCISE"
                     else: #option
-                        action = row[fields-23]
+                        action = row[fields-22]
                         trade.price = 0.00
                         if action == "Expired":
                             trade.description = "EXPIRED OPTION"
@@ -1458,7 +1496,7 @@ def getDividendByDir(path):
                     continue
                 
                 entryType = row[16].strip()
-                if entryType != "DV":
+                if entryType != "DV" and entryType != "UN":
                     continue
                 
                 # currently, we only handle DV
@@ -1488,6 +1526,12 @@ def getDividendByDir(path):
                     trade.baseMoney = float(row[14])
                 elif trade.description == "DSTP" or trade.description == "DST":
                     trade.description = "STOCK DIVIDEND, " + trade.description
+                    trade.quantity = int(row[12])
+                elif trade.description == "LIEU":
+                    trade.description = "JOURNAL, " + trade.description
+                    trade.baseMoney = float(row[14])
+                elif trade.description == "JE":
+                    trade.description = "JOURNAL, " + trade.description
                     trade.quantity = int(row[12])
                     
                 trade.tradeDate = today    
@@ -1603,6 +1647,63 @@ def getProFuturesByDir(path):
     print "Done"
     return True
 
+def getProFutureExchangeFees(path):
+    print "Getting pro future exchange fees..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG,"a") 
+    
+    for filename in filelist:
+        if filename == ".DS_Store":
+            continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb') 
+        header = True
+            
+        #read the multiplier file
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            if not header:               
+                try:      
+                    if row[1].strip() != "A":
+                        continue
+                    
+                    symbol = row[38].strip()
+    
+                    trade = Trade()
+                    
+                    trade.symbol = symbol
+                    trade.account = row[3].strip() + row[4].strip() + row[5].strip()
+                    trade.securityType = "FUTURE"
+                    
+                    date_str = row[6].strip()
+                    year = int(date_str[:4])
+                    month = int(date_str[4:6])
+                    day = int(date_str[6:])
+                    trade.tradeDate = date(year, month, day)
+                    
+                    side = row[7].strip()
+                    if side == "1":
+                        trade.side = "BUY"
+                    else:
+                        trade.side = "SEL"
+                    
+                    trade.baseMoney = float(row[26])                    
+                    trade.description = "FUTURE EXCHANGE FEE"
+                    
+                    trade.save()
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet multiplier of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()
+    log.close()
+    
+    print "Pro Future Exchange Fees acquired"
+    return
 
 # import the EDF type future files
 def getEdfFuturesByDir(path):
@@ -1687,6 +1788,8 @@ def getEdfFuturesByDir(path):
     log.close()
     print "Done"
     return True
+
+
 
 # ipmort the future files of account 71178
 def get78FuturesByDir(path):

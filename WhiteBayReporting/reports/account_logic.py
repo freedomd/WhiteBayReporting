@@ -156,6 +156,10 @@ def refreshReports(today, account):
             new_report.sellAve = 0.0
             new_report.commission = 0.0
             new_report.clearanceFees = 0.0
+            new_report.brokerCommission = 0.0
+            new_report.futureCommission = 0.0
+            new_report.exchangeFees = 0.0
+            new_report.nfaFees += 0.0
             new_report.secFees = 0.0
             new_report.baseMoney = 0.0
             new_report.netPNL = 0.0
@@ -305,6 +309,17 @@ def getRollTrades(today, account):
                                          side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
                                          tradeDate=trade.tradeDate, description = trade.description)
                 continue
+            
+                if "JOURNAL" in trade.description :
+                    new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
+                    if "SETTLED" not in trade.description:
+                            trade.description = "SETTLED: " + trade.description
+                            
+                    trade.save()
+                    RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                             side=trade.side, quantity=trade.quantity, baseMoney = trade.baseMoney, 
+                                             tradeDate=trade.tradeDate, description = trade.description)
+                    continue
             
             # exercised option
             if trade.description == "ASSIGNED OPTION" or trade.description == "EXERCISED OPTION":
@@ -604,7 +619,9 @@ def getDailyReport(report_date, account):
             multiplier = symbol_mark.multiplier
         
         # discard useless report
-        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0:
+        if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0 and \
+            report.exchangeFees == 0 and report.baseMoney == 0:
+
             report.delete()
             continue
         
@@ -846,7 +863,27 @@ def getReportByDate(today, account):
                     new_report.shareClearFlag = True
             new_report.save()
             continue
-            
+        
+        # if the trade is a cash in
+        if "JOURNAL" in rtrade.description:
+            if "LIEU" in rtrade.description:
+                new_report.todayCash -= rtrade.baseMoney
+                new_report.cashClearFlag = True
+            elif "JE" in rtrade.description:
+                new_report.todayShare += rtrade.quantity
+                new_report.shareClearFlag = True
+            new_report.save()
+            continue
+        
+        # if the trade is future exchange fee
+        if "FUTURE EXCHANGE FEE" in rtrade.description:
+            if 'BUY' in rtrade.side:
+                new_report.exchangeFees += rtrade.baseMoney
+            else:
+                new_report.exchangeFees -= rtrade.baseMoney
+            new_report.save()
+            continue
+        
         # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
             # if no buy or sell on that day, then we cannot add the pnl into average
@@ -978,7 +1015,10 @@ def getReportByDate(today, account):
         new_report.futureCommission += futureCommission
         new_report.exchangeFees += exchangeFees
         new_report.nfaFees += nfaFees
-        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
+        if new_report.exchangeFees == 0.0:
+            new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
+        else:
+            new_report.commission += new_report.exchangeFees + clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
             new_report.accruedSecFees += secFees
