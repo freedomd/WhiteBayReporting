@@ -222,6 +222,12 @@ def getSupplementByDate(path, mark_date):
                         stock = row[5].split('.')[0]
                         if stock == "17": # temp use, build a map later
                             stock = "ZB"
+                        if stock == "EW":
+                            stock = "SC"
+                        if stock == "W1":
+                            stock = "1E"
+                        if stock == "W4":
+                            stock = "4E"
                         
                         time_str = row[5].split('.')[1]
                         year_symbol = time_str[1]
@@ -455,8 +461,7 @@ def getExecutionPrice(account, symbol, tradeDate):
 def getRollTrades(today):
     trades = Trade.objects.filter(tradeDate=today)
     for trade in trades:
-        try:
-            
+        try:           
             # dividend
             if "DIVIDEND" in trade.description:
                 new_report = newReport(trade.account, trade.symbol, trade.tradeDate)
@@ -513,6 +518,16 @@ def getRollTrades(today):
                                          route=trade.route, destination=trade.destination, liqFlag=trade.liqFlag,
                                          tradeDate=trade.tradeDate, description = trade.description)
                 continue
+            
+            # future option
+            if "FUTURE" in trade.description:
+                # do not roll the future option exercised and expired trade
+                RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
+                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         baseMoney = trade.baseMoney, route=trade.route, destination=trade.destination,
+                                         liqFlag=trade.liqFlag, tradeDate=trade.tradeDate, description = trade.description)
+                continue
+            
             # future
             if trade.securityType == "FUTURE" and "UNM" in trade.account:
                 try: 
@@ -669,6 +684,18 @@ def getReportByDate(today):
                 new_report.commission -= rtrade.baseMoney
             new_report.save()
             continue
+        
+        elif "EXPIRED FUTURE OPTION" in rtrade.description: # expired future option
+            if 'BUY' in rtrade.side:
+                price = new_report.mark
+                new_report.baseMoney -= rtrade.quantity * price
+                new_report.EOD -= rtrade.quantity
+            else:
+                price = new_report.mark
+                new_report.baseMoney += rtrade.quantity * price
+                new_report.EOD += rtrade.quantity
+            new_report.save()
+            continue
             
         # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
@@ -801,8 +828,7 @@ def getReportByDate(today):
         new_report.futureCommission += futureCommission
         new_report.exchangeFees += exchangeFees
         new_report.nfaFees += nfaFees
-        new_report.commission += new_report.clearanceFees + new_report.brokerCommission + \
-                                new_report.futureCommission + new_report.exchangeFees + new_report.nfaFees
+        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
         if rtrade.broker == "FBCO" or rtrade.broker == "UBS" or rtrade.broker == "BARC":
             new_report.accruedSecFees += secFees
@@ -1214,6 +1240,11 @@ def getTradesByDir(path):
                             trade.symbol = symb + expiry + side + price
                     else:
                         trade.symbol = row[1].strip()
+                    
+                    # get rid of the future options, we will read it in specific method for 71178
+                    if "71178" in trade.account and "ESO" in trade.symbol:
+                        continue    
+                    
                     trade.securityType = row[2]
                     trade.side = row[3]
                     trade.quantity = int(row[4])
@@ -1320,7 +1351,7 @@ def getTransferAsTradesByDir(path):
     return True 
 
 # import the option exercise and expire records as trades
-def getOptionsAsTradesByDir(path):
+def getOptionsAsTradesByDir(path, today):
     print "Getting option exercise record from files..."
     filelist = os.listdir(path)
     filelist.sort()
@@ -1341,27 +1372,31 @@ def getOptionsAsTradesByDir(path):
                     fields = len(row)
                     
                     # different date format
-                    if len(row[6].split(' ')) > 1:
-                        date_str = row[6].split(' ')[0].split('/')
-                    else:
-                        date_str = row[6].split('/')
-                    if len(date_str[2]) == 2:
-                        year = "20" + date_str[2]
-                    else:
-                        year = date_str[2]
-                    today = date(int(year), int(date_str[0]), int(date_str[1]))
+#                     if len(row[6].split(' ')) > 1:
+#                         date_str = row[6].split(' ')[0].split('/')
+#                     else:
+#                         date_str = row[6].split('/')
+#                     if len(date_str[2]) == 2:
+#                         year = "20" + date_str[2]
+#                     else:
+#                         year = date_str[2]
+#                     today = date(int(year), int(date_str[0]), int(date_str[1]))
                     #print today
                     
                     trade = Trade()
-                    trade.account = row[3] + row[4]
-                    trade.symbol = row[9].strip()
+                    #trade.account = row[3] + row[4]
+                    #trade.symbol = row[9].strip()
                     
                     #print trade.account + ", " + trade.symbol
                     sec = row[8]
                     if sec == "SSU":
                         trade.securityType = "SEC"                       
-                    else:
+                    elif sec == "SPO" or sec == "SCO":
                         trade.securityType = "OPT"
+                    elif sec == "FUT":
+                        trade.securityType = "FUTURE"
+                    else:
+                        trade.securityType = "FUTOPTION"
                     
                     side = row[fields-19]
                     if side.strip() == "SELL":
@@ -1373,9 +1408,13 @@ def getOptionsAsTradesByDir(path):
                     trade.tradeDate = today
                     
                     if sec == "SSU": #stock
+                        trade.account = row[3] + row[4]
+                        trade.symbol = row[9].strip()
                         trade.price = float(row[fields-13])
                         trade.description = "EXERCISE"
-                    else: #option
+                    elif sec == "SCO" or sec == "SPO": #option
+                        trade.account = row[3] + row[4]
+                        trade.symbol = row[9].strip()
                         action = row[fields-22]
                         trade.price = 0.00
                         if action == "Expired":
@@ -1408,7 +1447,28 @@ def getOptionsAsTradesByDir(path):
                             underlyingTrade.tradeDate = today
                             underlyingTrade.description = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
                             underlyingTrade.save()
-                            
+                    elif sec == "FUT":
+                        trade.account = row[5] + row[4] + "R1"
+                        trade.symbol = row[9].strip()
+                        trade.price = float(row[fields-13])
+                        action = row[fields-21].strip()
+                        if action == "E":
+                            trade.description = "EXERCISE FUTURE"
+                        else:
+                            trade.description = "UNKNOWN TYPE FUTURE"
+                    elif sec == "FOP":
+                        trade.account = row[5] + row[4] + "R1"
+                        callput = row[fields-20]
+                        strike_str = row[fields-15].split('.')[0]
+                        trade.symbol = row[9].strip() + " " + callput + strike_str
+                        trade.price = float(row[fields-13])
+                        action = row[fields-21].strip()
+                        if action == "E":
+                            trade.description = "EXERCISED FUTURE OPTION"
+                        elif action == "X":
+                            trade.description = "EXPIRED FUTURE OPTION"
+                        else:
+                            trade.description = "UNKNOWN TYPE FUTURE OPTION"
                     trade.save() # save into database
                         
                         
@@ -1782,7 +1842,7 @@ def getEdfFuturesByDir(path):
                 except Exception, e:
                     print str(e.message)
                     log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-                    log.write( "\tGet future trade %s %s from record file %s failed: %s\n" % (trade.symbol, trade.executionId, filename, str(e.message)) )
+                    log.write( "\tGet future trade from record file %s failed: %s\n" % (filename, str(e.message)) )
                     continue
             else:
                 header = False
@@ -1795,7 +1855,7 @@ def getEdfFuturesByDir(path):
 
 # ipmort the future files of account 71178
 def get78FuturesByDir(path):
-    print "Getting futures record from files..."
+    print "Getting 71178 futures record from files..."
     filelist = os.listdir(path)
     filelist.sort()
     log = open(ERROR_LOG, "a")
@@ -1810,59 +1870,36 @@ def get78FuturesByDir(path):
 
         for row in csv.reader(file.read().splitlines(), delimiter=','): 
             try:
-                if '/' in row[1]:
-                    date_str = row[1].split('/')
-                    if len(date_str[2]) == 2:
-                        year = "20" + date_str[2]
-                    else:
-                        year = date_str[2]
-                    today = date(int(year), int(date_str[0]), int(date_str[1]))
-                elif '-' in row[1]:
-                    date_str = row[1].split('-')
-                    if len(date_str[0]) == 2:
-                        year = "20" + date_str[0]
-                    else:
-                        year = date_str[0]
-                    today = date(int(year), int(date_str[1]), int(date_str[2]))
-                else:
+                if row[4].strip() != "78502" or row[1].strip() != "T":
                     continue
+                
+                date_str = row[6].strip()
+                year = int(date_str[:4])
+                month = int(date_str[4:6])
+                day = int(date_str[6:])
+                today = date(year, month, day)
                 
                 trade = Trade()
+                trade.account = row[3].strip() + row[4].strip() + row[5].strip()             
                 
-                action = row[16].strip()
-                message = row[34].strip()
-                if action != "EXECUTION" or (message != "Filled" and message != "Partially Filled"):
-                    continue
-
-                trade.symbol = row[20].strip()
-                if trade.symbol == None or trade.symbol == "":
-                    continue               
-                # option
-                if len(trade.symbol.split(' ')) > 1:
-                    trade.securityType = "FUTOPTION"
-                else:
-                    trade.securityType = "FUTURE"     
-                
-                trade.account = row[10] + "R1"
-                          
-                
-                side = row[17]
-                if side == "B":
+                side = row[7].strip()
+                if side == "1":
                     trade.side = "BUY"
                 else:
                     trade.side = "SEL"
+                    
+                trade.quantity = int(row[8].strip().split('.')[0])
+                trade.price = float(row[11].strip())
                 
-                trade.destination = row[5].upper()
+                if row[18].strip() == "" or row[18].strip() == None:
+                    trade.securityType = "FUTURE"
+                    trade.symbol = row[38].strip()
+                else:
+                    trade.securityType = "FUTOPTION"
+                    trade.symbol = row[38].strip() + " " + row[18].strip() + row[19].strip().split('.')[0]
                 
-                trade.quantity = int(row[18])
-                
-                price = row[26]
-                price = float(price) / 100
-                
-                trade.price = price
-                
-                trade.executionId = row[13]
-                trade.tradeDate = today    
+                trade.executionId = row[13].strip()
+                trade.tradeDate = today
                 trade.save() # save into database
                     
             except Exception, e:
@@ -1968,6 +2005,16 @@ def setupReport(path, reportDate):
                             new_report.account = new_report.account[:5]
                         
                         stock = row[5].split('.')[0]
+                        if stock == "17": # temp use, build a map later
+                            stock = "ZB"
+                        if stock == "EW":
+                            stock = "SC"
+                        if stock == "W1":
+                            stock = "1E"
+                        if stock == "W4":
+                            stock = "4E"
+                        
+                        
                         time_str = row[5].split('.')[1]
                         year_symbol = time_str[1]
                         month_symbol = time_str[2:]

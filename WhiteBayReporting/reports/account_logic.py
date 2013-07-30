@@ -95,47 +95,204 @@ def getMarksByDir(path, account):
     log.close()
     print "Done"
     return True
-
-
-def getSupplement(filepath, mark_date, account):
+# get multiplier for future and future option
+def getMultiplierByDate(path, today):
+    print "Getting multipliers..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    log = open(ERROR_LOG,"a") 
     
-    print "Getting marks and calculating reports..."    
-    
-    print filepath + " " + str(mark_date)
-    file = open(filepath, 'rb')
-    log = open(ERROR_LOG, "a")
-        
-    for row in csv.reader(file.read().splitlines(), delimiter=','): 
-        try:
-            # please modify row number here according to the supplement file format
-            symbol = row[5].strip()
-            if symbol == "" or symbol == None:
-                continue
-            
-            if row[8] != "":
-                continue
-            
-            closing = round(float(row[13]), 2)
-            if closing == 0.0: # invalid symbol
-                continue
-
-            try:
-                new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
-                new_symbol.closing = closing
-                new_symbol.save()
-            except Symbol.DoesNotExist:
-                new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
-                
-        except Exception, e:
-            print str(e.message)
-            log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
-            log.write( "\tGet mark price of %s failed: %s\n" % (symbol, str(e.message)) )
+    for filename in filelist:
+        if filename == ".DS_Store":
             continue
+        filepath = os.path.join(path, filename)
+        print filepath
+        file = open(filepath, 'rb') 
+        header = True
             
-    getReportByDate(mark_date, account)
+        #read the multiplier file
+        for row in csv.reader(file.read().splitlines(), delimiter=','): 
+            if not header:               
+                try:      
+                    symbol = row[38].strip()
+                    expDate = str(row[36]).strip()
+            
+                    if expDate != "" and expDate != "0": # future option
+                        #strike
+                        strike = row[19]
+                        if float(strike) == int(strike.split('.')[0]):
+                            strike_str = strike.split('.')[0]
+                        else:
+                            strike_str = strike
     
+                        symbol += " " + row[18].strip() + strike_str
+                        #print symbol
+    
+                    multiplier = int(float(str(row[10]).strip()))
+                    try:
+                        new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=today))
+                        continue
+                    except Symbol.DoesNotExist:
+                        new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=today, multiplier=multiplier)
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet multiplier of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()
     log.close()
-    file.close()
+    
+    print "Multipliers acquire finished"
+    return
+
+
+def getSupplement(path, mark_date, account):
+    print "Getting supplement marks and calculating reports..."
+    filelist = os.listdir(path)
+    filelist.sort()
+    
+    #read all the mark files for mark_date
+    for filename in filelist:
+        if filename == ".DS_Store":
+            continue
+        print filename
+        
+        filepath = os.path.join(path, filename)
+        if os.path.isdir(filepath) == True:
+            getMultiplierByDate(filepath, mark_date)
+            continue
+        
+        #print filepath
+        file = open(filepath, 'rb')
+        log = open(ERROR_LOG, "a")
+        header = True
+        
+        #read one mark file
+        for row in csv.reader(file.read().splitlines(), delimiter=','): # all marks in this file
+            if not header:               
+                try:      
+                    if row == None or row == "" or len(row) == 0:
+                        continue
+                    #symbol
+                    type = row[6].strip()
+                    if type == "SCO" or type == "SPO": # stock option
+                        #expiration date
+                        exp_date = row[8].split("/")
+                        if len(exp_date[0]) == 1:
+                            month = "0" + exp_date[0]
+                        else:
+                            month = exp_date[0]
+                        if len(exp_date[1]) == 1:
+                            day = "0" + exp_date[1]
+                        else:
+                            day = exp_date[1]
+                        year = exp_date[2]
+                        if len(year) == 4:
+                            year = year[2:]
+                        date_str = year + month + day
+                        
+                        #strike
+                        strike = float(row[9])
+                        strike_str = str(int(strike * 1000))
+                        while (len(strike_str) < 8):
+                            strike_str = "0" + strike_str
+                                                
+                        symbol = row[5].strip() 
+                        while len(symbol) < 6:
+                            symbol += " "
+                        if type == "SCO":
+                            symbol += date_str + "C" + strike_str
+                            #print symbol
+                        elif type == "SPO":
+                            symbol += date_str + "P" + strike_str
+                            #print symbol
+                    elif type == "FUTURE" or type == "FPO" or type == "FCO": # future
+                        stock = row[5].split('.')[0]
+                        if stock == "17": # temp use, build a map later
+                            stock = "ZB"
+                        if stock == "EW":
+                            stock = "SC"
+                        if stock == "W1":
+                            stock = "1E"
+                        if stock == "W4":
+                            stock = "4E"
+                        
+                        time_str = row[5].split('.')[1]
+                        year_symbol = time_str[1]
+                        month_symbol = time_str[2:]
+                        if month_symbol == "01":
+                            m_symbol = "F"
+                        elif month_symbol == "02":
+                            m_symbol = "G"
+                        elif month_symbol == "03":
+                            m_symbol = "H"
+                        elif month_symbol == "04":
+                            m_symbol = "J"
+                        elif month_symbol == "05":
+                            m_symbol = "K"
+                        elif month_symbol == "06":
+                            m_symbol = "M"
+                        elif month_symbol == "07":
+                            m_symbol = "N"
+                        elif month_symbol == "08":
+                            m_symbol = "Q"
+                        elif month_symbol == "09":
+                            m_symbol = "U"
+                        elif month_symbol == "10":
+                            m_symbol = "V"
+                        elif month_symbol == "11":
+                            m_symbol = "X"
+                        elif month_symbol == "12":
+                            m_symbol = "Z"
+                        
+                        underlying = stock + m_symbol + year_symbol
+                        if type == "FUTURE":
+                            symbol = underlying
+                        else: # future option                           
+                            strike = row[9]
+                            if float(strike) == int(strike.split('.')[0]):
+                                strike_str = strike.split('.')[0]
+                            else:
+                                strike_str = strike                                                                              
+                            
+                            if type == "FCO":
+                                symbol = underlying + " C" + strike_str
+                            elif type == "FPO":
+                                symbol = underlying + " P" + strike_str
+                    else: # stock
+                        symbol = row[5].strip() 
+                        #print symbol
+                    if symbol == "" or symbol == None:
+                        continue
+                        
+                    closing = float(row[17])
+                    #print closing
+                    if closing == 0.0: # invalid symbol
+                        continue
+        
+                    try:
+                        new_symbol = Symbol.objects.get(Q(symbol=symbol) & Q(symbolDate=mark_date))
+                        new_symbol.closing = closing
+                        new_symbol.save()
+                    except Symbol.DoesNotExist:
+                        new_symbol = Symbol.objects.create(symbol=symbol, symbolDate=mark_date, closing=closing)
+                        
+                except Exception, e:
+                    print str(e.message)
+                    log.write( strftime("%Y-%m-%d %H:%M:%S", time.localtime()) )
+                    log.write( "\tGet mark price of %s from %s failed: %s\n" % (symbol, filepath, str(e.message)) )
+                    continue
+            else:
+                header = False
+        file.close()
+        log.close()
+    
+    if mark_date:
+        print "Start calculating report..."
+        getReportByDate(mark_date, account)
+    
     print "Done"
     return True
 
@@ -883,6 +1040,18 @@ def getReportByDate(today, account):
             else:
                 new_report.exchangeFees -= rtrade.baseMoney
                 new_report.commission -= rtrade.baseMoney
+            new_report.save()
+            continue
+         
+        elif "EXPIRED FUTURE OPTION" in rtrade.description: # expired future option
+            if 'BUY' in rtrade.side:
+                price = new_report.mark
+                new_report.baseMoney -= rtrade.quantity * price
+                new_report.EOD -= rtrade.quantity
+            else:
+                price = new_report.mark
+                new_report.baseMoney += rtrade.quantity * price
+                new_report.EOD += rtrade.quantity
             new_report.save()
             continue
         
