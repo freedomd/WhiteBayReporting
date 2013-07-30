@@ -159,7 +159,7 @@ def refreshReports(today, account):
             new_report.brokerCommission = 0.0
             new_report.futureCommission = 0.0
             new_report.exchangeFees = 0.0
-            new_report.nfaFees += 0.0
+            new_report.nfaFees = 0.0
             new_report.secFees = 0.0
             new_report.baseMoney = 0.0
             new_report.netPNL = 0.0
@@ -620,7 +620,7 @@ def getDailyReport(report_date, account):
         
         # discard useless report
         if SOD == 0 and buys == 0 and sells == 0 and report.todayCash == 0 and report.todayShare == 0 and \
-            report.exchangeFees == 0 and report.baseMoney == 0:
+            report.commission == 0 and report.baseMoney == 0:
 
             report.delete()
             continue
@@ -879,8 +879,10 @@ def getReportByDate(today, account):
         if "FUTURE EXCHANGE FEE" in rtrade.description:
             if 'BUY' in rtrade.side:
                 new_report.exchangeFees += rtrade.baseMoney
+                new_report.commission += rtrade.baseMoney
             else:
                 new_report.exchangeFees -= rtrade.baseMoney
+                new_report.commission -= rtrade.baseMoney
             new_report.save()
             continue
         
@@ -1015,12 +1017,9 @@ def getReportByDate(today, account):
         new_report.futureCommission += futureCommission
         new_report.exchangeFees += exchangeFees
         new_report.nfaFees += nfaFees
-        if new_report.exchangeFees == 0.0:
-            new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
-        else:
-            new_report.commission += new_report.exchangeFees + clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
+        new_report.commission += clearance + brokerCommission + futureCommission + exchangeFees + nfaFees
         # for the specific contract broker, we calculate the accrued Sec Fees other than secFees
-        if rtrade.route == "WBPT" and (rtrade.destination == "FBCO" or rtrade.destination == "UBS"):
+        if rtrade.broker == "FBCO" or rtrade.broker == "UBS" or rtrade.broker == "BARC":
             new_report.accruedSecFees += secFees
         else:
             new_report.secFees += secFees
