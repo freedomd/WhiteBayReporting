@@ -562,9 +562,17 @@ def getRollTrades(today):
             # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
             if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or \
                 trade.route == "CMZ" or trade.route == "":
-                               
+                
+                if trade.description == "EXERCISE":
+                    if trade.symbol == "ARP":
+                        price = trade.price * 10
+                    else:
+                        price = trade.price
+                else:
+                    price = trade.price
+                 
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
-                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         side=trade.side, price=price, quantity=trade.quantity, 
                                          baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
                                          destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
                                          tradeDate=trade.tradeDate, description = trade.description)
@@ -696,7 +704,15 @@ def getReportByDate(today):
                 new_report.EOD += rtrade.quantity
             new_report.save()
             continue
-            
+        
+        if "COMBINATION OPTION CASH" in rtrade.description:
+            if 'BUY' in rtrade.side:
+                new_report.baseMoney -= rtrade.baseMoney
+            else:
+                new_report.baseMoney += rtrade.baseMoney
+            new_report.save()
+            continue
+        
         # if the trade is an option transferred pnl
         if rtrade.price == 0.00 and rtrade.quantity == 0:
             # if no buy or sell on that day, then we cannot add the pnl into average
@@ -1412,6 +1428,24 @@ def getOptionsAsTradesByDir(path, today):
                         trade.symbol = row[9].strip()
                         trade.price = float(row[fields-13])
                         trade.description = "EXERCISE"
+                        
+                        # part of combination option
+                        if trade.symbol == "ARP":
+                            # add the option's pnl into the underlying equity
+                            underlyingTrade = Trade()
+                            underlyingTrade.account = trade.account
+                            underlyingTrade.symbol = trade.symbol
+                            underlyingTrade.securityType = "SEC"
+                            if trade.side == "BUY":
+                                underlyingTrade.side = "SEL"
+                            else:
+                                underlyingTrade.side = "BUY"
+                            underlyingTrade.price = 0.0471
+                            underlyingTrade.baseMoney = 0.0471 * trade.quantity * 10
+                            underlyingTrade.tradeDate = today
+                            underlyingTrade.description = "COMBINATION OPTION CASH"
+                            underlyingTrade.save()
+                        
                     elif sec == "SCO" or sec == "SPO": #option
                         trade.account = row[3] + row[4]
                         trade.symbol = row[9].strip()
@@ -1425,7 +1459,10 @@ def getOptionsAsTradesByDir(path, today):
                             # add the option's pnl into the underlying equity
                             underlyingTrade = Trade()
                             underlyingTrade.account = trade.account
-                            underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                            if "ATLS1" in trade.symbol:
+                                underlyingTrade.symbol = "ATLS"
+                            else:
+                                underlyingTrade.symbol = trade.symbol.split(" ")[0]
                             underlyingTrade.securityType = "SEC"
                             underlyingTrade.side = "BUY"
                             underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
@@ -1439,7 +1476,10 @@ def getOptionsAsTradesByDir(path, today):
                             # add the option's pnl into the underlying equity
                             underlyingTrade = Trade()
                             underlyingTrade.account = trade.account
-                            underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                            if "ATLS1" in trade.symbol:
+                                underlyingTrade.symbol = "ATLS"
+                            else:
+                                underlyingTrade.symbol = trade.symbol.split(" ")[0]
                             underlyingTrade.securityType = "SEC"
                             underlyingTrade.side = "SEL"
                             underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade

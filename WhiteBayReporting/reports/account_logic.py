@@ -540,13 +540,20 @@ def getRollTrades(today, account):
                 
             # do not roll the trades with Route "BAML", "INSTINET", "ITGI", and exercised trades
             if trade.route == "BAML" or trade.route == "INSTINET" or trade.route == "ITGI" or \
-            trade.route == "CMZ" or trade.route == "":
+            trade.route == "CMZ" or trade.route == "": 
+                if trade.description == "EXERCISE":
+                    if trade.symbol == "ARP":
+                        price = trade.price * 10
+                    else:
+                        price = trade.price
+                else:
+                    price = trade.price
+                 
                 RollTrade.objects.create(account=trade.account, symbol=trade.symbol, securityType = trade.securityType,
-                                         side=trade.side, price=trade.price, quantity=trade.quantity, 
+                                         side=trade.side, price=price, quantity=trade.quantity, 
                                          baseMoney = trade.baseMoney, ecnFees=trade.ecnFees, route=trade.route,
                                          destination=trade.destination, broker = trade.broker, liqFlag=trade.liqFlag,
                                          tradeDate=trade.tradeDate, description = trade.description)
-                
                 continue
             
             # for Route "RAVEN", roll the trades with same account, symbol, and side
@@ -1052,6 +1059,14 @@ def getReportByDate(today, account):
                 price = new_report.mark
                 new_report.baseMoney += rtrade.quantity * price
                 new_report.EOD += rtrade.quantity
+            new_report.save()
+            continue
+        
+        if "COMBINATION OPTION CASH" in rtrade.description:
+            if 'BUY' in rtrade.side:
+                new_report.baseMoney -= rtrade.baseMoney
+            else:
+                new_report.baseMoney += rtrade.baseMoney
             new_report.save()
             continue
         
