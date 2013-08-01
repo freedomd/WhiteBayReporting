@@ -7,7 +7,7 @@ import os
 from admins.models import Firm, Broker, Route, Account, FutureFeeRate, FutureFeeGroup, FutureMultiplier
 from trades.models import Trade, RollTrade
 from reports.models import Security, Symbol, Report, DailyReport, MonthlyReport
-from datetime import date
+from datetime import date, timedelta
 import time
 from time import strftime
 from django.db.models import Q
@@ -386,8 +386,10 @@ def refreshReports(today):
             new_report.brokerCommission = 0.0
             new_report.futureCommission = 0.0
             new_report.exchangeFees = 0.0
-            new_report.nfaFees += 0.0
+            new_report.nfaFees = 0.0
             new_report.secFees = 0.0
+            new_report.ecnFees = 0.0
+            new_report.accruedSecFees = 0.0
             new_report.baseMoney = 0.0
             new_report.netPNL = 0.0
             new_report.SOD = new_report.EOD 
@@ -1244,8 +1246,18 @@ def getTradesByDir(path):
                             ex_year = exp_date[2]
                             if len(ex_year) == 4:
                                 ex_year = ex_year[2:]
+                            
+                            # handle the expiry date mismatch of account 71178
+                            if "71178" in trade.account:
+                                exDate = date(int("20" + ex_year), int(ex_month), int(ex_day))
+                                if exDate.weekday() == 4:
+                                    exDate += timedelta(1)
+                                    ex_year = exDate.year
+                                    ex_month = exDate.month
+                                    ex_day = exDate.day
                                                      
                             expiry = ex_year + ex_month + ex_day
+                                
                             # side
                             side = symbol_str[2]
                             # price
@@ -1270,9 +1282,9 @@ def getTradesByDir(path):
                     trade.liqFlag = row[9]
                     trade.tradeDate = today
                     trade.executionId = row[11]
-                    trade.ecnFees = getECNFees(trade.symbol, trade.tradeDate, 
-                                               trade.destination, trade.liqFlag, 
-                                               trade.price, trade.quantity)
+#                     trade.ecnFees = getECNFees(trade.symbol, trade.tradeDate, 
+#                                                trade.destination, trade.liqFlag, 
+#                                                trade.price, trade.quantity)
                     
                     # broker
                     if trade.route == "INSTINET" and trade.destination != "":
@@ -1286,6 +1298,8 @@ def getTradesByDir(path):
                             trade.broker = "UBSS"
                         elif trade.destination == "NASDAQ":
                             trade.broker = "NSDQ"
+                        elif trade.destination == "CSR":
+                            trade.broker = "NITE"
                     elif trade.route == "ITGI" and trade.securityType == "SEC":
                         trade.broker = "ITGI"
                     elif trade.route == "BAML" and trade.destination == "NSDQ":
@@ -1426,7 +1440,7 @@ def getOptionsAsTradesByDir(path, today):
                     if sec == "SSU": #stock
                         trade.account = row[3] + row[4]
                         trade.symbol = row[9].strip()
-                        trade.price = float(row[fields-13])
+                        trade.price = float(row[fields-13].strip())
                         trade.description = "EXERCISE"
                         
                         # part of combination option
@@ -1456,37 +1470,42 @@ def getOptionsAsTradesByDir(path, today):
                         elif action == "Exercise":
                             trade.description = "EXERCISED OPTION"
                             
-                            # add the option's pnl into the underlying equity
-                            underlyingTrade = Trade()
-                            underlyingTrade.account = trade.account
-                            if "ATLS1" in trade.symbol:
-                                underlyingTrade.symbol = "ATLS"
+                            if "71178" in trade.account and ("OEX" in trade.symbol or "XEO" in trade.symbol):
+                                trade.price = float(row[fields-13].strip())
                             else:
-                                underlyingTrade.symbol = trade.symbol.split(" ")[0]
-                            underlyingTrade.securityType = "SEC"
-                            underlyingTrade.side = "BUY"
-                            underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
-                            underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
-                            underlyingTrade.tradeDate = today
-                            underlyingTrade.description = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
-                            underlyingTrade.save()
+                                # add the option's pnl into the underlying equity
+                                underlyingTrade = Trade()
+                                underlyingTrade.account = trade.account
+                                if "ATLS1" in trade.symbol:
+                                    underlyingTrade.symbol = "ATLS"
+                                else:
+                                    underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                                underlyingTrade.securityType = "SEC"
+                                underlyingTrade.side = "BUY"
+                                underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
+                                underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
+                                underlyingTrade.tradeDate = today
+                                underlyingTrade.description = "TRANSFER PNL FROM EXERCISED OPTION:" + trade.symbol
+                                underlyingTrade.save()
                         else: #assign
                             trade.description = "ASSIGNED OPTION"
-                            
-                            # add the option's pnl into the underlying equity
-                            underlyingTrade = Trade()
-                            underlyingTrade.account = trade.account
-                            if "ATLS1" in trade.symbol:
-                                underlyingTrade.symbol = "ATLS"
+                            if "71178" in trade.account and ("OEX" in trade.symbol or "XEO" in trade.symbol):
+                                trade.price = float(row[fields-13].strip())
                             else:
-                                underlyingTrade.symbol = trade.symbol.split(" ")[0]
-                            underlyingTrade.securityType = "SEC"
-                            underlyingTrade.side = "SEL"
-                            underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
-                            underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
-                            underlyingTrade.tradeDate = today
-                            underlyingTrade.description = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
-                            underlyingTrade.save()
+                                # add the option's pnl into the underlying equity
+                                underlyingTrade = Trade()
+                                underlyingTrade.account = trade.account
+                                if "ATLS1" in trade.symbol:
+                                    underlyingTrade.symbol = "ATLS"
+                                else:
+                                    underlyingTrade.symbol = trade.symbol.split(" ")[0]
+                                underlyingTrade.securityType = "SEC"
+                                underlyingTrade.side = "SEL"
+                                underlyingTrade.quantity = trade.quantity * 100 # Temporarily stored, will be cleared in getRollTrade
+                                underlyingTrade.baseMoney = 0.00 # will be calculated in getRollTrade
+                                underlyingTrade.tradeDate = today
+                                underlyingTrade.description = "TRANSFER PNL FROM ASSIGNED OPTION:" + trade.symbol
+                                underlyingTrade.save()
                     elif sec == "FUT":
                         trade.account = row[5] + row[4] + "R1"
                         trade.symbol = row[9].strip()

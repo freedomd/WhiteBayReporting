@@ -318,6 +318,8 @@ def refreshReports(today, account):
             new_report.exchangeFees = 0.0
             new_report.nfaFees = 0.0
             new_report.secFees = 0.0
+            new_report.ecnFees = 0.0
+            new_report.accruedSecFees = 0.0
             new_report.baseMoney = 0.0
             new_report.netPNL = 0.0
             new_report.SOD = new_report.EOD 
